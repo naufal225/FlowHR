@@ -1,0 +1,6 @@
+﻿*** Begin Patch
+*** Update File: routes/admin.php
+@@
+     Route::post('/settings/update-multiple', [CostSettingController::class, 'updateMultiple'])->name('settings.update-multiple');
++    Route::post('/settings/features', [CostSettingController::class, 'updateFeatures'])->name('settings.features.update');
+*** End Patch
