@@ -34,9 +34,10 @@ class OfficeLocation extends Model
         return $this->hasMany(AttendanceSetting::class, 'office_location_id');
     }
 
-    public function activeAttendanceSettings(): HasMany
+    public function activeAttendanceSetting()
     {
-        return $this->attendanceSettings()->where('is_active', true);
+        return $this->hasOne(AttendanceSetting::class, 'office_location_id')
+            ->where('is_active', true);
     }
 
     public function attendanceQrTokens(): HasMany
