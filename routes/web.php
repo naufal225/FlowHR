@@ -11,6 +11,7 @@ use App\Enums\Roles;
 // ==============================
 // TESTING EVENTS
 // ==============================
+
 Route::get('/_test-bc', function () {
     $leave = \App\Models\Leave::latest()->first() ?? \App\Models\Leave::factory()->create();
     event(new \App\Events\LeaveSubmitted($leave, 1)); // 👈 harus 1
