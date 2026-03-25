@@ -41,7 +41,9 @@ class AttendancePolicyService
             throw new OfficeLocationNotAssignedException([]);
         }
 
-        $office = OfficeLocation::query()->find($user->office_location_id);
+        $office = OfficeLocation::query()
+            ->select(['id', 'latitude', 'longitude', 'radius_meter', 'timezone'])
+            ->find($user->office_location_id);
 
         if (!$office) {
             throw new OfficeLocationNotAssignedException([]);
@@ -65,8 +67,8 @@ class AttendancePolicyService
             'office_location_id'         => $office->id,
             'work_start_time'            => $setting->work_start_time,
             'work_end_time'              => $setting->work_end_time,
-            'latitdue'                   => $setting->latitdue,
-            'longitude'                  => $setting->longitude,
+            'latitude'                   => $office->latitude,
+            'longitude'                  => $office->longitude,
             'late_tolerance_minutes'     => $setting->late_tolerance_minutes,
             'qr_rotation_seconds'        => $setting->qr_rotation_seconds,
             'min_location_accuracy_meter'=> $setting->min_location_accuracy_meter,
