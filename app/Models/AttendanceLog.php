@@ -20,6 +20,7 @@ class AttendanceLog extends Model
         'ip_address',
         'device_info',
         'message',
+        'context',
         'occurred_at',
     ];
 
@@ -30,6 +31,7 @@ class AttendanceLog extends Model
         'longitude' => 'decimal:7',
         'accuracy_meter' => 'decimal:2',
         'occurred_at' => 'datetime',
+        'context' => 'json',
         'action_type' => AttendanceLogActionType::class,
         'action_status' => AttendanceLogActionStatus::class,
     ];

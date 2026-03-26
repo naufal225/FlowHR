@@ -37,6 +37,7 @@ return new class extends Migration
             $table->string('ip_address', 45)->nullable();
             $table->text('device_info')->nullable();
             $table->text('message')->nullable();
+            $table->json('context')->nullable();
 
             $table->timestamp('occurred_at');
 
