@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SuperAdminController\CostSettingController;
 use App\Http\Controllers\SuperAdminController\HolidayController;
+use App\Http\Controllers\SuperAdminController\OfficeLocationController;
 use App\Http\Controllers\SuperAdminController\ApproverController;
 use App\Http\Controllers\SuperAdminController\CustomerController;
 use App\Http\Controllers\SuperAdminController\DashboardController;
@@ -24,6 +25,14 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('divisions', DivisionController::class);
+
+    Route::resource('office-locations', OfficeLocationController::class)->only([
+        'index',
+        'create',
+        'store',
+        'edit',
+        'update',
+    ]);
 
     Route::resource('users', UserController::class);
 

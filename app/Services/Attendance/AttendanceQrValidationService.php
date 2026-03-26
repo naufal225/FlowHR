@@ -50,12 +50,12 @@ class AttendanceQrValidationService
                 'office_location_id',
                 'token',
                 'is_active',
-                'expires_at',
+                'expired_at',
             ])
             ->where('token', $normalizedToken)
             ->first();
 
-        if (! $qrToken) {
+        if (!$qrToken) {
             throw new InvalidQrTokenException(
                 message: 'QR token tidak valid.',
                 context: [

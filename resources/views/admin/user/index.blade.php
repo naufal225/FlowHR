@@ -53,6 +53,7 @@
                     <div class="flex-1">
                         <div class="relative">
                             <input type="text" placeholder="Search users..." name="search"
+                                value="{{ $search ?? request('search') }}"
                                 class="w-full py-2 pl-10 pr-4 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
@@ -97,6 +98,9 @@
                                 Division</th>
                             <th
                                 class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Office</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
                                 Role</th>
                             <th
                                 class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
@@ -129,11 +133,20 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-neutral-500">
+                                    {{ $user->officeLocation->name ?? "N/A" }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-neutral-500">
                                     {{ $user->role_display }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 font-medium text-md whitespace-nowrap">
                                 <div class="flex items-center space-x-2">
+                                    <a href="{{ route('admin.users.show', $user->id) }}"
+                                        class="text-sky-600 hover:text-sky-900" title="Detail">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                     <a href="{{ route('admin.users.edit', $user->id) }}"
                                         class="text-secondary-600 hover:text-secondary-900" title="Edit">
                                         <i class="fas fa-edit"></i>
@@ -155,7 +168,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="7" class="px-6 py-12 text-center">
                                 <div class="text-neutral-400">
                                     <i class="mb-4 text-4xl fas fa-inbox"></i>
                                     <p class="text-lg font-medium">No users found</p>

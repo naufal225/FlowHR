@@ -15,6 +15,7 @@ class OfficeLocation extends Model
         'longitude',
         'radius_meter',
         'is_active',
+        'timezone'
     ];
 
     protected $casts = [

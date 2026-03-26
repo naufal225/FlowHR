@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminController\DashboardController;
 use App\Http\Controllers\AdminController\DivisionController;
 use App\Http\Controllers\AdminController\HolidayController;
 use App\Http\Controllers\AdminController\LeaveBalancesController;
+use App\Http\Controllers\AdminController\OfficeLocationController;
 use App\Http\Controllers\AdminController\UserController;
 use App\Http\Controllers\AdminController\LeaveController;
 use App\Http\Controllers\AdminController\OfficialTravelController;
@@ -28,6 +29,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('divisions', DivisionController::class);
+
+    Route::resource('office-locations', OfficeLocationController::class)->only([
+        'index',
+        'create',
+        'store',
+        'edit',
+        'update',
+    ]);
 
     Route::resource('users', UserController::class);
 

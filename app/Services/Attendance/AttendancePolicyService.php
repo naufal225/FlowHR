@@ -42,7 +42,7 @@ class AttendancePolicyService
         }
 
         $office = OfficeLocation::query()
-            ->select(['id', 'latitude', 'longitude', 'radius_meter', 'timezone'])
+            ->select(['id', 'latitude', 'longitude', 'radius_meter', 'is_active', 'timezone'])
             ->find($user->office_location_id);
 
         if (!$office) {
@@ -73,7 +73,7 @@ class AttendancePolicyService
             'qr_rotation_seconds'        => $setting->qr_rotation_seconds,
             'min_location_accuracy_meter'=> $setting->min_location_accuracy_meter,
             'allowed_radius_meter'       => $office->radius_meter,
-            'timezone'                   => $office->timezone ?? config('app.timezone', 'Asia/Jakarta'),
+            'timezone'                   => $office->policy->timezone ?? config('app.timezone', 'Asia/Jakarta'),
         ]);
     }
 

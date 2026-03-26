@@ -18,6 +18,8 @@ return new class extends Migration
             $table->decimal('latitude', 10, 7);
             $table->decimal('longitude', 10, 7);
 
+            $table->string('timezone');
+
             $table->unsignedInteger('radius_meter')->default(100);
             $table->boolean('is_active')->default(true);
 

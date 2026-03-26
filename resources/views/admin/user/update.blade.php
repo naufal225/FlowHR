@@ -182,6 +182,33 @@
                         </p>
                     </div>
 
+                    <div>
+                        <label for="office_location_id" class="block mb-2 text-sm font-medium text-gray-700">
+                            Office Location
+                        </label>
+                        <div class="relative">
+                            <select id="office_location_id" name="office_location_id"
+                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('office_location_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
+                                <option value="">Select an office (optional)</option>
+                                @foreach($officeLocations as $officeLocation)
+                                <option value="{{ $officeLocation->id }}" {{ old('office_location_id', $user->office_location_id) == $officeLocation->id ? 'selected' : '' }}>
+                                    {{ $officeLocation->name }} ({{ $officeLocation->code }}){{ $officeLocation->is_active ? '' : ' - Inactive' }}
+                                </option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 left-0 z-10 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h6m-6 4h6m-6 4h6" />
+                                </svg>
+                            </div>
+                        </div>
+                        @error('office_location_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-2 text-xs text-gray-500">Set office to align attendance policy and reporting.</p>
+                    </div>
+
                     <!-- Form Actions -->
                     <div class="flex items-center justify-end pt-6 space-x-4 border-t border-gray-200">
                         <a href="{{ url()->previous() }}"
