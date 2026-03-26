@@ -14,7 +14,8 @@ class CheckInData
         public readonly float $accuracyMeter,
         public readonly ?string $deviceInfo = null,
         public readonly ?string $ipAddress = null,
-    ) {}
+    ) {
+    }
 
     public static function fromArray(array $data): self
     {
@@ -36,7 +37,9 @@ class CheckInData
             qrToken: trim((string) $request->input('qr_token')),
             latitude: (float) $request->input('latitude'),
             longitude: (float) $request->input('longitude'),
-            accuracyMeter: (float) $request->input('accuracy_meter'),
+            accuracyMeter: $request->filled('accuracy_meter')
+            ? (float) $request->input('accuracy_meter')
+            : null,
             deviceInfo: $request->userAgent(),
             ipAddress: $request->ip(),
         );
