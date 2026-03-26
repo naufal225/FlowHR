@@ -34,59 +34,115 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-       // 1. HANDLE SEMUA AttendanceException (BASE)
+        $isMobileApiRequest = static fn(Request $request): bool => $request->is('api/mobile/*');
+        $isLocalDevelopment = static fn(): bool => app()->environment(['local', 'development']) && (bool) config('app.debug');
+        $debugContext = static function (Throwable $e) use ($isLocalDevelopment): array {
+            if (! $isLocalDevelopment()) {
+                return [];
+            }
+
+            $traceSteps = collect($e->getTrace())
+                ->take(10)
+                ->map(function (array $frame, int $index): array {
+                    $class = $frame['class'] ?? null;
+                    $type = $frame['type'] ?? null;
+                    $function = $frame['function'] ?? 'unknown';
+                    $file = $frame['file'] ?? null;
+                    $line = $frame['line'] ?? null;
+
+                    return [
+                        'step' => $index + 1,
+                        'call' => $class ? $class . $type . $function : $function,
+                        'file' => $file,
+                        'line' => $line,
+                        'location' => $file && $line ? $file . ':' . $line : null,
+                    ];
+                })
+                ->values()
+                ->all();
+
+            return [
+                'debug' => [
+                    'exception' => $e::class,
+                    'error_message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'error_location' => $e->getFile() . ':' . $e->getLine(),
+                    'trace' => $traceSteps,
+                ],
+            ];
+        };
+
+        // 1. HANDLE SEMUA AttendanceException (BASE) untuk API mobile
         $exceptions->render(function (
             AttendanceException $e,
             Request $request
-        ) {
+        ) use ($isMobileApiRequest, $debugContext) {
+            if (! $isMobileApiRequest($request)) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'code' => $e->getErrorCode(),
+                ...$debugContext($e),
             ], $e->getStatusCode());
         });
 
-        // 2. VALIDATION ERROR (Form Request / Validator)
+        // 2. VALIDATION ERROR (Form Request / Validator) untuk API mobile
         $exceptions->render(function (
             ValidationException $e,
             Request $request
-        ) {
+        ) use ($isMobileApiRequest, $debugContext) {
+            if (! $isMobileApiRequest($request)) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak valid.',
                 'code' => 'VALIDATION_ERROR',
                 'errors' => $e->errors(),
+                ...$debugContext($e),
             ], 422);
         });
 
-        // 3. AUTH ERROR API MOBILE
+        // 3. AUTH ERROR untuk API mobile
         $exceptions->render(function (
             AuthenticationException $e,
             Request $request
-        ) {
+        ) use ($isMobileApiRequest, $debugContext) {
+            if (! $isMobileApiRequest($request)) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized.',
                 'code' => 'UNAUTHORIZED',
+                ...$debugContext($e),
             ], 401);
         });
 
-        // 4. FALLBACK (ERROR SYSTEM)
+        // 4. FALLBACK (ERROR SYSTEM) untuk API mobile
         $exceptions->render(function (
             Throwable $e,
             Request $request
-        ) {
+        ) use ($isMobileApiRequest, $debugContext, $isLocalDevelopment) {
+            if (! $isMobileApiRequest($request)) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan pada server.',
+                'message' => $isLocalDevelopment() ? $e->getMessage() : 'Terjadi kesalahan pada server.',
                 'code' => 'INTERNAL_SERVER_ERROR',
+                ...$debugContext($e),
             ], 500);
         });
 
     })
     ->withCommands([
         \App\Console\Commands\RunQueueOnce::class,
-    ])
-    ->withExceptions(function (Exceptions $exceptions): void {
-        //
-    })->create();
+    ])->create();
