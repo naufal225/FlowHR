@@ -1,115 +1,114 @@
 <div class="space-y-6">
-    {{-- Top Row: Stats + Calendar --}}
-    <section class="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 lg:col-span-8 content-start items-start self-start">
-            <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-                <div class="flex items-start justify-between">
-                    <div>
-                        <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Total Employees</p>
-                        <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_employees }}</p>
-                    </div>
-                    <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                        </svg>
-                    </div>
+    {{-- Stats Cards Grid --}}
+    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Total Employees</p>
+                    <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_employees }}</p>
                 </div>
-            </article>
-
-            <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-                <div class="flex items-start justify-between">
-                    <div>
-                        <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Pending</p>
-                        <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_pending }}</p>
-                    </div>
-                    <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-amber-50">
-                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
+                <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
                 </div>
-            </article>
+            </div>
+        </article>
 
-            <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-                <div class="flex items-start justify-between">
-                    <div>
-                        <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Approved</p>
-                        <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_approved }}</p>
-                    </div>
-                    <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-50">
-                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
+        <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Pending</p>
+                    <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_pending }}</p>
                 </div>
-            </article>
-
-            <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
-                <div class="flex items-start justify-between">
-                    <div>
-                        <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Rejected</p>
-                        <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_rejected }}</p>
-                    </div>
-                    <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-rose-50">
-                        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </div>
+                <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-amber-50">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
-            </article>
-        </div>
+            </div>
+        </article>
 
-        {{-- Calendar Widget (Top Right) --}}
-        <article class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl lg:col-span-4">
-            <header class="px-5 py-4 border-b border-gray-100 bg-gray-50">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-semibold text-gray-800">Employee Leave Calendar</h3>
-                    <span class="text-xs text-gray-500">{{ now()->format('F Y') }}</span>
+        <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Approved</p>
+                    <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_approved }}</p>
                 </div>
-            </header>
-            <div class="p-5">
-                <div id="calendar">
-                    <div class="flex items-center justify-between mb-4">
-                        <button id="prev" type="button" aria-label="Previous month"
-                            class="flex items-center justify-center w-8 h-8 text-gray-500 transition rounded-lg hover:bg-gray-100">
-                            <i class="text-xs fas fa-chevron-left"></i>
-                        </button>
-                        <h2 id="monthYear" class="text-sm font-semibold text-gray-800"></h2>
-                        <button id="next" type="button" aria-label="Next month"
-                            class="flex items-center justify-center w-8 h-8 text-gray-500 transition rounded-lg hover:bg-gray-100">
-                            <i class="text-xs fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-7 mb-2">
-                        @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day)
-                            <div class="py-2 text-xs font-medium text-center text-gray-400">{{ $day }}</div>
-                        @endforeach
-                    </div>
-
-                    <div id="dates" class="grid grid-cols-7 gap-1"></div>
+                <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-50">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
-                <div class="flex items-center justify-center gap-4 pt-3 mt-4 border-t border-gray-100">
-                    <div class="flex items-center gap-1.5">
-                        <span class="inline-block w-2 h-2 bg-red-500 rounded-full"></span>
-                        <span class="text-xs text-gray-500">Leave</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
-                        <span class="text-xs text-gray-500">Today</span>
-                    </div>
+            </div>
+        </article>
+
+        <article class="p-5 transition-shadow bg-white border border-gray-100 shadow-sm rounded-2xl hover:shadow-md">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Rejected</p>
+                    <p class="mt-1 text-2xl font-bold text-gray-900">{{ $total_rejected }}</p>
+                </div>
+                <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-rose-50">
+                    <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </div>
             </div>
         </article>
     </section>
 
-    {{-- Main Content: Charts + Recent Requests --}}
-    <section class="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-        {{-- Left Column: Charts --}}
-        <div class="space-y-6 lg:col-span-8">`r`n            {{-- Monthly Requests Chart --}}
+    {{-- Main Content: Calendar + Charts + Recent Requests --}}
+    <section class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {{-- Left Column: Calendar + Charts --}}
+        <div class="space-y-6 lg:col-span-7">
+            {{-- Calendar Widget --}}
+            <article class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl">
+                <header class="px-5 py-4 border-b border-gray-100 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-800">Employee Leave Calendar</h3>
+                        <span class="text-xs text-gray-500">{{ now()->format('F Y') }}</span>
+                    </div>
+                </header>
+                <div class="p-5">
+                    <div id="calendar">
+                        <div class="flex items-center justify-between mb-4">
+                            <button id="prev" type="button" aria-label="Previous month"
+                                class="flex items-center justify-center w-8 h-8 text-gray-500 transition rounded-lg hover:bg-gray-100">
+                                <i class="text-xs fas fa-chevron-left"></i>
+                            </button>
+                            <h2 id="monthYear" class="text-sm font-semibold text-gray-800"></h2>
+                            <button id="next" type="button" aria-label="Next month"
+                                class="flex items-center justify-center w-8 h-8 text-gray-500 transition rounded-lg hover:bg-gray-100">
+                                <i class="text-xs fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-7 mb-2">
+                            @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day)
+                                <div class="py-2 text-xs font-medium text-center text-gray-400">{{ $day }}</div>
+                            @endforeach
+                        </div>
+
+                        <div id="dates" class="grid grid-cols-7 gap-1"></div>
+                    </div>
+                    <div class="flex items-center justify-center gap-4 pt-3 mt-4 border-t border-gray-100">
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span class="text-xs text-gray-500">Leave</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                            <span class="text-xs text-gray-500">Today</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            {{-- Monthly Requests Chart --}}
             <article class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl">
                 <header class="px-5 py-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-sm font-semibold text-gray-800">Monthly Requests Overview</h3>
@@ -137,7 +136,7 @@
         </div>
 
         {{-- Right Column: Recent Requests --}}
-        <aside class="lg:col-span-4">
+        <aside class="lg:col-span-5">
             <article class="sticky overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl top-6">
                 <header class="px-5 py-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-sm font-semibold text-gray-800">Recent Requests</h3>
@@ -626,6 +625,3 @@
     renderCalendar(currentMonth, currentYear);
 </script>
 @endpush
-
-
-
