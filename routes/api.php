@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Mobile\Attendance\AttendanceController;
 use App\Http\Controllers\Api\Mobile\Attendance\CheckInController;
 use App\Http\Controllers\Api\Mobile\Attendance\CheckOutController;
 use Illuminate\Http\Request;
@@ -12,4 +13,5 @@ Route::get('/user', function (Request $request) {
 Route::middleware(['auth:sanctum'])->prefix('mobile')->group(function () {
     Route::post('/attendance/check-in', CheckInController::class);
     Route::post('/attendance/check-out', CheckOutController::class);
+    Route::get('/attendance/today-status', [AttendanceController::class, 'todayStatus']);
 });
