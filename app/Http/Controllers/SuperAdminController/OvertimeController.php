@@ -5,7 +5,6 @@ namespace App\Http\Controllers\SuperAdminController;
 use App\Exports\OvertimesExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateOvertimeRequest;
-use App\Models\ApprovalLink;
 use App\Models\Overtime;
 use App\Models\User;
 use App\Enums\Roles;
@@ -18,10 +17,8 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use ZipArchive;
 
@@ -34,12 +31,12 @@ class OvertimeController extends Controller
     public function index(Request $request)
     {
         // Query for user's own requests (all statuses)
-        $ownRequestsQuery = Overtime::with(['employee', 'approver1','approver2'])
+        $ownRequestsQuery = Overtime::with(['employee', 'approver1', 'approver2'])
             ->where('employee_id', Auth::id())
             ->orderBy('created_at', 'desc');
 
         // Query for all users' requests (excluding own unless approved)
-        $allUsersQuery = Overtime::with(['employee', 'approver1','approver2'])
+        $allUsersQuery = Overtime::with(['employee', 'approver1', 'approver2'])
             ->where(function ($q) {
                 $q->where('employee_id', '!=', Auth::id())
                     ->orWhere(function ($subQ) {
@@ -116,7 +113,7 @@ class OvertimeController extends Controller
 
         $managerRole = Role::where('name', 'manager')->first();
 
-       $manager = User::whereHas('roles', function ($query) use ($managerRole) {
+        $manager = User::whereHas('roles', function ($query) use ($managerRole) {
             $query->where('roles.id', $managerRole->id);
         })->first();
         return view('super-admin.overtime.index', compact('allUsersRequests', 'ownRequests', 'totalRequests', 'pendingRequests', 'approvedRequests', 'rejectedRequests', 'manager'));
@@ -125,7 +122,7 @@ class OvertimeController extends Controller
     public function show($id)
     {
         $overtime = Overtime::findOrFail($id);
-        $overtime->load(['employee', 'approver']);
+        $overtime->load(['employee', 'approver1']);
         return view('super-admin.overtime.show', compact('overtime'));
     }
 
