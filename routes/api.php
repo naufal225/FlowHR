@@ -15,4 +15,6 @@ Route::middleware(['auth:sanctum'])->prefix('mobile')->group(function () {
     Route::post('/attendance/check-out', CheckOutController::class);
     Route::get('/attendance/today-status', [AttendanceController::class, 'todayStatus']);
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
+    Route::get('/attendance/history/{attendanceId}', [AttendanceController::class, 'detail'])
+        ->whereNumber('attendanceId');
 });
