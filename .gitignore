@@ -28,3 +28,6 @@ rr.exe
 *.zip
 *.apk
 /dist/
+implementation_attendance_ui_admin_super_admin_employee_plan.md
+attendance-fix-review.md
+.gitignore
