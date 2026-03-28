@@ -5,16 +5,17 @@ use App\Http\Middleware\CheckFeatureActive;
 use App\Http\Middleware\EnsureHasDivision;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Foundation\Configuration\Exceptions;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
-        // Menjalankan command custom "queue:once" setiap menit
         $schedule->command('queue:once')
             ->everyMinute()
             ->withoutOverlapping();
@@ -28,14 +29,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            "role" => RoleMiddleware::class,
-            "feature" => CheckFeatureActive::class,
-            "division" => EnsureHasDivision::class,
+            'role' => RoleMiddleware::class,
+            'feature' => CheckFeatureActive::class,
+            'division' => EnsureHasDivision::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $isMobileApiRequest = static fn(Request $request): bool => $request->is('api/mobile/*');
-        $isLocalDevelopment = static fn(): bool => app()->environment(['local', 'development']) && (bool) config('app.debug');
+        $isMobileApiRequest = static fn (Request $request): bool => $request->is('api/mobile/*');
+        $isLocalDevelopment = static fn (): bool => app()->environment(['local', 'development']) && (bool) config('app.debug');
         $debugContext = static function (Throwable $e) use ($isLocalDevelopment): array {
             if (! $isLocalDevelopment()) {
                 return [];
@@ -73,7 +74,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ];
         };
 
-        // 1. HANDLE SEMUA AttendanceException (BASE) untuk API mobile
         $exceptions->render(function (
             AttendanceException $e,
             Request $request
@@ -90,7 +90,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ], $e->getStatusCode());
         });
 
-        // 2. VALIDATION ERROR (Form Request / Validator) untuk API mobile
         $exceptions->render(function (
             ValidationException $e,
             Request $request
@@ -108,7 +107,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422);
         });
 
-        // 3. AUTH ERROR untuk API mobile
         $exceptions->render(function (
             AuthenticationException $e,
             Request $request
@@ -125,7 +123,49 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 401);
         });
 
-        // 4. FALLBACK (ERROR SYSTEM) untuk API mobile
+        $exceptions->render(function (
+            ModelNotFoundException $e,
+            Request $request
+        ) use ($isMobileApiRequest, $debugContext) {
+            if (! $isMobileApiRequest($request)) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource tidak ditemukan.',
+                'code' => 'NOT_FOUND',
+                ...$debugContext($e),
+            ], 404);
+        });
+
+        $exceptions->render(function (
+            HttpExceptionInterface $e,
+            Request $request
+        ) use ($isMobileApiRequest, $debugContext) {
+            if (! $isMobileApiRequest($request)) {
+                return null;
+            }
+
+            $statusCode = $e->getStatusCode();
+            $code = match ($statusCode) {
+                403 => 'FORBIDDEN',
+                404 => 'NOT_FOUND',
+                default => 'HTTP_EXCEPTION',
+            };
+
+            $message = $statusCode === 404
+                ? 'Resource tidak ditemukan.'
+                : ($e->getMessage() !== '' ? $e->getMessage() : 'HTTP error.');
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'code' => $code,
+                ...$debugContext($e),
+            ], $statusCode);
+        });
+
         $exceptions->render(function (
             Throwable $e,
             Request $request
@@ -141,8 +181,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 ...$debugContext($e),
             ], 500);
         });
-
     })
     ->withCommands([
         \App\Console\Commands\RunQueueOnce::class,
     ])->create();
+

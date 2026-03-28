@@ -11,7 +11,7 @@ class CheckInData
         public readonly string $qrToken,
         public readonly float $latitude,
         public readonly float $longitude,
-        public readonly float $accuracyMeter,
+        public readonly ?float $accuracyMeter,
         public readonly ?string $deviceInfo = null,
         public readonly ?string $ipAddress = null,
     ) {
@@ -24,7 +24,9 @@ class CheckInData
             qrToken: trim((string) $data['qr_token']),
             latitude: (float) $data['latitude'],
             longitude: (float) $data['longitude'],
-            accuracyMeter: (float) $data['accuracy_meter'],
+            accuracyMeter: isset($data['accuracy_meter']) && $data['accuracy_meter'] !== ''
+                ? (float) $data['accuracy_meter']
+                : null,
             deviceInfo: isset($data['device_info']) ? (string) $data['device_info'] : null,
             ipAddress: isset($data['ip_address']) ? (string) $data['ip_address'] : null,
         );
@@ -38,8 +40,8 @@ class CheckInData
             latitude: (float) $request->input('latitude'),
             longitude: (float) $request->input('longitude'),
             accuracyMeter: $request->filled('accuracy_meter')
-            ? (float) $request->input('accuracy_meter')
-            : null,
+                ? (float) $request->input('accuracy_meter')
+                : null,
             deviceInfo: $request->userAgent(),
             ipAddress: $request->ip(),
         );

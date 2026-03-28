@@ -73,7 +73,7 @@ class AttendancePolicyService
             'qr_rotation_seconds'        => $setting->qr_rotation_seconds,
             'min_location_accuracy_meter'=> $setting->min_location_accuracy_meter,
             'allowed_radius_meter'       => $office->radius_meter,
-            'timezone'                   => $office->policy->timezone ?? config('app.timezone', 'Asia/Jakarta'),
+            'timezone'                   => $office->timezone ?? config('app.timezone', 'Asia/Jakarta'),
         ]);
     }
 
@@ -173,3 +173,5 @@ class AttendancePolicyService
         return $now->betweenIncluded($startWindow, $endWindow);
     }
 }
+
+
