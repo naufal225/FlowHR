@@ -48,6 +48,8 @@ Route::middleware(['auth', 'role:employee', 'division'])->prefix('employee')->na
 
     Route::prefix('attendance')->name('attendance.')->group(function () {
         Route::get('/', [AttendanceController::class, 'index'])->name('index');
+        Route::get('/history', [AttendanceController::class, 'history'])->name('history');
+        Route::get('/{attendance}', [AttendanceController::class, 'show'])->whereNumber('attendance')->name('show');
         Route::post('/corrections', [AttendanceController::class, 'storeCorrection'])->name('corrections.store');
     });
 

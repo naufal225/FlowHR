@@ -30,6 +30,37 @@
             <span class="font-medium">Office Location</span>
         </a>
 
+        <div class="space-y-1"
+            x-data="{ open: {{ request()->routeIs('super-admin.attendance.*') ? 'true' : 'false' }} }">
+            <button type="button"
+                class="flex items-center w-full px-4 py-3 text-left transition-all duration-200 rounded-lg"
+                :class="open ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white'"
+                @click="open = !open">
+                <i class="w-5 mr-3 text-center fas fa-user-check"></i>
+                <span class="flex-1 font-medium">Attendance</span>
+                <i class="text-xs transition-transform duration-200 fas fa-chevron-down"
+                    :class="{ 'rotate-180': open }"></i>
+            </button>
+            <div class="pl-4 space-y-1 overflow-hidden" x-show="open" x-collapse>
+                <a href="{{ route('super-admin.attendance.index') }}"
+                    class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('super-admin.attendance.index') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
+                    <span>Overview</span>
+                </a>
+                <a href="{{ route('super-admin.attendance.records') }}"
+                    class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('super-admin.attendance.records', 'super-admin.attendance.show') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
+                    <span>Records</span>
+                </a>
+                <a href="{{ route('super-admin.attendance.qr') }}"
+                    class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('super-admin.attendance.qr*') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
+                    <span>QR Code</span>
+                </a>
+                <a href="{{ route('super-admin.attendance.settings') }}"
+                    class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('super-admin.attendance.settings*') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
+                    <span>Settings</span>
+                </a>
+            </div>
+        </div>
+
         <a href="{{ route('super-admin.users.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('super-admin.users.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
             <i class="w-5 mr-3 text-center fas fa-users"></i>

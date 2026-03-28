@@ -16,6 +16,7 @@ use App\Http\Controllers\AdminController\OvertimeController;
 use App\Http\Controllers\AdminController\ProfileController;
 use App\Http\Controllers\AdminController\ReimbursementController;
 use App\Http\Controllers\AdminController\ReimbursementTypeController;
+use App\Http\Controllers\Attendance\AdminAttendanceController as AttendanceController;
 use App\Models\OfficialTravel;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
@@ -39,6 +40,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     ]);
 
     Route::resource('users', UserController::class);
+
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/', [AttendanceController::class, 'index'])->name('index');
+        Route::get('/records', [AttendanceController::class, 'records'])->name('records');
+        Route::get('/qr', [AttendanceController::class, 'qr'])->name('qr');
+        Route::get('/qr/status', [AttendanceController::class, 'qrStatus'])->name('qr.status');
+        Route::post('/qr/regenerate', [AttendanceController::class, 'regenerateQr'])->name('qr.regenerate');
+        Route::post('/qr/invalidate', [AttendanceController::class, 'invalidateQr'])->name('qr.invalidate');
+        Route::get('/settings', [AttendanceController::class, 'settings'])->name('settings');
+        Route::put('/settings', [AttendanceController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/{attendance}', [AttendanceController::class, 'show'])->whereNumber('attendance')->name('show');
+    });
 
     Route::get('/leaves/export', [LeaveController::class, 'export'])
         ->name('leaves.export');

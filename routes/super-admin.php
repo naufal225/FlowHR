@@ -15,6 +15,7 @@ use App\Http\Controllers\SuperAdminController\OfficialTravelController;
 use App\Http\Controllers\SuperAdminController\OvertimeController;
 use App\Http\Controllers\SuperAdminController\ProfileController;
 use App\Http\Controllers\SuperAdminController\ReimbursementController;
+use App\Http\Controllers\Attendance\AdminAttendanceController as AttendanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
@@ -35,6 +36,18 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
     ]);
 
     Route::resource('users', UserController::class);
+
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/', [AttendanceController::class, 'index'])->name('index');
+        Route::get('/records', [AttendanceController::class, 'records'])->name('records');
+        Route::get('/qr', [AttendanceController::class, 'qr'])->name('qr');
+        Route::get('/qr/status', [AttendanceController::class, 'qrStatus'])->name('qr.status');
+        Route::post('/qr/regenerate', [AttendanceController::class, 'regenerateQr'])->name('qr.regenerate');
+        Route::post('/qr/invalidate', [AttendanceController::class, 'invalidateQr'])->name('qr.invalidate');
+        Route::get('/settings', [AttendanceController::class, 'settings'])->name('settings');
+        Route::put('/settings', [AttendanceController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/{attendance}', [AttendanceController::class, 'show'])->whereNumber('attendance')->name('show');
+    });
 
     Route::get('/leaves/export', [LeaveController::class, 'export'])
         ->name('leaves.export');

@@ -43,11 +43,28 @@
                     <span class="font-medium">Dashboard</span>
                 </a>
 
-                <a href="{{ route('employee.attendance.index') }}"
-                    class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('employee.attendance.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
-                    <i class="w-5 mr-3 text-center fas fa-user-check"></i>
-                    <span class="font-medium">Attendance</span>
-                </a>
+                <div class="space-y-1"
+                    x-data="{ open: {{ request()->routeIs('employee.attendance.*') ? 'true' : 'false' }} }">
+                    <button type="button"
+                        class="flex items-center w-full px-4 py-3 text-left transition-all duration-200 rounded-lg"
+                        :class="open ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white'"
+                        @click="open = !open">
+                        <i class="w-5 mr-3 text-center fas fa-user-check"></i>
+                        <span class="flex-1 font-medium">Attendance</span>
+                        <i class="text-xs transition-transform duration-200 fas fa-chevron-down"
+                            :class="{ 'rotate-180': open }"></i>
+                    </button>
+                    <div class="pl-4 space-y-1 overflow-hidden" x-show="open" x-collapse>
+                        <a href="{{ route('employee.attendance.index') }}"
+                            class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('employee.attendance.index') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
+                            <span>Overview</span>
+                        </a>
+                        <a href="{{ route('employee.attendance.history') }}"
+                            class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('employee.attendance.history', 'employee.attendance.show') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
+                            <span>History</span>
+                        </a>
+                    </div>
+                </div>
 
                 @if(\App\Models\FeatureSetting::isActive('cuti'))
                 <a href="{{ route('employee.leaves.index') }}"
