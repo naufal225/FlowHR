@@ -23,6 +23,7 @@
             </div>
         </div>
 
+
         @if(session('success'))
         <div class="flex items-center p-4 my-6 border border-green-200 bg-green-50 rounded-xl">
             <div class="flex-shrink-0">
@@ -39,7 +40,8 @@
 
     <div class="mb-6">
         <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
-            <form class="flex flex-col gap-4 sm:flex-row" action="{{ route('super-admin.office-locations.index') }}" method="GET">
+            <form class="flex flex-col gap-4 sm:flex-row" action="{{ route('super-admin.office-locations.index') }}"
+                method="GET">
                 <div class="flex-1">
                     <div class="relative">
                         <input type="text" placeholder="Search office by code, name, or address..." name="search"
@@ -67,18 +69,34 @@
         </div>
 
         <div class="overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200">
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto"> 
                 <table class="min-w-full divide-y divide-neutral-200">
                     <thead class="bg-neutral-50">
                         <tr>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">No</th>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Code</th>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Office Name</th>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Address</th>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Radius</th>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Users</th>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Status</th>
-                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Actions</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                No</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Code</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Office Name</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Address</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Radius</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Users</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Status</th>
+                            <th
+                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
+                                Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-neutral-200">
@@ -92,20 +110,26 @@
                                     {{ $officeLocation->code }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-sm text-neutral-900 whitespace-nowrap">{{ $officeLocation->name }}</td>
-                            <td class="px-6 py-4 text-sm text-neutral-500 max-w-sm truncate" title="{{ $officeLocation->address }}">
+                            <td class="px-6 py-4 text-sm text-neutral-900 whitespace-nowrap">{{ $officeLocation->name }}
+                            </td>
+                            <td class="max-w-sm px-6 py-4 text-sm truncate text-neutral-500"
+                                title="{{ $officeLocation->address }}">
                                 {{ $officeLocation->address ?? '-' }}
                             </td>
-                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{ $officeLocation->radius_meter }} m</td>
-                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{ $officeLocation->users_count }}</td>
+                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{
+                                $officeLocation->radius_meter }} m</td>
+                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{
+                                $officeLocation->users_count }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($officeLocation->is_active)
-                                <span class="px-2.5 py-1 text-xs font-medium text-emerald-700 rounded-full bg-emerald-100">Active</span>
+                                <span
+                                    class="px-2.5 py-1 text-xs font-medium text-emerald-700 rounded-full bg-emerald-100">Active</span>
                                 @else
-                                <span class="px-2.5 py-1 text-xs font-medium text-gray-700 rounded-full bg-gray-200">Inactive</span>
+                                <span
+                                    class="px-2.5 py-1 text-xs font-medium text-gray-700 rounded-full bg-gray-200">Inactive</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-md font-medium whitespace-nowrap">
+                            <td class="px-6 py-4 font-medium text-md whitespace-nowrap">
                                 <a href="{{ route('super-admin.office-locations.edit', $officeLocation) }}"
                                     class="text-secondary-600 hover:text-secondary-900" title="Edit">
                                     <i class="fas fa-edit"></i>
