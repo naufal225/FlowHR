@@ -19,6 +19,7 @@ class AttendanceDetailService
         return Attendance::query()
             ->with([
                 'officeLocation:id,name,address,latitude,longitude,radius_meter',
+                'officeLocation.activeAttendanceSetting:id,office_location_id,work_start_time,work_end_time,late_tolerance_minutes,is_active',
                 'attendanceQrToken:id,office_location_id,generated_at,expired_at,is_active',
                 'logs' => function ($query) {
                     $query->select([
@@ -53,6 +54,7 @@ class AttendanceDetailService
             ->with([
                 'user:id,name,email,office_location_id',
                 'officeLocation:id,name,address,latitude,longitude,radius_meter',
+                'officeLocation.activeAttendanceSetting:id,office_location_id,work_start_time,work_end_time,late_tolerance_minutes,is_active',
                 'attendanceQrToken:id,office_location_id,generated_at,expired_at,is_active',
                 'logs' => function ($query) {
                     $query->select([

@@ -15,6 +15,7 @@ use App\Models\AttendanceSetting;
 use App\Models\OfficeLocation;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class AttendanceUiService
@@ -159,6 +160,9 @@ class AttendanceUiService
 
     public function makeAttendanceDetail(Attendance $attendance, bool $includeSensitive): array
     {
+        $office = $attendance->officeLocation;
+        $officeSetting = $office?->activeAttendanceSetting;
+
         return [
             'id' => $attendance->id,
             'date' => $this->formatDate($attendance->work_date),
@@ -172,7 +176,12 @@ class AttendanceUiService
                 ['label' => 'Early Leave', 'value' => $this->formatMinutes($attendance->early_leave_minutes)],
                 ['label' => 'Overtime', 'value' => $this->formatMinutes($attendance->overtime_minutes)],
             ],
-            'employee' => ['name' => $attendance->user?->name ?? '-', 'email' => $attendance->user?->email ?? '-', 'office' => $attendance->officeLocation?->name ?? '-', 'division' => $attendance->user?->division?->name ?? '-'],
+            'employee' => [
+                'name' => $attendance->user?->name ?? '-',
+                'email' => $attendance->user?->email ?? '-',
+                'office' => $this->makeOfficeInfoValue($office, $officeSetting),
+                'division' => $attendance->user?->division?->name ?? '-',
+            ],
             'check_in' => ['time' => $this->formatDateTime($attendance->check_in_at), 'recorded_at' => $this->formatDateTime($attendance->check_in_recorded_at), 'latitude' => $this->formatCoordinate($attendance->check_in_latitude), 'longitude' => $this->formatCoordinate($attendance->check_in_longitude), 'accuracy' => $this->formatAccuracy($attendance->check_in_accuracy_meter)],
             'check_out' => ['time' => $this->formatDateTime($attendance->check_out_at), 'recorded_at' => $this->formatDateTime($attendance->check_out_recorded_at), 'latitude' => $this->formatCoordinate($attendance->check_out_latitude), 'longitude' => $this->formatCoordinate($attendance->check_out_longitude), 'accuracy' => $this->formatAccuracy($attendance->check_out_accuracy_meter)],
             'suspicious_reason' => $this->humanizeReason($attendance->suspicious_reason),
@@ -360,6 +369,26 @@ class AttendanceUiService
     private function formatAccuracy(mixed $value): string
     {
         return $value !== null ? number_format((float) $value, 1) . ' m' : '-';
+    }
+
+    private function makeOfficeInfoValue(?OfficeLocation $office, ?AttendanceSetting $officeSetting): HtmlString
+    {
+        $officeName = e($office?->name ?? '-');
+        $segments = [];
+
+        if (filled($office?->address)) {
+            $segments[] = '<small>' . e((string) $office->address) . '</small>';
+        }
+
+        if ($officeSetting !== null) {
+            $segments[] = '<small>Office start: ' . e($this->formatClockString((string) $officeSetting->work_start_time)) . '</small>';
+            $segments[] = '<small>Office end: ' . e($this->formatClockString((string) $officeSetting->work_end_time)) . '</small>';
+            $segments[] = '<small>Late tolerance: ' . e($officeSetting->late_tolerance_minutes . ' min') . '</small>';
+        } else {
+            $segments[] = '<small>Office policy is not available.</small>';
+        }
+
+        return new HtmlString($officeName . '<br>' . implode('<br>', $segments));
     }
 
     private function maskToken(?string $token): string
