@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\OfficeLocation;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class OfficeLocationService
 {
@@ -26,12 +27,20 @@ class OfficeLocationService
 
     public function create(array $validated): OfficeLocation
     {
-        return OfficeLocation::query()->create($this->normalizePayload($validated));
+        return DB::transaction(function () use ($validated): OfficeLocation {
+            return OfficeLocation::query()->create($this->normalizePayload($validated));
+        });
     }
 
     public function update(OfficeLocation $officeLocation, array $validated): OfficeLocation
     {
-        $officeLocation->update($this->normalizePayload($validated));
+        DB::transaction(function () use ($officeLocation, $validated): void {
+            $officeLocation->fill($this->normalizePayload($validated));
+
+            if ($officeLocation->isDirty()) {
+                $officeLocation->save();
+            }
+        });
 
         return $officeLocation->refresh();
     }
@@ -41,10 +50,11 @@ class OfficeLocationService
         return [
             'code' => strtoupper(trim($validated['code'])),
             'name' => trim($validated['name']),
-            'address' => isset($validated['address']) ? trim($validated['address']) : null,
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
-            'radius_meter' => $validated['radius_meter'],
+            'address' => filled($validated['address'] ?? null) ? trim((string) $validated['address']) : null,
+            'latitude' => round((float) $validated['latitude'], 7),
+            'longitude' => round((float) $validated['longitude'], 7),
+            'radius_meter' => (int) $validated['radius_meter'],
+            'timezone' => trim($validated['timezone']),
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ];
     }

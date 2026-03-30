@@ -34,6 +34,8 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
         'edit',
         'update',
     ]);
+    Route::post('office-locations/resolve-timezone', [OfficeLocationController::class, 'resolveTimezone'])
+        ->name('office-locations.resolve-timezone');
 
     Route::resource('users', UserController::class);
 
