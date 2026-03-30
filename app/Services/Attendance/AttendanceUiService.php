@@ -104,9 +104,9 @@ class AttendanceUiService
             'overtime_label' => $this->formatMinutes($attendance->overtime_minutes),
             'primary_status' => $this->badgeFromStatus($this->resolvePrimaryAttendanceStatus($attendance)),
             'flags' => $this->buildFlags(
-                (int) ($attendance->late_minutes ?? 0) > 0 || $attendance->check_in_status === AttendanceCheckInStatus::LATE,
-                (int) ($attendance->early_leave_minutes ?? 0) > 0 || $attendance->check_out_status === AttendanceCheckOutStatus::EARLY_LEAVE,
-                (bool) $attendance->is_suspicious,
+                ($attendance->check_in_status ?? null) === AttendanceCheckInStatus::LATE,
+                ($attendance->check_out_status ?? null) === AttendanceCheckOutStatus::EARLY_LEAVE,
+                (bool) ($attendance->is_suspicious ?? false),
                 (int) ($attendance->overtime_minutes ?? 0),
             ),
             'suspicious_reason' => $this->humanizeReason($attendance->suspicious_reason),
