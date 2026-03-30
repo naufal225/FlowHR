@@ -108,8 +108,6 @@ $mapConfig = [
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h2 class="text-lg font-semibold text-gray-900">Office Profile</h2>
-                            <p class="mt-1 text-sm text-gray-600">Keep office naming and address details clear for
-                                attendance monitoring and user assignment.</p>
                         </div>
                         @if($officeLocation)
                         <span
