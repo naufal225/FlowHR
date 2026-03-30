@@ -189,6 +189,7 @@ class AdminAttendanceController extends Controller
             'selectedOffice' => $selectedOffice,
             'currentSetting' => $currentSetting,
             'settingSummary' => $this->attendanceUiService->makeSettingSummary($currentSetting, $selectedOffice),
+            'settingsForm' => $this->settingsFormData($selectedOffice, $currentSetting),
         ]);
     }
 
@@ -226,19 +227,21 @@ class AdminAttendanceController extends Controller
     private function officeLocations(): Collection
     {
         return OfficeLocation::query()
-            ->select(['id', 'name', 'address', 'radius_meter', 'timezone', 'is_active'])
+            ->select(['id', 'code', 'name', 'address', 'radius_meter', 'timezone', 'is_active'])
             ->orderBy('name')
             ->get();
     }
 
     private function resolveSelectedOffice(Request $request, Collection $officeLocations): ?OfficeLocation
     {
-        $requestedOfficeId = $request->filled('office_location_id')
-            ? (int) $request->input('office_location_id')
-            : null;
+        $requestedOfficeId = old('office_location_id');
+
+        if ($requestedOfficeId === null && $request->filled('office_location_id')) {
+            $requestedOfficeId = (int) $request->input('office_location_id');
+        }
 
         if ($requestedOfficeId !== null) {
-            return $officeLocations->firstWhere('id', $requestedOfficeId);
+            return $officeLocations->firstWhere('id', (int) $requestedOfficeId);
         }
 
         return $officeLocations->first();
@@ -294,6 +297,43 @@ class AdminAttendanceController extends Controller
         return $data;
     }
 
+    private function settingsFormData(?OfficeLocation $selectedOffice, ?AttendanceSetting $currentSetting): array
+    {
+        return [
+            'filter_action' => route($this->routeName('attendance.settings')),
+            'submit_action' => route($this->routeName('attendance.settings.update')),
+            'reset_href' => route($this->routeName('attendance.settings'), array_filter([
+                'office_location_id' => $selectedOffice?->id,
+            ])),
+            'selected_office_id' => (int) old('office_location_id', $selectedOffice?->id),
+            'selected_office' => $selectedOffice,
+            'values' => [
+                'work_start_time' => old('work_start_time', $this->normalizeTimeInput($currentSetting?->work_start_time, '09:00')),
+                'work_end_time' => old('work_end_time', $this->normalizeTimeInput($currentSetting?->work_end_time, '17:00')),
+                'late_tolerance_minutes' => (int) old('late_tolerance_minutes', $currentSetting?->late_tolerance_minutes ?? 15),
+                'qr_rotation_seconds' => (int) old('qr_rotation_seconds', $currentSetting?->qr_rotation_seconds ?? 30),
+                'min_location_accuracy_meter' => (int) old('min_location_accuracy_meter', $currentSetting?->min_location_accuracy_meter ?? 50),
+                'is_active' => filter_var(old('is_active', $currentSetting?->is_active ?? true), FILTER_VALIDATE_BOOLEAN),
+            ],
+        ];
+    }
+
+    private function normalizeTimeInput(?string $value, string $fallback): string
+    {
+        if (blank($value)) {
+            return $fallback;
+        }
+
+        try {
+            return Carbon::createFromFormat('H:i:s', $value)->format('H:i');
+        } catch (\Throwable) {
+            try {
+                return Carbon::createFromFormat('H:i', $value)->format('H:i');
+            } catch (\Throwable) {
+                return $fallback;
+            }
+        }
+    }
     private function currentQrCardData(?OfficeLocation $office): array
     {
         $currentSetting = $office?->activeAttendanceSetting()->latest('id')->first();
@@ -304,6 +344,4 @@ class AdminAttendanceController extends Controller
         return $this->attendanceUiService->makeQrCard($currentToken, $office, $currentSetting);
     }
 }
-
-
 
