@@ -23,7 +23,6 @@
             </div>
         </div>
 
-
         @if(session('success'))
         <div class="flex items-center p-4 my-6 border border-green-200 bg-green-50 rounded-xl">
             <div class="flex-shrink-0">
@@ -36,12 +35,25 @@
             </div>
         </div>
         @endif
+
+        @if(session('error'))
+        <div class="flex items-center p-4 my-6 border border-rose-200 bg-rose-50 rounded-xl">
+            <div class="flex-shrink-0">
+                <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-rose-800">{{ session('error') }}</p>
+            </div>
+        </div>
+        @endif
     </div>
 
     <div class="mb-6">
         <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
-            <form class="flex flex-col gap-4 sm:flex-row" action="{{ route('super-admin.office-locations.index') }}"
-                method="GET">
+            <form class="flex flex-col gap-4 sm:flex-row" action="{{ route('super-admin.office-locations.index') }}" method="GET">
                 <div class="flex-1">
                     <div class="relative">
                         <input type="text" placeholder="Search office by code, name, or address..." name="search"
@@ -69,34 +81,18 @@
         </div>
 
         <div class="overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200">
-            <div class="overflow-x-auto"> 
+            <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-neutral-200">
                     <thead class="bg-neutral-50">
                         <tr>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                No</th>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                Code</th>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                Office Name</th>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                Address</th>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                Radius</th>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                Users</th>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                Status</th>
-                            <th
-                                class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                                Actions</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">No</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Code</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Office Name</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Address</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Radius</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Users</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Status</th>
+                            <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-neutral-200">
@@ -110,30 +106,37 @@
                                     {{ $officeLocation->code }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-sm text-neutral-900 whitespace-nowrap">{{ $officeLocation->name }}
-                            </td>
-                            <td class="max-w-sm px-6 py-4 text-sm truncate text-neutral-500"
-                                title="{{ $officeLocation->address }}">
+                            <td class="px-6 py-4 text-sm text-neutral-900 whitespace-nowrap">{{ $officeLocation->name }}</td>
+                            <td class="max-w-sm px-6 py-4 text-sm truncate text-neutral-500" title="{{ $officeLocation->address }}">
                                 {{ $officeLocation->address ?? '-' }}
                             </td>
-                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{
-                                $officeLocation->radius_meter }} m</td>
-                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{
-                                $officeLocation->users_count }}</td>
+                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{ $officeLocation->radius_meter }} m</td>
+                            <td class="px-6 py-4 text-sm text-neutral-500 whitespace-nowrap">{{ $officeLocation->users_count }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($officeLocation->is_active)
-                                <span
-                                    class="px-2.5 py-1 text-xs font-medium text-emerald-700 rounded-full bg-emerald-100">Active</span>
+                                <span class="px-2.5 py-1 text-xs font-medium text-emerald-700 rounded-full bg-emerald-100">Active</span>
                                 @else
-                                <span
-                                    class="px-2.5 py-1 text-xs font-medium text-gray-700 rounded-full bg-gray-200">Inactive</span>
+                                <span class="px-2.5 py-1 text-xs font-medium text-gray-700 rounded-full bg-gray-200">Inactive</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 font-medium text-md whitespace-nowrap">
-                                <a href="{{ route('super-admin.office-locations.edit', $officeLocation) }}"
-                                    class="text-secondary-600 hover:text-secondary-900" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('super-admin.office-locations.edit', $officeLocation) }}"
+                                        class="text-secondary-600 hover:text-secondary-900" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button
+                                        type="button"
+                                        class="text-rose-600 transition hover:text-rose-800"
+                                        title="Delete"
+                                        data-delete-office-button
+                                        data-delete-office-name="{{ $officeLocation->name }}"
+                                        data-delete-office-route="{{ route('super-admin.office-locations.destroy', $officeLocation) }}"
+                                        data-delete-office-users="{{ $officeLocation->users_count }}"
+                                        data-delete-office-attendances="{{ $officeLocation->attendances_count }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @empty
@@ -163,4 +166,109 @@
         </div>
     </div>
 </main>
+@endsection
+
+@section('partial-modal')
+<div id="deleteOfficeLocationModal" class="fixed inset-0 z-50 hidden overflow-y-auto" data-inline-hidden style="display: none;">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+            </div>
+
+            <div class="text-center">
+                <h3 class="mb-2 text-lg font-semibold text-gray-900">Delete Office Location</h3>
+                <p class="mb-3 text-sm text-gray-500">
+                    Are you sure you want to delete <span id="deleteOfficeLocationName" class="font-medium text-gray-900"></span>?
+                </p>
+                <p id="deleteOfficeLocationHint" class="mb-6 text-sm text-gray-500">
+                    Employees assigned to this office will be unassigned automatically. This action cannot be undone.
+                </p>
+            </div>
+
+            <form id="deleteOfficeLocationForm" method="POST" class="space-y-4">
+                @csrf
+                @method('DELETE')
+
+                <div class="flex justify-center space-x-3">
+                    <button type="button" id="cancelDeleteOfficeLocationButton"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Cancel
+                    </button>
+                    <button type="submit" id="confirmDeleteOfficeLocationButton"
+                        class="px-4 py-2 text-sm font-medium text-white transition-colors bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('deleteOfficeLocationModal');
+        const form = document.getElementById('deleteOfficeLocationForm');
+        const nameEl = document.getElementById('deleteOfficeLocationName');
+        const hintEl = document.getElementById('deleteOfficeLocationHint');
+        const confirmButton = document.getElementById('confirmDeleteOfficeLocationButton');
+        const cancelButton = document.getElementById('cancelDeleteOfficeLocationButton');
+
+        if (!modal || !form || !nameEl || !hintEl || !confirmButton || !cancelButton) {
+            return;
+        }
+
+        const openModal = ({ route, officeName, usersCount, attendancesCount }) => {
+            const assignedUsers = Number.parseInt(usersCount, 10) || 0;
+            const attendanceRecords = Number.parseInt(attendancesCount, 10) || 0;
+            const hasAttendanceHistory = attendanceRecords > 0;
+
+            form.action = route;
+            nameEl.textContent = officeName;
+
+            if (hasAttendanceHistory) {
+                hintEl.textContent = 'This office already has attendance history, so it cannot be deleted. Remove or archive related attendance usage first.';
+                confirmButton.disabled = true;
+                confirmButton.classList.add('opacity-60', 'cursor-not-allowed');
+            } else {
+                hintEl.textContent = assignedUsers > 0
+                    ? `${assignedUsers} assigned employee${assignedUsers === 1 ? '' : 's'} will be unassigned automatically. This action cannot be undone.`
+                    : 'This action cannot be undone.';
+                confirmButton.disabled = false;
+                confirmButton.classList.remove('opacity-60', 'cursor-not-allowed');
+            }
+
+            modal.classList.remove('hidden');
+            modal.style.display = 'block';
+        };
+
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        };
+
+        document.querySelectorAll('[data-delete-office-button]').forEach((button) => {
+            button.addEventListener('click', () => {
+                openModal({
+                    route: button.dataset.deleteOfficeRoute,
+                    officeName: button.dataset.deleteOfficeName,
+                    usersCount: button.dataset.deleteOfficeUsers,
+                    attendancesCount: button.dataset.deleteOfficeAttendances,
+                });
+            });
+        });
+
+        cancelButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    });
+</script>
+@endpush
 @endsection

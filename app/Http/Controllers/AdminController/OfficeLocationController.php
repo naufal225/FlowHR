@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateOfficeLocationRequest;
 use App\Models\OfficeLocation;
 use App\Services\OfficeLocationService;
 use App\Services\OfficeLocationTimezoneResolverService;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +56,27 @@ class OfficeLocationController extends Controller
         return redirect()
             ->route('admin.office-locations.index')
             ->with('success', 'Office location updated successfully.');
+    }
+
+    public function destroy(OfficeLocation $officeLocation): RedirectResponse
+    {
+        try {
+            $affectedUsers = $this->officeLocationService->delete($officeLocation);
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('admin.office-locations.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        $message = 'Office location deleted successfully.';
+
+        if ($affectedUsers > 0) {
+            $message .= ' ' . $affectedUsers . ' assigned employee' . ($affectedUsers === 1 ? ' was' : 's were') . ' unassigned from this office.';
+        }
+
+        return redirect()
+            ->route('admin.office-locations.index')
+            ->with('success', $message);
     }
 
     public function resolveTimezone(ResolveOfficeLocationTimezoneRequest $request): JsonResponse

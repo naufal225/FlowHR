@@ -33,6 +33,7 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
         'store',
         'edit',
         'update',
+        'destroy',
     ]);
     Route::post('office-locations/resolve-timezone', [OfficeLocationController::class, 'resolveTimezone'])
         ->name('office-locations.resolve-timezone');

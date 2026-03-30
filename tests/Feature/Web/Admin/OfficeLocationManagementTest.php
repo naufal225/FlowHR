@@ -118,5 +118,69 @@ class OfficeLocationManagementTest extends TestCase
                 ],
             ]);
     }
-}
 
+    public function test_admin_can_delete_office_location_and_unassign_employees(): void
+    {
+        $admin = $this->createEmployee();
+        $this->assignRole($admin, Roles::Admin->value);
+
+        $officeLocation = $this->createOfficeLocation([
+            'code' => 'BDG-HQ',
+            'name' => 'Bandung Office',
+        ]);
+
+        $employeeOne = $this->createEmployee(['email' => 'bandung.one@example.com'], $officeLocation);
+        $employeeTwo = $this->createEmployee(['email' => 'bandung.two@example.com'], $officeLocation);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->delete(route('admin.office-locations.destroy', $officeLocation));
+
+        $response->assertRedirect(route('admin.office-locations.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('office_locations', [
+            'id' => $officeLocation->id,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $employeeOne->id,
+            'office_location_id' => null,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $employeeTwo->id,
+            'office_location_id' => null,
+        ]);
+    }
+
+    public function test_admin_cannot_delete_office_location_with_attendance_history(): void
+    {
+        $admin = $this->createEmployee();
+        $this->assignRole($admin, Roles::Admin->value);
+
+        $officeLocation = $this->createOfficeLocation([
+            'code' => 'SBY-HQ',
+            'name' => 'Surabaya Office',
+        ]);
+
+        $employee = $this->createEmployee(['email' => 'surabaya.employee@example.com'], $officeLocation);
+        $this->createAttendance($employee, $officeLocation);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->delete(route('admin.office-locations.destroy', $officeLocation));
+
+        $response->assertRedirect(route('admin.office-locations.index'))
+            ->assertSessionHas('error', 'Office location cannot be deleted because it already has attendance history.');
+
+        $this->assertDatabaseHas('office_locations', [
+            'id' => $officeLocation->id,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $employee->id,
+            'office_location_id' => $officeLocation->id,
+        ]);
+    }
+}

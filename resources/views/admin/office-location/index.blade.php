@@ -35,6 +35,20 @@
             </div>
         </div>
         @endif
+
+        @if(session('error'))
+        <div class="flex items-center p-4 my-6 border border-rose-200 bg-rose-50 rounded-xl">
+            <div class="flex-shrink-0">
+                <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-rose-800">{{ session('error') }}</p>
+            </div>
+        </div>
+        @endif
     </div>
 
     <div class="mb-6">
@@ -106,10 +120,23 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-md font-medium whitespace-nowrap">
-                                <a href="{{ route('admin.office-locations.edit', $officeLocation) }}"
-                                    class="text-secondary-600 hover:text-secondary-900" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('admin.office-locations.edit', $officeLocation) }}"
+                                        class="text-secondary-600 hover:text-secondary-900" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button
+                                        type="button"
+                                        class="text-rose-600 transition hover:text-rose-800"
+                                        title="Delete"
+                                        data-delete-office-button
+                                        data-delete-office-name="{{ $officeLocation->name }}"
+                                        data-delete-office-route="{{ route('admin.office-locations.destroy', $officeLocation) }}"
+                                        data-delete-office-users="{{ $officeLocation->users_count }}"
+                                        data-delete-office-attendances="{{ $officeLocation->attendances_count }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @empty
@@ -139,4 +166,109 @@
         </div>
     </div>
 </main>
+@endsection
+
+@section('partial-modal')
+<div id="deleteOfficeLocationModal" class="fixed inset-0 z-50 hidden overflow-y-auto" data-inline-hidden style="display: none;">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+            </div>
+
+            <div class="text-center">
+                <h3 class="mb-2 text-lg font-semibold text-gray-900">Delete Office Location</h3>
+                <p class="mb-3 text-sm text-gray-500">
+                    Are you sure you want to delete <span id="deleteOfficeLocationName" class="font-medium text-gray-900"></span>?
+                </p>
+                <p id="deleteOfficeLocationHint" class="mb-6 text-sm text-gray-500">
+                    Employees assigned to this office will be unassigned automatically. This action cannot be undone.
+                </p>
+            </div>
+
+            <form id="deleteOfficeLocationForm" method="POST" class="space-y-4">
+                @csrf
+                @method('DELETE')
+
+                <div class="flex justify-center space-x-3">
+                    <button type="button" id="cancelDeleteOfficeLocationButton"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Cancel
+                    </button>
+                    <button type="submit" id="confirmDeleteOfficeLocationButton"
+                        class="px-4 py-2 text-sm font-medium text-white transition-colors bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('deleteOfficeLocationModal');
+        const form = document.getElementById('deleteOfficeLocationForm');
+        const nameEl = document.getElementById('deleteOfficeLocationName');
+        const hintEl = document.getElementById('deleteOfficeLocationHint');
+        const confirmButton = document.getElementById('confirmDeleteOfficeLocationButton');
+        const cancelButton = document.getElementById('cancelDeleteOfficeLocationButton');
+
+        if (!modal || !form || !nameEl || !hintEl || !confirmButton || !cancelButton) {
+            return;
+        }
+
+        const openModal = ({ route, officeName, usersCount, attendancesCount }) => {
+            const assignedUsers = Number.parseInt(usersCount, 10) || 0;
+            const attendanceRecords = Number.parseInt(attendancesCount, 10) || 0;
+            const hasAttendanceHistory = attendanceRecords > 0;
+
+            form.action = route;
+            nameEl.textContent = officeName;
+
+            if (hasAttendanceHistory) {
+                hintEl.textContent = 'This office already has attendance history, so it cannot be deleted. Remove or archive related attendance usage first.';
+                confirmButton.disabled = true;
+                confirmButton.classList.add('opacity-60', 'cursor-not-allowed');
+            } else {
+                hintEl.textContent = assignedUsers > 0
+                    ? `${assignedUsers} assigned employee${assignedUsers === 1 ? '' : 's'} will be unassigned automatically. This action cannot be undone.`
+                    : 'This action cannot be undone.';
+                confirmButton.disabled = false;
+                confirmButton.classList.remove('opacity-60', 'cursor-not-allowed');
+            }
+
+            modal.classList.remove('hidden');
+            modal.style.display = 'block';
+        };
+
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        };
+
+        document.querySelectorAll('[data-delete-office-button]').forEach((button) => {
+            button.addEventListener('click', () => {
+                openModal({
+                    route: button.dataset.deleteOfficeRoute,
+                    officeName: button.dataset.deleteOfficeName,
+                    usersCount: button.dataset.deleteOfficeUsers,
+                    attendancesCount: button.dataset.deleteOfficeAttendances,
+                });
+            });
+        });
+
+        cancelButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    });
+</script>
+@endpush
 @endsection
