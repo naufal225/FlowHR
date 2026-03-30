@@ -3,6 +3,7 @@
 namespace Tests\Feature\Web\Admin;
 
 use App\Enums\Roles;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\CreatesAttendanceTestData;
@@ -35,6 +36,111 @@ class OfficeLocationManagementTest extends TestCase
             ->assertDontSee('locationRestriction = bounds', false)
             ->assertDontSee('google.maps.places.Autocomplete', false)
             ->assertDontSee('leaflet', false);
+    }
+
+    public function test_admin_can_view_office_location_detail_with_latest_first_paginated_employees(): void
+    {
+        $admin = $this->createEmployee();
+        $this->assignRole($admin, Roles::Admin->value);
+
+        $officeLocation = $this->createOfficeLocation([
+            'code' => 'HQ-JKT',
+            'name' => 'Jakarta HQ',
+            'address' => 'Jl. Jend. Sudirman No. 99, Jakarta',
+            'timezone' => 'Asia/Jakarta',
+            'radius_meter' => 150,
+        ]);
+
+        $division = $this->createDivision(['name' => 'Operations']);
+
+        for ($index = 1; $index <= 12; $index++) {
+            $label = str_pad((string) $index, 2, '0', STR_PAD_LEFT);
+
+            $this->createEmployee([
+                'name' => 'Employee ' . $label,
+                'email' => 'employee' . $label . '@example.com',
+                'created_at' => Carbon::create(2026, 1, 1, 8, 0, 0, 'Asia/Jakarta')->addDays($index),
+                'updated_at' => Carbon::create(2026, 1, 1, 8, 0, 0, 'Asia/Jakarta')->addDays($index),
+            ], $officeLocation, $division);
+        }
+
+        $otherOffice = $this->createOfficeLocation([
+            'code' => 'SBY',
+            'name' => 'Surabaya Branch',
+        ]);
+
+        $this->createEmployee([
+            'name' => 'External Employee',
+            'email' => 'external.employee@example.com',
+        ], $otherOffice, $division);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->get(route('admin.office-locations.show', $officeLocation));
+
+        $response->assertOk()
+            ->assertSee('Office Detail', false)
+            ->assertSee('Jakarta HQ', false)
+            ->assertSee('12 total employees', false)
+            ->assertSee('Asia/Jakarta', false)
+            ->assertSeeInOrder(['Employee 12', 'Employee 11', 'Employee 10'])
+            ->assertDontSee('Employee 01', false)
+            ->assertDontSee('External Employee', false)
+            ->assertSee('Showing 1-10 of 12 assigned employees.', false);
+    }
+
+    public function test_admin_office_location_detail_second_page_shows_remaining_employees(): void
+    {
+        $admin = $this->createEmployee();
+        $this->assignRole($admin, Roles::Admin->value);
+
+        $officeLocation = $this->createOfficeLocation([
+            'code' => 'BDG',
+            'name' => 'Bandung Office',
+        ]);
+
+        $division = $this->createDivision(['name' => 'People Ops']);
+
+        for ($index = 1; $index <= 12; $index++) {
+            $label = str_pad((string) $index, 2, '0', STR_PAD_LEFT);
+
+            $this->createEmployee([
+                'name' => 'Paged Employee ' . $label,
+                'email' => 'paged.employee' . $label . '@example.com',
+                'created_at' => Carbon::create(2026, 2, 1, 9, 0, 0, 'Asia/Jakarta')->addDays($index),
+                'updated_at' => Carbon::create(2026, 2, 1, 9, 0, 0, 'Asia/Jakarta')->addDays($index),
+            ], $officeLocation, $division);
+        }
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->get(route('admin.office-locations.show', $officeLocation) . '?page=2');
+
+        $response->assertOk()
+            ->assertSee('Paged Employee 02', false)
+            ->assertSee('Paged Employee 01', false)
+            ->assertDontSee('Paged Employee 12', false)
+            ->assertSee('Showing 11-12 of 12 assigned employees.', false);
+    }
+
+    public function test_super_admin_can_view_office_location_detail_page(): void
+    {
+        $superAdmin = $this->createEmployee();
+        $this->assignRole($superAdmin, Roles::SuperAdmin->value);
+
+        $officeLocation = $this->createOfficeLocation([
+            'code' => 'DPS',
+            'name' => 'Denpasar Office',
+        ]);
+
+        $response = $this->actingAs($superAdmin)
+            ->withSession(['active_role' => Roles::SuperAdmin->value])
+            ->get(route('super-admin.office-locations.show', $officeLocation));
+
+        $response->assertOk()
+            ->assertSee('Denpasar Office', false)
+            ->assertSee('Back to List', false)
+            ->assertSee('Assigned Employees', false);
     }
 
     public function test_admin_can_store_an_office_location_with_timezone(): void

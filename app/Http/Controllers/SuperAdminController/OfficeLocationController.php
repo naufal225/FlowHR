@@ -30,6 +30,14 @@ class OfficeLocationController extends Controller
         return view('super-admin.office-location.index', compact('officeLocations', 'search'));
     }
 
+    public function show(OfficeLocation $officeLocation): View
+    {
+        return view('admin.office-location.show', array_merge(
+            $this->formContext(),
+            $this->officeLocationService->getDetailPageData($officeLocation)
+        ));
+    }
+
     public function create(): View
     {
         return view('admin.office-location.create', $this->formContext());

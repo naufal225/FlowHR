@@ -121,6 +121,10 @@
                             </td>
                             <td class="px-6 py-4 text-md font-medium whitespace-nowrap">
                                 <div class="flex items-center gap-3">
+                                    <a href="{{ route('admin.office-locations.show', $officeLocation) }}"
+                                        class="text-sky-600 hover:text-sky-800" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                     <a href="{{ route('admin.office-locations.edit', $officeLocation) }}"
                                         class="text-secondary-600 hover:text-secondary-900" title="Edit">
                                         <i class="fas fa-edit"></i>
@@ -272,3 +276,4 @@
 </script>
 @endpush
 @endsection
+

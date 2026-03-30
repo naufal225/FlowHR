@@ -27,6 +27,32 @@ class OfficeLocationService
             ->withQueryString();
     }
 
+    public function getDetailPageData(OfficeLocation $officeLocation, int $perPage = 10): array
+    {
+        $officeLocation->loadCount(['users', 'attendances']);
+
+        $assignedEmployees = $officeLocation->users()
+            ->select([
+                'id',
+                'name',
+                'email',
+                'division_id',
+                'office_location_id',
+                'is_active',
+                'created_at',
+            ])
+            ->with(['division:id,name'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return [
+            'officeLocation' => $officeLocation,
+            'assignedEmployees' => $assignedEmployees,
+        ];
+    }
+
     public function create(array $validated): OfficeLocation
     {
         return DB::transaction(function () use ($validated): OfficeLocation {

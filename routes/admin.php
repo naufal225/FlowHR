@@ -33,6 +33,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::resource('office-locations', OfficeLocationController::class)->only([
         'index',
+        'show',
         'create',
         'store',
         'edit',
@@ -111,3 +112,4 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/test', [ReimbursementController::class, 'exportPdfAllData']);
 });
+

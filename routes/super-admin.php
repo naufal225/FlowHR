@@ -29,6 +29,7 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
 
     Route::resource('office-locations', OfficeLocationController::class)->only([
         'index',
+        'show',
         'create',
         'store',
         'edit',
@@ -111,3 +112,4 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
     Route::post('/settings/features', [CostSettingController::class, 'updateFeatures'])->name('settings.features.update');
 
 });
+
