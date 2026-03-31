@@ -15,10 +15,10 @@
 
     @include('components.attendance.flash-messages')
 
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="p-6 bg-white border shadow-sm rounded-3xl border-slate-200">
         <form method="GET" action="{{ route($routePrefix . '.attendance.qr') }}" class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
+                <label class="block mb-2 text-sm font-medium text-slate-700" for="office_location_id">Office</label>
                 <select id="office_location_id" name="office_location_id"
                     class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:min-w-[18rem]">
                     @foreach($officeLocations as $office)
@@ -35,7 +35,7 @@
     </div>
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_1fr]">
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="p-6 bg-white border shadow-sm rounded-3xl border-slate-200">
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h2 class="text-lg font-semibold text-slate-900">Current QR</h2>
@@ -49,7 +49,7 @@
 
             <div id="attendance-qr-active-state" class="mt-6 {{ $qrCard['has_token'] ? '' : 'hidden' }}">
                 <div class="flex flex-col gap-6 lg:flex-row lg:items-center">
-                    <div class="flex h-72 w-72 items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <div class="flex items-center justify-center p-5 border h-72 w-72 rounded-3xl border-slate-200 bg-slate-50">
                         <div id="attendance-qr-canvas" data-token="{{ $qrCard['token'] }}"></div>
                     </div>
                     <div class="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
@@ -66,12 +66,35 @@
             <div id="attendance-qr-empty-state" class="mt-6 {{ $qrCard['has_token'] ? 'hidden' : '' }}">
                 @include('components.attendance.empty-state', ['title' => 'No QR token available', 'description' => 'Generate the first active QR token after an attendance setting is configured for the selected office.', 'icon' => 'fa-solid fa-qrcode'])
             </div>
+
+             @if($selectedOffice && $qrCard['rotation_seconds'])
+                <div class="flex flex-wrap gap-3 mt-5">
+                    <form method="POST" action="{{ route($routePrefix . '.attendance.qr.regenerate') }}">
+                        @csrf
+                        <input type="hidden" name="office_location_id" value="{{ $selectedOffice->id }}">
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-700">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>Regenerate QR</span>
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ route($routePrefix . '.attendance.qr.invalidate') }}">
+                        @csrf
+                        <input type="hidden" name="office_location_id" value="{{ $selectedOffice->id }}">
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
+                            <i class="fa-solid fa-ban"></i>
+                            <span>Invalidate QR</span>
+                        </button>
+                    </form>
+                </div>
+            @endif
         </div>
 
         <div class="space-y-6">
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="p-6 bg-white border shadow-sm rounded-3xl border-slate-200">
                 <h2 class="text-lg font-semibold text-slate-900">QR Info</h2>
-                <div class="mt-5 grid grid-cols-1 gap-3">
+                <div class="grid grid-cols-1 gap-3 mt-5">
                     @include('components.attendance.info-item', ['label' => 'Office', 'value' => $qrCard['office_name'], 'helper' => $qrCard['office_address']])
                     @include('components.attendance.info-item', ['label' => 'Rotation Interval', 'value' => $qrCard['rotation_seconds'] ? $qrCard['rotation_seconds'] . ' sec' : '-'])
                     @include('components.attendance.info-item', ['label' => 'Minimum Accuracy', 'value' => $qrCard['min_accuracy'] ? $qrCard['min_accuracy'] . ' m' : '-'])
@@ -79,31 +102,7 @@
                 </div>
             </div>
 
-            @if($selectedOffice && $qrCard['rotation_seconds'])
-                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 class="text-lg font-semibold text-slate-900">Actions</h2>
-                    <div class="mt-5 flex flex-wrap gap-3">
-                        <form method="POST" action="{{ route($routePrefix . '.attendance.qr.regenerate') }}">
-                            @csrf
-                            <input type="hidden" name="office_location_id" value="{{ $selectedOffice->id }}">
-                            <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-700">
-                                <i class="fa-solid fa-rotate"></i>
-                                <span>Regenerate QR</span>
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ route($routePrefix . '.attendance.qr.invalidate') }}">
-                            @csrf
-                            <input type="hidden" name="office_location_id" value="{{ $selectedOffice->id }}">
-                            <button type="submit"
-                                class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
-                                <i class="fa-solid fa-ban"></i>
-                                <span>Invalidate QR</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            @else
+            @if(!($selectedOffice && $qrCard['rotation_seconds']))
                 @include('components.attendance.state-panel', [
                     'title' => 'QR actions unavailable',
                     'description' => 'Configure an active attendance setting for the selected office before generating or rotating QR tokens.',

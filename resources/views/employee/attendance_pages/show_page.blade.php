@@ -5,12 +5,7 @@
 @section('subtitle', 'Daily attendance transparency and correction')
 
 @section('content')
-<div x-data="{ loading: false }" class="space-y-6">
-    @include('components.attendance.loading-overlay', [
-        'title' => 'Submitting correction request',
-        'description' => 'Saving your attendance correction and refreshing the record detail.',
-    ])
-
+<div class="space-y-6">
     @include('components.attendance.page-header', [
         'eyebrow' => 'Employee Attendance',
         'title' => 'Attendance Detail',
@@ -86,7 +81,7 @@
                 @if($hasPendingCorrection)
                     @include('components.attendance.state-panel', ['title' => 'Pending correction already exists', 'description' => 'This attendance record already has a pending correction request, so a new one cannot be submitted yet.', 'icon' => 'fa-solid fa-clock', 'classes' => 'mt-5 border-amber-200 bg-amber-50', 'iconClasses' => 'bg-amber-100 text-amber-700'])
                 @else
-                    <form method="POST" action="{{ route('employee.attendance.corrections.store') }}" @submit="loading = true" class="mt-5 space-y-4">
+                    <form method="POST" action="{{ route('employee.attendance.corrections.store') }}" class="mt-5 space-y-4">
                         @csrf
                         <input type="hidden" name="attendance_record_id" value="{{ $attendanceRecord->id }}">
                         <div class="grid grid-cols-1 gap-4">
@@ -160,4 +155,3 @@
     </div>
 </div>
 @endsection
-

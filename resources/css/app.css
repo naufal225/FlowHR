@@ -95,4 +95,17 @@
     .modal-panel {
         @apply bg-white border rounded-2xl border-neutral-200 shadow-medium;
     }
+
+    .time-input-fix {
+        letter-spacing: normal;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .time-input-fix::-webkit-datetime-edit,
+    .time-input-fix::-webkit-datetime-edit-fields-wrapper,
+    .time-input-fix::-webkit-datetime-edit-hour-field,
+    .time-input-fix::-webkit-datetime-edit-minute-field {
+        letter-spacing: normal;
+        padding: 0;
+    }
 }

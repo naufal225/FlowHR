@@ -5,12 +5,7 @@
 @section('subtitle', 'Review attendance history and correction requests')
 
 @section('content')
-<div x-data="{ loading: false }" class="space-y-6">
-    @include('components.attendance.loading-overlay', [
-        'title' => 'Loading attendance history',
-        'description' => 'Applying attendance filters and preparing your history records.',
-    ])
-
+<div class="space-y-6">
     @include('components.attendance.page-header', [
         'eyebrow' => 'Employee Attendance',
         'title' => 'Attendance History',
@@ -18,7 +13,7 @@
     ])
 
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <form method="GET" action="{{ route('employee.attendance.history') }}" @submit="loading = true"
+        <form method="GET" action="{{ route('employee.attendance.history') }}"
             class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="start_date">Start Date</label>
@@ -172,4 +167,3 @@
     </div>
 </div>
 @endsection
-

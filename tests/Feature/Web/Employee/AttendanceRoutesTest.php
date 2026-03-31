@@ -32,4 +32,42 @@ class AttendanceRoutesTest extends TestCase
 
         $response->assertOk();
     }
+
+    public function test_employee_attendance_history_page_resets_loading_state_safely(): void
+    {
+        $office = $this->createOfficeLocation();
+        $employee = $this->createEmployee([], $office);
+        $this->assignRole($employee, Roles::Employee->value);
+
+        $response = $this->actingAs($employee)
+            ->withSession([
+                'active_role' => Roles::Employee->value,
+            ])
+            ->get(route('employee.attendance.history'));
+
+        $response->assertOk()
+            ->assertDontSee('Loading attendance history', false)
+            ->assertDontSee('@submit="loading = $event.target.reportValidity()"', false)
+            ->assertDontSee('x-bind:disabled="loading"', false);
+    }
+
+    public function test_employee_attendance_detail_page_resets_loading_state_safely(): void
+    {
+        $office = $this->createOfficeLocation();
+        $employee = $this->createEmployee([], $office);
+        $this->assignRole($employee, Roles::Employee->value);
+        $attendance = $this->createAttendance($employee, $office);
+
+        $response = $this->actingAs($employee)
+            ->withSession([
+                'active_role' => Roles::Employee->value,
+            ])
+            ->get(route('employee.attendance.show', $attendance->id));
+
+        $response->assertOk()
+            ->assertDontSee('Submitting correction request', false)
+            ->assertDontSee('@pageshow.window="loading = false"', false)
+            ->assertDontSee('@submit="loading = $event.target.reportValidity()"', false)
+            ->assertDontSee('x-bind:disabled="loading"', false);
+    }
 }
