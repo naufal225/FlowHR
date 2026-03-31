@@ -13,6 +13,7 @@ class AttendanceCorrection extends Model
         'requested_check_in_time',
         'requested_check_out_time',
         'reason',
+        'original_attendance_snapshot',
         'status',
         'reviewer_note',
         'reviewed_by',
@@ -25,6 +26,7 @@ class AttendanceCorrection extends Model
         'reviewed_by' => 'integer',
         'requested_check_in_time' => 'datetime',
         'requested_check_out_time' => 'datetime',
+        'original_attendance_snapshot' => 'array',
         'reviewed_at' => 'datetime',
     ];
 

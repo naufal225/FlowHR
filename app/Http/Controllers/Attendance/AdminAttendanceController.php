@@ -9,10 +9,13 @@ use App\Enums\Roles;
 use App\Exceptions\Attendance\AttendanceException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\AttendanceQrActionRequest;
+use App\Http\Requests\Attendance\ReviewAttendanceCorrectionRequest;
 use App\Http\Requests\Attendance\UpsertAttendanceSettingRequest;
+use App\Models\AttendanceCorrection;
 use App\Models\AttendanceSetting;
 use App\Models\OfficeLocation;
 use App\Models\User;
+use App\Services\Attendance\AttendanceCorrectionApprovalService;
 use App\Services\Attendance\AttendanceDailyStatusResolverService;
 use App\Services\Attendance\AttendanceDetailService;
 use App\Services\Attendance\AttendanceHistoryService;
@@ -25,6 +28,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class AdminAttendanceController extends Controller
@@ -34,6 +38,7 @@ class AdminAttendanceController extends Controller
         private readonly AttendanceHistoryService $attendanceHistoryService,
         private readonly AttendanceDetailService $attendanceDetailService,
         private readonly AttendanceUiService $attendanceUiService,
+        private readonly AttendanceCorrectionApprovalService $attendanceCorrectionApprovalService,
         private readonly AttendanceQrManagementService $attendanceQrManagementService,
         private readonly AttendanceSettingManagementService $attendanceSettingManagementService,
     ) {}
@@ -117,6 +122,111 @@ class AdminAttendanceController extends Controller
             'headerSubtitle' => 'Audit a single attendance record with full operational context.',
             'detail' => $this->attendanceUiService->makeAttendanceDetail($record, includeSensitive: true),
         ]);
+    }
+
+    public function corrections(Request $request): View
+    {
+        $status = (string) $request->input('status', 'pending');
+        $allowedStatuses = ['pending', 'approved', 'rejected', 'all'];
+
+        if (! in_array($status, $allowedStatuses, true)) {
+            $status = 'pending';
+        }
+
+        $officeLocations = $this->officeLocations();
+        $employees = $this->employeeQuery()->get();
+
+        $corrections = AttendanceCorrection::query()
+            ->with([
+                'attendance:id,user_id,office_location_id,work_date,check_in_at,check_out_at',
+                'attendance.user:id,name,email',
+                'attendance.officeLocation:id,name',
+                'reviewer:id,name',
+            ])
+            ->when($request->filled('office_location_id'), function ($query) use ($request) {
+                $query->whereHas('attendance', function ($attendanceQuery) use ($request) {
+                    $attendanceQuery->where('office_location_id', (int) $request->input('office_location_id'));
+                });
+            })
+            ->when($request->filled('user_id'), fn ($query) => $query->where('user_id', (int) $request->input('user_id')))
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->latest('created_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return $this->sharedView('attendance.admin.corrections', [
+            'headerTitle' => 'Attendance Corrections',
+            'headerSubtitle' => 'Review and process attendance correction requests without touching approval flows in other modules.',
+            'officeLocations' => $officeLocations,
+            'employees' => $employees,
+            'selectedStatus' => $status,
+            'statusOptions' => [
+                'pending' => 'Pending',
+                'approved' => 'Approved',
+                'rejected' => 'Rejected',
+                'all' => 'All',
+            ],
+            'corrections' => $corrections,
+            'statusBadgeMap' => $this->correctionStatusBadgeMap(),
+        ]);
+    }
+
+    public function showCorrection(int $correction): View
+    {
+        $correctionModel = AttendanceCorrection::query()
+            ->with([
+                'attendance.user.division:id,name',
+                'attendance.officeLocation.activeAttendanceSetting:id,office_location_id,work_start_time,work_end_time,late_tolerance_minutes,is_active',
+                'attendance.attendanceQrToken:id,office_location_id,generated_at,expired_at,is_active,token',
+                'attendance.logs' => fn ($query) => $query->latest('occurred_at')->latest('id'),
+                'reviewer:id,name',
+            ])
+            ->findOrFail($correction);
+
+        return $this->sharedView('attendance.admin.correction-show', [
+            'headerTitle' => 'Attendance Correction Detail',
+            'headerSubtitle' => 'Compare requested correction against the original and current attendance record before reviewing.',
+            'correction' => $correctionModel,
+            'detail' => $this->attendanceUiService->makeAttendanceDetail($correctionModel->attendance, includeSensitive: true),
+            'statusBadgeMap' => $this->correctionStatusBadgeMap(),
+            'originalSnapshot' => $this->normalizeCorrectionSnapshot($correctionModel->original_attendance_snapshot ?? []),
+        ]);
+    }
+
+    public function reviewCorrection(ReviewAttendanceCorrectionRequest $request, int $correction): RedirectResponse
+    {
+        $correctionModel = AttendanceCorrection::query()->findOrFail($correction);
+        $action = $request->validated('action');
+        $reviewerNote = blank($request->validated('reviewer_note')) ? null : (string) $request->validated('reviewer_note');
+
+        try {
+            if ($action === 'approve') {
+                $this->attendanceCorrectionApprovalService->approve(
+                    correction: $correctionModel,
+                    reviewerId: (int) Auth::id(),
+                    reviewerNote: $reviewerNote,
+                );
+
+                $message = 'Attendance correction approved and applied to the attendance record.';
+            } else {
+                $this->attendanceCorrectionApprovalService->reject(
+                    correction: $correctionModel,
+                    reviewerId: (int) Auth::id(),
+                    reviewerNote: (string) $reviewerNote,
+                );
+
+                $message = 'Attendance correction rejected.';
+            }
+        } catch (\DomainException $exception) {
+            return redirect()
+                ->route($this->routeName('attendance.corrections.show'), $correctionModel->id)
+                ->with('error', $exception->getMessage())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route($this->routeName('attendance.corrections.show'), $correctionModel->id)
+            ->with('success', $message);
     }
 
     public function qr(Request $request): View
@@ -342,6 +452,7 @@ class AdminAttendanceController extends Controller
             }
         }
     }
+
     private function currentQrCardData(?OfficeLocation $office): array
     {
         $currentSetting = $office?->activeAttendanceSetting()->latest('id')->first();
@@ -351,5 +462,57 @@ class AdminAttendanceController extends Controller
 
         return $this->attendanceUiService->makeQrCard($currentToken, $office, $currentSetting);
     }
-}
 
+    private function correctionStatusBadgeMap(): array
+    {
+        return [
+            'pending' => [
+                'label' => 'Pending',
+                'icon' => 'fa-solid fa-clock',
+                'pill_classes' => 'bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200',
+            ],
+            'approved' => [
+                'label' => 'Approved',
+                'icon' => 'fa-solid fa-circle-check',
+                'pill_classes' => 'bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200',
+            ],
+            'rejected' => [
+                'label' => 'Rejected',
+                'icon' => 'fa-solid fa-circle-xmark',
+                'pill_classes' => 'bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200',
+            ],
+        ];
+    }
+
+    private function normalizeCorrectionSnapshot(array $snapshot): array
+    {
+        return [
+            'work_date' => $snapshot['work_date'] ?? '-',
+            'check_in_at' => $this->formatSnapshotDateTime($snapshot['check_in_at'] ?? null),
+            'check_out_at' => $this->formatSnapshotDateTime($snapshot['check_out_at'] ?? null),
+            'check_in_status' => $snapshot['check_in_status'] ?? '-',
+            'check_out_status' => $snapshot['check_out_status'] ?? '-',
+            'record_status' => $snapshot['record_status'] ?? '-',
+            'late_minutes' => (int) ($snapshot['late_minutes'] ?? 0),
+            'early_leave_minutes' => (int) ($snapshot['early_leave_minutes'] ?? 0),
+            'overtime_minutes' => (int) ($snapshot['overtime_minutes'] ?? 0),
+            'is_suspicious' => (bool) ($snapshot['is_suspicious'] ?? false),
+            'suspicious_reason' => $snapshot['suspicious_reason'] ?? null,
+            'check_in_recorded_at' => $this->formatSnapshotDateTime($snapshot['check_in_recorded_at'] ?? null),
+            'check_out_recorded_at' => $this->formatSnapshotDateTime($snapshot['check_out_recorded_at'] ?? null),
+        ];
+    }
+
+    private function formatSnapshotDateTime(?string $value): string
+    {
+        if (blank($value)) {
+            return '-';
+        }
+
+        try {
+            return Carbon::parse($value)->setTimezone('Asia/Jakarta')->translatedFormat('D, d M Y H:i');
+        } catch (\Throwable) {
+            return (string) $value;
+        }
+    }
+}

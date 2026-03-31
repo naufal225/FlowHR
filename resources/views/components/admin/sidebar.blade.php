@@ -50,6 +50,10 @@
                     class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('admin.attendance.records', 'admin.attendance.show') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
                     <span>Records</span>
                 </a>
+                <a href="{{ route('admin.attendance.corrections.index') }}"
+                    class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('admin.attendance.corrections.*') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
+                    <span>Corrections</span>
+                </a>
                 <a href="{{ route('admin.attendance.qr') }}"
                     class="flex items-center px-4 py-2 text-sm transition-all duration-200 rounded-lg {{ request()->routeIs('admin.attendance.qr*') ? 'bg-primary-600 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white' }}">
                     <span>QR Code</span>

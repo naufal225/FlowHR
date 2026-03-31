@@ -48,6 +48,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::prefix('attendance')->name('attendance.')->group(function () {
         Route::get('/', [AttendanceController::class, 'index'])->name('index');
         Route::get('/records', [AttendanceController::class, 'records'])->name('records');
+        Route::get('/corrections', [AttendanceController::class, 'corrections'])->name('corrections.index');
+        Route::get('/corrections/{correction}', [AttendanceController::class, 'showCorrection'])->whereNumber('correction')->name('corrections.show');
+        Route::post('/corrections/{correction}/review', [AttendanceController::class, 'reviewCorrection'])->whereNumber('correction')->name('corrections.review');
         Route::get('/qr', [AttendanceController::class, 'qr'])->name('qr');
         Route::get('/qr/status', [AttendanceController::class, 'qrStatus'])->name('qr.status');
         Route::post('/qr/regenerate', [AttendanceController::class, 'regenerateQr'])->name('qr.regenerate');
