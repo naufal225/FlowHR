@@ -294,6 +294,14 @@ class AdminAttendanceController extends Controller
             $data['end_date'] = now('Asia/Jakarta')->toDateString();
         }
 
+        if (empty($data['sort_by'])) {
+            $data['sort_by'] = 'created_at';
+        }
+
+        if (empty($data['sort_direction'])) {
+            $data['sort_direction'] = 'desc';
+        }
+
         return $data;
     }
 
