@@ -41,7 +41,7 @@
                                 class="w-full appearance-none rounded-xl border border-slate-300 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-slate-700 shadow-sm transition-all focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 sm:min-w-[18rem] hover:border-slate-400 cursor-pointer">
                                 @foreach($officeLocations as $office)
                                     <option value="{{ $office->id }}" @selected($settingsForm['selected_office_id'] === $office->id)>
-                                        {{ $office->name }}{{ filled($office->code) ? ' • ' . $office->code : '' }}
+                                        {{ $office->name }}{{ filled($office->code) ? ' - ' . $office->code : '' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -111,23 +111,21 @@
                     @endif
 
                     <div class="group">
-                        <label class="block mb-2 text-sm font-semibold transition-colors text-slate-700 group-focus-within:text-sky-600"
-                            for="work_start_time">
-                            Work Start Time
-                        </label>
-                        <input id="work_start_time" name="work_start_time" type="time"
-                            value="{{ $settingsForm['values']['work_start_time'] }}"
-                            class="w-full rounded-xl border border-slate-300 bg-white py-2.5 px-4 text-sm text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 hover:border-slate-400">
+                        <x-time-picker
+                            id="work_start_time"
+                            name="work_start_time"
+                            label="Work Start Time"
+                            :value="$settingsForm['values']['work_start_time']"
+                        />
                     </div>
 
-                    <div class="group">
-                        <label class="block mb-2 text-sm font-semibold transition-colors text-slate-700 group-focus-within:text-sky-600"
-                            for="work_end_time">
-                            Work End Time
-                        </label>
-                        <input id="work_end_time" name="work_end_time" type="time"
-                            value="{{ $settingsForm['values']['work_end_time'] }}"
-                            class="w-full rounded-xl border border-slate-300 bg-white py-2.5 px-4 text-sm text-slate-700 shadow-sm transition-all placeholder:text-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 hover:border-slate-400">
+                    <div class="group md:max-w-xs">
+                        <x-time-picker
+                            id="work_end_time"
+                            name="work_end_time"
+                            label="Work End Time"
+                            :value="$settingsForm['values']['work_end_time']"
+                        />
                     </div>
 
                     <div class="group">
