@@ -410,6 +410,74 @@ class AttendanceLogService
         }
     }
 
+    public function logCorrectionSubmitted(
+        int $attendanceId,
+        int $userId,
+        array $context = [],
+        ?Carbon $occurredAt = null
+    ): ?AttendanceLog {
+        return $this->safeCreateLog(
+            attendanceId: $attendanceId,
+            userId: $userId,
+            actionType: AttendanceLogActionType::CORRECTION_SUBMITTED,
+            actionStatus: AttendanceLogActionStatus::SUCCESS,
+            message: 'Pengajuan koreksi absensi berhasil dicatat.',
+            context: $context,
+            occurredAt: $occurredAt,
+        );
+    }
+
+    public function logCorrectionApproved(
+        int $attendanceId,
+        int $userId,
+        array $context = [],
+        ?Carbon $occurredAt = null
+    ): ?AttendanceLog {
+        return $this->safeCreateLog(
+            attendanceId: $attendanceId,
+            userId: $userId,
+            actionType: AttendanceLogActionType::CORRECTION_APPROVED,
+            actionStatus: AttendanceLogActionStatus::SUCCESS,
+            message: 'Koreksi absensi disetujui.',
+            context: $context,
+            occurredAt: $occurredAt,
+        );
+    }
+
+    public function logCorrectionRejected(
+        int $attendanceId,
+        int $userId,
+        array $context = [],
+        ?Carbon $occurredAt = null
+    ): ?AttendanceLog {
+        return $this->safeCreateLog(
+            attendanceId: $attendanceId,
+            userId: $userId,
+            actionType: AttendanceLogActionType::CORRECTION_REJECTED,
+            actionStatus: AttendanceLogActionStatus::REJECTED,
+            message: 'Koreksi absensi ditolak.',
+            context: $context,
+            occurredAt: $occurredAt,
+        );
+    }
+
+    public function logCorrectionApplied(
+        int $attendanceId,
+        int $userId,
+        array $context = [],
+        ?Carbon $occurredAt = null
+    ): ?AttendanceLog {
+        return $this->safeCreateLog(
+            attendanceId: $attendanceId,
+            userId: $userId,
+            actionType: AttendanceLogActionType::CORRECTION_APPLIED,
+            actionStatus: AttendanceLogActionStatus::SUCCESS,
+            message: 'Koreksi absensi diterapkan ke record attendance.',
+            context: $context,
+            occurredAt: $occurredAt,
+        );
+    }
+
     private function buildBaseContext(
         ?int $attendanceId,
         int $userId,
@@ -541,6 +609,10 @@ class AttendanceLogService
             AttendanceLogActionType::SUSPICIOUS_ACTIVITY => $actionStatus === AttendanceLogActionStatus::SUSPICIOUS
             ? 'Aktivitas mencurigakan terdeteksi.'
             : 'Aktivitas dicatat.',
+            AttendanceLogActionType::CORRECTION_SUBMITTED => 'Pengajuan koreksi absensi dicatat.',
+            AttendanceLogActionType::CORRECTION_APPROVED => 'Koreksi absensi disetujui.',
+            AttendanceLogActionType::CORRECTION_REJECTED => 'Koreksi absensi ditolak.',
+            AttendanceLogActionType::CORRECTION_APPLIED => 'Koreksi absensi diterapkan.',
         };
     }
 

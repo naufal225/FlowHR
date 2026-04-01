@@ -203,7 +203,7 @@ class AdminAttendanceController extends Controller
             if ($action === 'approve') {
                 $this->attendanceCorrectionApprovalService->approve(
                     correction: $correctionModel,
-                    reviewerId: (int) Auth::id(),
+                    reviewer: Auth::user(),
                     reviewerNote: $reviewerNote,
                 );
 
@@ -211,13 +211,13 @@ class AdminAttendanceController extends Controller
             } else {
                 $this->attendanceCorrectionApprovalService->reject(
                     correction: $correctionModel,
-                    reviewerId: (int) Auth::id(),
+                    reviewer: Auth::user(),
                     reviewerNote: (string) $reviewerNote,
                 );
 
                 $message = 'Attendance correction rejected.';
             }
-        } catch (\DomainException $exception) {
+        } catch (AttendanceException $exception) {
             return redirect()
                 ->route($this->routeName('attendance.corrections.show'), $correctionModel->id)
                 ->with('error', $exception->getMessage())
@@ -399,11 +399,6 @@ class AdminAttendanceController extends Controller
     {
         $data = $request->all();
 
-        if (empty($data['start_date']) && empty($data['end_date'])) {
-            $data['start_date'] = now('Asia/Jakarta')->startOfMonth()->toDateString();
-            $data['end_date'] = now('Asia/Jakarta')->toDateString();
-        }
-
         if (empty($data['sort_by'])) {
             $data['sort_by'] = 'created_at';
         }
@@ -516,3 +511,6 @@ class AdminAttendanceController extends Controller
         }
     }
 }
+
+
+

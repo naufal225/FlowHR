@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\Mobile\Attendance;
 
 use App\Enums\AttendanceCheckOutStatus;
 use App\Enums\AttendanceRecordStatus;
+use App\Enums\Roles;
 use App\Exceptions\Attendance\AttendanceNotAllowedException;
 use App\Services\Attendance\AttendanceCheckOutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,6 +22,7 @@ class CheckOutControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
         $attendance = $this->createAttendance($user, $office, null, [
             'work_date' => '2026-03-27',
             'check_in_at' => '2026-03-27 08:55:00',
@@ -69,6 +71,7 @@ class CheckOutControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
 
         /** @var AttendanceCheckOutService&MockObject $service */
         $service = $this->createMock(AttendanceCheckOutService::class);

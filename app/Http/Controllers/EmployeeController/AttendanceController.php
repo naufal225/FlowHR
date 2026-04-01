@@ -12,6 +12,7 @@ use App\Models\Attendance;
 use App\Models\AttendanceCorrection;
 use App\Services\Attendance\AttendanceDailyStatusResolverService;
 use App\Services\Attendance\AttendanceDetailService;
+use App\Services\Attendance\AttendanceCorrectionSubmissionService;
 use App\Services\Attendance\AttendanceHistoryService;
 use App\Services\Attendance\AttendancePolicyService;
 use App\Services\Attendance\AttendanceUiService;
@@ -26,6 +27,7 @@ class AttendanceController extends Controller
         private readonly AttendanceDetailService $attendanceDetailService,
         private readonly AttendancePolicyService $attendancePolicyService,
         private readonly AttendanceUiService $attendanceUiService,
+        private readonly AttendanceCorrectionSubmissionService $attendanceCorrectionSubmissionService,
     ) {}
 
     public function index(Request $request)
@@ -119,19 +121,6 @@ class AttendanceController extends Controller
         $user = $request->user();
         abort_if($user === null, 401);
 
-        $attendance = Attendance::query()
-            ->where('id', (int) $request->input('attendance_record_id'))
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($attendance === null) {
-            return back()
-                ->withErrors([
-                    'attendance_record_id' => 'Log absensi tidak valid untuk user aktif.',
-                ])
-                ->withInput();
-        }
-
         $requestedCheckInTime = $request->filled('requested_check_in_time')
             ? Carbon::parse((string) $request->input('requested_check_in_time'), 'Asia/Jakarta')
             : null;
@@ -139,48 +128,24 @@ class AttendanceController extends Controller
             ? Carbon::parse((string) $request->input('requested_check_out_time'), 'Asia/Jakarta')
             : null;
 
-        if ($requestedCheckInTime !== null && $requestedCheckOutTime !== null && $requestedCheckOutTime->lt($requestedCheckInTime)) {
+        try {
+            $correction = $this->attendanceCorrectionSubmissionService->submit(
+                user: $user,
+                attendanceId: (int) $request->input('attendance_record_id'),
+                requestedCheckInTime: $requestedCheckInTime,
+                requestedCheckOutTime: $requestedCheckOutTime,
+                reason: (string) $request->input('reason'),
+            );
+        } catch (AttendanceException $exception) {
             return back()
                 ->withErrors([
-                    'requested_check_out_time' => 'Waktu check out koreksi tidak boleh lebih awal dari check in koreksi.',
+                    'attendance_record_id' => $exception->getMessage(),
                 ])
                 ->withInput();
         }
-
-        if ($requestedCheckOutTime !== null && $requestedCheckInTime === null && $attendance->check_in_at === null) {
-            return back()
-                ->withErrors([
-                    'requested_check_in_time' => 'Koreksi check-in wajib diisi jika log saat ini belum memiliki check-in.',
-                ])
-                ->withInput();
-        }
-
-        $hasPendingCorrection = AttendanceCorrection::query()
-            ->where('user_id', $user->id)
-            ->where('attendance_id', $attendance->id)
-            ->where('status', 'pending')
-            ->exists();
-
-        if ($hasPendingCorrection) {
-            return back()
-                ->withErrors([
-                    'attendance_record_id' => 'Log absensi ini sudah memiliki pengajuan koreksi yang masih pending.',
-                ])
-                ->withInput();
-        }
-
-        AttendanceCorrection::query()->create([
-            'user_id' => $user->id,
-            'attendance_id' => $attendance->id,
-            'requested_check_in_time' => $requestedCheckInTime,
-            'requested_check_out_time' => $requestedCheckOutTime,
-            'reason' => (string) $request->input('reason'),
-            'original_attendance_snapshot' => $this->attendanceSnapshot($attendance),
-            'status' => 'pending',
-        ]);
 
         return redirect()
-            ->route('employee.attendance.show', $attendance->id)
+            ->route('employee.attendance.show', $correction->attendance_id)
             ->with('success', 'Pengajuan koreksi absensi berhasil dikirim.');
     }
 
@@ -214,24 +179,5 @@ class AttendanceController extends Controller
         }
 
         return $data;
-    }
-
-    private function attendanceSnapshot(Attendance $attendance): array
-    {
-        return [
-            'work_date' => $attendance->work_date?->toDateString(),
-            'check_in_at' => $attendance->check_in_at?->toIso8601String(),
-            'check_out_at' => $attendance->check_out_at?->toIso8601String(),
-            'check_in_status' => $attendance->check_in_status?->value,
-            'check_out_status' => $attendance->check_out_status?->value,
-            'record_status' => $attendance->record_status?->value,
-            'late_minutes' => (int) ($attendance->late_minutes ?? 0),
-            'early_leave_minutes' => (int) ($attendance->early_leave_minutes ?? 0),
-            'overtime_minutes' => (int) ($attendance->overtime_minutes ?? 0),
-            'is_suspicious' => (bool) $attendance->is_suspicious,
-            'suspicious_reason' => $attendance->suspicious_reason,
-            'check_in_recorded_at' => $attendance->check_in_recorded_at?->toIso8601String(),
-            'check_out_recorded_at' => $attendance->check_out_recorded_at?->toIso8601String(),
-        ];
     }
 }

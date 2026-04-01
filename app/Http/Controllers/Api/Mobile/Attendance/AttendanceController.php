@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Mobile\Attendance;
 
 use App\Data\Attendance\AttendanceHistoryFilterData;
+use App\Models\Attendance;
+use App\Models\AttendanceCorrection;
 use App\Http\Controllers\Controller;
 use App\Services\Attendance\AttendanceDailyStatusResolverService;
 use App\Services\Attendance\AttendanceDetailService;
@@ -36,8 +38,16 @@ class AttendanceController extends Controller
             : now('Asia/Jakarta');
 
         $statusData = $this->attendanceDailyStatusResolverService->resolveForUser($user, $date);
+        $user->loadMissing('officeLocation:id,name,address');
+
+        $hasPendingCorrection = AttendanceCorrection::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereHas('attendance', fn ($query) => $query->whereDate('work_date', $date->toDateString()))
+            ->exists();
 
         return response()->json([
+            'success' => true,
             'message' => 'Attendance status for the selected date was retrieved successfully.',
             'data' => [
                 'date' => $statusData->date->toDateString(),
@@ -50,6 +60,17 @@ class AttendanceController extends Controller
                 'is_early_leave' => $statusData->isEarlyLeave,
                 'is_suspicious' => $statusData->isSuspicious,
                 'reason' => $statusData->reason,
+                'has_pending_correction' => $hasPendingCorrection,
+                'available_actions' => [
+                    'can_check_in' => $statusData->attendanceId === null,
+                    'can_check_out' => $statusData->attendanceId !== null && $statusData->checkOutAt === null,
+                    'can_submit_correction' => $statusData->attendanceId !== null,
+                ],
+                'office_location' => [
+                    'id' => $user->officeLocation?->id,
+                    'name' => $user->officeLocation?->name,
+                    'address' => $user->officeLocation?->address,
+                ],
             ],
         ], 200);
     }
@@ -83,6 +104,7 @@ class AttendanceController extends Controller
         );
 
         return response()->json([
+            'success' => true,
             'message' => 'Attendance history retrieved successfully.',
             'data' => $this->transformHistoryCollection($paginator->items()),
             'meta' => [
@@ -131,13 +153,20 @@ class AttendanceController extends Controller
         );
 
         return response()->json([
+            'success' => true,
             'message' => 'Attendance detail retrieved successfully.',
             'data' => $this->transformAttendanceDetail($attendance),
         ], 200);
     }
 
-    private function transformAttendanceDetail($attendance): array
+    private function transformAttendanceDetail(Attendance $attendance): array
     {
+        $hasPendingCorrection = AttendanceCorrection::query()
+            ->where('user_id', $attendance->user_id)
+            ->where('attendance_id', $attendance->id)
+            ->where('status', 'pending')
+            ->exists();
+
         return [
             'id' => $attendance->id,
             'work_date' => $attendance->work_date?->toDateString(),
@@ -206,6 +235,9 @@ class AttendanceController extends Controller
                 'office_location_id' => $attendance->office_location_id,
                 'created_at' => $attendance->created_at?->toDateTimeString(),
                 'updated_at' => $attendance->updated_at?->toDateTimeString(),
+            ],
+            'correction' => [
+                'has_pending_correction' => $hasPendingCorrection,
             ],
         ];
     }

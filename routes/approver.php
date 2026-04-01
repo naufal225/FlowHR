@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApproverController\AttendanceController;
 use App\Http\Controllers\ApproverController\LeaveController;
 use App\Http\Controllers\ApproverController\DashboardController;
 use App\Http\Controllers\ApproverController\OfficialTravelController;
@@ -16,6 +17,15 @@ Route::middleware(['auth', 'role:approver', 'division'])->prefix('approver')->na
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/', [AttendanceController::class, 'index'])->name('index');
+        Route::get('/records', [AttendanceController::class, 'records'])->name('records');
+        Route::get('/corrections', [AttendanceController::class, 'corrections'])->name('corrections.index');
+        Route::get('/corrections/{correction}', [AttendanceController::class, 'showCorrection'])->whereNumber('correction')->name('corrections.show');
+        Route::post('/corrections/{correction}/review', [AttendanceController::class, 'reviewCorrection'])->whereNumber('correction')->name('corrections.review');
+        Route::get('/{attendance}', [AttendanceController::class, 'show'])->whereNumber('attendance')->name('show');
+    });
 
     // Leaves (feature: cuti)
     Route::middleware('feature:cuti')->group(function () {

@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\Mobile\Attendance;
 
 use App\Enums\AttendanceCheckInStatus;
 use App\Enums\AttendanceRecordStatus;
+use App\Enums\Roles;
 use App\Services\Attendance\AttendanceCheckInService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -36,6 +37,7 @@ class CheckInControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
         $attendance = $this->createAttendance($user, $office, null, [
             'work_date' => '2026-03-27',
             'check_in_at' => '2026-03-27 08:58:00',
@@ -82,6 +84,7 @@ class CheckInControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
         $attendance = $this->createAttendance($user, $office, null, [
             'work_date' => '2026-03-27',
             'check_in_at' => '2026-03-27 08:59:00',

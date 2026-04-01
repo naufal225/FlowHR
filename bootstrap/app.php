@@ -3,6 +3,7 @@
 use App\Exceptions\Attendance\AttendanceException;
 use App\Http\Middleware\CheckFeatureActive;
 use App\Http\Middleware\EnsureHasDivision;
+use App\Http\Middleware\EnsureMobileEmployeeAccess;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'feature' => CheckFeatureActive::class,
             'division' => EnsureHasDivision::class,
+            'mobile.employee' => EnsureMobileEmployeeAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

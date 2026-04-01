@@ -20,6 +20,12 @@
 
         @php
         $divisionId = Auth::user()->division_id;
+        $pendingAttendanceCorrectionCount = \App\Models\AttendanceCorrection::where('status', 'pending')
+        ->whereHas('attendance.user', function ($query) {
+            $query->whereHas('roles', fn($roleQuery) => $roleQuery->where('name', \App\Enums\Roles::Employee->value))
+                ->whereHas('division', fn($divisionQuery) => $divisionQuery->where('leader_id', Auth::id()));
+        })
+        ->count();
         $unseenLeaveCount = 0;
         $unseenOfficialTravelCount = 0;
         $unseenOvertimeCount = 0;
@@ -42,6 +48,18 @@
         ->count();
 
         @endphp
+
+        <a href="{{ route('approver.attendance.index') }}"
+            class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.attendance.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+            <i class="w-5 mr-3 text-center fas fa-user-clock"></i>
+            <span class="font-medium">Attendance</span>
+
+            <span
+                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
+                style="{{ $pendingAttendanceCorrectionCount > 0 ? '' : 'display: none' }}">
+                {{ $pendingAttendanceCorrectionCount }}
+            </span>
+        </a>
 
         @if(\App\Models\FeatureSetting::isActive('cuti'))
         <a href="{{ route('approver.leaves.index') }}" id="leave-nav"

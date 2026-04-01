@@ -6,6 +6,7 @@ use App\Data\Attendance\DailyAttendanceStatusData;
 use App\Enums\AttendanceCheckInStatus;
 use App\Enums\AttendanceCheckOutStatus;
 use App\Enums\AttendanceRecordStatus;
+use App\Enums\Roles;
 use App\Models\Attendance;
 use App\Services\Attendance\AttendanceDailyStatusResolverService;
 use App\Services\Attendance\AttendanceDetailService;
@@ -28,6 +29,7 @@ class AttendanceControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
 
         /** @var AttendanceDailyStatusResolverService&MockObject $resolver */
         $resolver = $this->createMock(AttendanceDailyStatusResolverService::class);
@@ -54,6 +56,7 @@ class AttendanceControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJson([
+                'success' => true,
                 'message' => 'Attendance status for the selected date was retrieved successfully.',
                 'data' => [
                     'date' => '2026-03-27',
@@ -63,6 +66,7 @@ class AttendanceControllerTest extends TestCase
                     'is_late' => false,
                     'is_early_leave' => false,
                     'is_suspicious' => false,
+                    'has_pending_correction' => false,
                 ],
             ]);
     }
@@ -71,6 +75,7 @@ class AttendanceControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
 
         $attendances = [
             new Attendance([
@@ -119,6 +124,7 @@ class AttendanceControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJson([
+                'success' => true,
                 'message' => 'Attendance history retrieved successfully.',
                 'meta' => [
                     'current_page' => 1,
@@ -134,6 +140,7 @@ class AttendanceControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
 
         Sanctum::actingAs($user);
 
@@ -151,6 +158,7 @@ class AttendanceControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
 
         Sanctum::actingAs($user);
 
@@ -161,6 +169,7 @@ class AttendanceControllerTest extends TestCase
     {
         $office = $this->createOfficeLocation();
         $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
 
         /** @var AttendanceDetailService&MockObject $detailService */
         $detailService = $this->createMock(AttendanceDetailService::class);

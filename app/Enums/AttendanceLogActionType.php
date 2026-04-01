@@ -13,6 +13,10 @@ enum AttendanceLogActionType: string
     case DUPLICATE_CHECKIN_ATTEMPT = 'duplicate_checkin_attempt';
     case INVALID_CHECKOUT_ATTEMPT = 'invalid_checkout_attempt';
     case SUSPICIOUS_ACTIVITY = 'suspicious_activity';
+    case CORRECTION_SUBMITTED = 'correction_submitted';
+    case CORRECTION_APPROVED = 'correction_approved';
+    case CORRECTION_REJECTED = 'correction_rejected';
+    case CORRECTION_APPLIED = 'correction_applied';
 
     public static function values(): array
     {
@@ -31,6 +35,10 @@ enum AttendanceLogActionType: string
             self::DUPLICATE_CHECKIN_ATTEMPT => 'Percobaan Check-in Ganda',
             self::INVALID_CHECKOUT_ATTEMPT => 'Percobaan Check-out Tidak Valid',
             self::SUSPICIOUS_ACTIVITY => 'Aktivitas Mencurigakan',
+            self::CORRECTION_SUBMITTED => 'Koreksi Diajukan',
+            self::CORRECTION_APPROVED => 'Koreksi Disetujui',
+            self::CORRECTION_REJECTED => 'Koreksi Ditolak',
+            self::CORRECTION_APPLIED => 'Koreksi Diterapkan',
         };
     }
 }
