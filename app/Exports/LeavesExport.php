@@ -61,7 +61,7 @@ class LeavesExport implements FromCollection, WithHeadings, WithMapping, WithSty
             'Duration (Days)',
             'Reason',
             'Status',
-            'Approver ',
+            'Reviewed By',
             'Updated Date',
             'Approved Date',
             'Rejected Date',

@@ -66,9 +66,7 @@ class UserManagementService
 
     public function getRoleLabels(): array
     {
-        return collect(Roles::cases())
-            ->mapWithKeys(fn(Roles $role) => [$role->value => $role->label()])
-            ->all();
+        return Roles::labels();
     }
 
     public function formatRoleDisplay(User $user, ?array $roleLabels = null): string
@@ -169,7 +167,7 @@ class UserManagementService
 
         if (empty($validated['division_id'])) {
             throw ValidationException::withMessages([
-                'division_id' => 'Division is required when assigning role Approver.',
+                'division_id' => 'Division is required when assigning Team Leader or Manager role.',
             ]);
         }
 

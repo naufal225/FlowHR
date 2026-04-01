@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\Overtime;
 use App\Models\User;
 use App\Enums\Roles;
+use App\Support\ApprovalStageLabels;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -83,10 +84,10 @@ class OvertimesExport implements FromCollection, WithHeadings, WithMapping, With
             'Meal Costs (Rp)',
             'Overtime Rate (Rp)',
             'Total Amount (Rp)',
-            'Status 1',
-            'Status 2',
-            'Approver 1',
-            'Approver 2',
+            ApprovalStageLabels::status(Roles::Approver),
+            ApprovalStageLabels::status(Roles::Manager),
+            ApprovalStageLabels::actor(Roles::Approver),
+            ApprovalStageLabels::actor(Roles::Manager),
             'Updated Date',
             'Approved Date',
             'Rejected Date',

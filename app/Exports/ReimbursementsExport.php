@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\Reimbursement;
 use App\Models\User;
 use App\Enums\Roles;
+use App\Support\ApprovalStageLabels;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -51,10 +52,10 @@ class ReimbursementsExport implements FromCollection, WithHeadings, WithMapping,
             'Employee Email',
             'Date',
             'Total',
-            'Status 1',
-            'Status 2',
-            'Approver 1',
-            'Approver 2',
+            ApprovalStageLabels::status(Roles::Approver),
+            ApprovalStageLabels::status(Roles::Manager),
+            ApprovalStageLabels::actor(Roles::Approver),
+            ApprovalStageLabels::actor(Roles::Manager),
             'Updated Date',
             'Approved Date',
             'Rejected Date',

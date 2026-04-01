@@ -2,7 +2,9 @@
 
 namespace App\Exports;
 
+use App\Enums\Roles;
 use App\Models\OfficialTravel;
+use App\Support\ApprovalStageLabels;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -51,9 +53,9 @@ class OfficialTravelsExport implements FromCollection, WithHeadings, WithMapping
             'End Date',
             'Duration (Days)',
             'Total',
-            'Status 1',
-            'Status 2',
-            'Approver',
+            ApprovalStageLabels::status(Roles::Approver),
+            ApprovalStageLabels::status(Roles::Manager),
+            ApprovalStageLabels::actor(Roles::Approver),
             'Updated Date',
             'Approved Date',
             'Rejected Date',

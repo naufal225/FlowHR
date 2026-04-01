@@ -68,20 +68,14 @@ class AuthController extends Controller
             return app(AuthController::class)->redirectBasedOnRole($roleName);
         }
 
-        // Role labels untuk tampilan
-        $roleLabels = [
-            Roles::Employee->value => 'Employee',
-            Roles::Approver->value => 'Approver 1',
-            Roles::Manager->value => 'Approver 2',
-            Roles::Admin->value => 'Admin',
-            Roles::SuperAdmin->value => 'Super Admin',
-            Roles::Finance->value => 'Approver 3',
-        ];
+        $roleLabels = Roles::labels();
+        $roleOrder = Roles::selectionOrder();
 
         // Urutkan roles sesuai urutan yang diinginkan
-        $sortedRoles = $userRoles->sortBy(function ($role) use ($roleLabels) {
-            $order = array_keys($roleLabels);
-            return array_search($role->name, $order);
+        $sortedRoles = $userRoles->sortBy(function ($role) use ($roleOrder) {
+            $index = array_search($role->name, $roleOrder, true);
+
+            return $index === false ? PHP_INT_MAX : $index;
         });
 
         return view('auth.choose-role', [
