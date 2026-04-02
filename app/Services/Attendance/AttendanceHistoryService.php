@@ -70,6 +70,14 @@ class AttendanceHistoryService
             ->select($this->historySelectColumns())
             ->with([
                 'officeLocation:id,name',
+                'latestCorrection' => function ($query): void {
+                    $query->select([
+                        'attendance_corrections.id',
+                        'attendance_corrections.attendance_id',
+                        'attendance_corrections.status',
+                        'attendance_corrections.updated_at',
+                    ]);
+                },
             ])
             ->where('user_id', $userId);
     }
@@ -81,6 +89,14 @@ class AttendanceHistoryService
             ->with([
                 'user:id,name,email,office_location_id',
                 'officeLocation:id,name',
+                'latestCorrection' => function ($query): void {
+                    $query->select([
+                        'attendance_corrections.id',
+                        'attendance_corrections.attendance_id',
+                        'attendance_corrections.status',
+                        'attendance_corrections.updated_at',
+                    ]);
+                },
             ]);
     }
 

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Mobile\Attendance\AttendanceController;
 use App\Http\Controllers\Api\Mobile\Attendance\CheckInController;
 use App\Http\Controllers\Api\Mobile\Attendance\CheckOutController;
 use App\Http\Controllers\Api\Mobile\MobileAuthController;
+use App\Http\Controllers\Api\Mobile\MobileDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,7 @@ Route::prefix('mobile')->group(function () {
     Route::middleware(['auth:sanctum', 'mobile.employee'])->group(function () {
         Route::get('/auth/me', [MobileAuthController::class, 'me']);
         Route::post('/auth/logout', [MobileAuthController::class, 'logout']);
+        Route::get('/dashboard', MobileDashboardController::class);
 
         Route::post('/attendance/check-in', CheckInController::class);
         Route::post('/attendance/check-out', CheckOutController::class);

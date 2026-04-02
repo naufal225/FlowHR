@@ -8,6 +8,7 @@ use App\Enums\AttendanceCheckOutStatus;
 use App\Enums\AttendanceRecordStatus;
 use App\Enums\Roles;
 use App\Models\Attendance;
+use App\Models\AttendanceCorrection;
 use App\Services\Attendance\AttendanceDailyStatusResolverService;
 use App\Services\Attendance\AttendanceDetailService;
 use App\Services\Attendance\AttendanceHistoryService;
@@ -110,6 +111,16 @@ class AttendanceControllerTest extends TestCase
             $attendance->setRelation('officeLocation', $office);
         }
 
+        $latestCorrection = new AttendanceCorrection([
+            'id' => 701,
+            'attendance_id' => 1,
+            'status' => 'pending',
+        ]);
+        $latestCorrection->updated_at = Carbon::parse('2026-03-25 18:15:00', 'Asia/Jakarta');
+
+        $attendances[0]->setRelation('latestCorrection', $latestCorrection);
+        $attendances[1]->setRelation('latestCorrection', null);
+
         /** @var AttendanceHistoryService&MockObject $historyService */
         $historyService = $this->createMock(AttendanceHistoryService::class);
         $historyService->expects($this->once())
@@ -133,6 +144,12 @@ class AttendanceControllerTest extends TestCase
                     'total' => 2,
                 ],
             ])
+            ->assertJsonPath('data.0.correction.has_correction', true)
+            ->assertJsonPath('data.0.correction.latest_status', 'pending')
+            ->assertJsonPath('data.0.correction.latest_updated_at', '2026-03-25 18:15:00')
+            ->assertJsonPath('data.1.correction.has_correction', false)
+            ->assertJsonPath('data.1.correction.latest_status', null)
+            ->assertJsonPath('data.1.correction.latest_updated_at', null)
             ->assertJsonCount(2, 'data');
     }
 
@@ -152,6 +169,43 @@ class AttendanceControllerTest extends TestCase
                 'code' => 'VALIDATION_ERROR',
             ])
             ->assertJsonValidationErrors(['per_page', 'sort_direction']);
+    }
+
+    public function test_it_can_load_history_with_latest_correction_using_real_query(): void
+    {
+        $office = $this->createOfficeLocation();
+        $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
+
+        $attendance = $this->createAttendance($user, $office, null, [
+            'work_date' => '2026-03-27',
+            'check_in_at' => '2026-03-27 08:59:00',
+            'check_out_at' => '2026-03-27 17:06:00',
+            'check_in_status' => AttendanceCheckInStatus::ON_TIME,
+            'check_out_status' => AttendanceCheckOutStatus::NORMAL,
+            'record_status' => AttendanceRecordStatus::COMPLETE,
+            'late_minutes' => 0,
+            'early_leave_minutes' => 0,
+            'overtime_minutes' => 6,
+            'is_suspicious' => false,
+        ]);
+
+        AttendanceCorrection::query()->create([
+            'user_id' => $user->id,
+            'attendance_id' => $attendance->id,
+            'reason' => 'Request correction for regression test.',
+            'status' => 'pending',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/mobile/attendance/history?per_page=5');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.0.id', $attendance->id)
+            ->assertJsonPath('data.0.correction.has_correction', true)
+            ->assertJsonPath('data.0.correction.latest_status', 'pending');
     }
 
     public function test_detail_route_only_accepts_numeric_attendance_ids(): void

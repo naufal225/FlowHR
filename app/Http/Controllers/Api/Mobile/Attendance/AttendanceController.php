@@ -135,6 +135,11 @@ class AttendanceController extends Controller
                     'id' => $attendance->officeLocation?->id,
                     'name' => $attendance->officeLocation?->name,
                 ],
+                'correction' => [
+                    'has_correction' => $attendance->latestCorrection !== null,
+                    'latest_status' => $attendance->latestCorrection?->status,
+                    'latest_updated_at' => $attendance->latestCorrection?->updated_at?->toDateTimeString(),
+                ],
             ];
         }, $attendances);
     }

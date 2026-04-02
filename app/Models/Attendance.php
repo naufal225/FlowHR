@@ -8,6 +8,7 @@ use App\Enums\AttendanceRecordStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Attendance extends Model
 {
@@ -95,6 +96,17 @@ class Attendance extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class, 'attendance_id');
+    }
+
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(AttendanceCorrection::class, 'attendance_id');
+    }
+
+    public function latestCorrection(): HasOne
+    {
+        return $this->hasOne(AttendanceCorrection::class, 'attendance_id')
+            ->latestOfMany('created_at');
     }
 
     public function approvedLeaves()

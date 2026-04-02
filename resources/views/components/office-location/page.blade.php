@@ -26,6 +26,23 @@ $mapConfig = [
 'address' => filled($addressValue) ? (string) $addressValue : '',
 ],
 ];
+
+$formControlClass = function (?string $field = null, string $extra = '', string $type = 'input') use ($errors) {
+    $baseClass = match ($type) {
+        'select' => 'form-select',
+        'textarea' => 'form-textarea',
+        'file' => 'form-input-file',
+        default => 'form-input',
+    };
+
+    return \Illuminate\Support\Arr::toCssClasses([
+        $baseClass,
+        trim($extra),
+        'border-error-300 focus:border-error-500 focus:ring-error-100' => $field && $errors->has($field),
+    ]);
+};
+
+
 @endphp
 
 @push('styles')
@@ -121,7 +138,7 @@ $mapConfig = [
                             <label for="code" class="block text-sm font-medium text-gray-700">Office Code <span
                                     class="text-rose-500">*</span></label>
                             <input type="text" id="code" name="code" value="{{ old('code', $officeLocation?->code) }}"
-                                class="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-sm uppercase shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 @error('code') border-rose-300 focus:border-rose-500 focus:ring-rose-100 @enderror"
+                                class="{{ $formControlClass('code', "mt-2 uppercase tracking-[0.16em]") }}"
                                 placeholder="JKT-HQ" required>
                             @error('code') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
                         </div>
@@ -130,7 +147,7 @@ $mapConfig = [
                             <label for="name" class="block text-sm font-medium text-gray-700">Office Name <span
                                     class="text-rose-500">*</span></label>
                             <input type="text" id="name" name="name" value="{{ old('name', $officeLocation?->name) }}"
-                                class="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 @error('name') border-rose-300 focus:border-rose-500 focus:ring-rose-100 @enderror"
+                                class="{{ $formControlClass('name', "mt-2") }}"
                                 placeholder="Jakarta Head Office" required>
                             @error('name') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
                         </div>
@@ -139,7 +156,7 @@ $mapConfig = [
                     <div class="mt-5">
                         <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
                         <textarea id="address" name="address" rows="4"
-                            class="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 @error('address') border-rose-300 focus:border-rose-500 focus:ring-rose-100 @enderror"
+                            class="{{ $formControlClass('address', "mt-2", "textarea") }}"
                             placeholder="Full office address">{{ $addressValue }}</textarea>
                         <p class="mt-2 text-xs text-gray-500">This field is updated from the selected candidate place,
                             but you can still refine the written address if needed.</p>
@@ -313,7 +330,7 @@ $mapConfig = [
                                 <div class="relative mt-2">
                                     <input type="number" id="radius_meter" name="radius_meter" min="1"
                                         max="{{ $radiusManualMax }}" value="{{ (int) $radiusValue }}"
-                                        class="w-full rounded-xl border border-gray-300 px-4 py-3 pr-12 text-sm shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 @error('radius_meter') border-rose-300 focus:border-rose-500 focus:ring-rose-100 @enderror"
+                                        class="{{ $formControlClass('radius_meter', "pr-12 text-sm") }}"
                                         required>
                                     <span
                                         class="pointer-events-none absolute inset-y-0 right-4 inline-flex items-center text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">m</span>
@@ -342,7 +359,7 @@ $mapConfig = [
                             </button>
                         </div>
                         <input type="text" id="timezone" name="timezone" value="{{ $timezoneValue }}"
-                            class="mt-4 w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 @error('timezone') border-rose-300 focus:border-rose-500 focus:ring-rose-100 @enderror"
+                            class="{{ $formControlClass('timezone', "mt-4") }}"
                             placeholder="Asia/Jakarta" required>
                         <p class="px-3 py-2 mt-3 text-xs font-medium border rounded-xl"
                             data-office-location-timezone-status>Automatic timezone detection will appear here.</p>
@@ -359,7 +376,7 @@ $mapConfig = [
                                         class="text-rose-500">*</span></label>
                                 <input type="number" step="any" id="latitude" name="latitude"
                                     value="{{ $latitudeValue }}"
-                                    class="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 @error('latitude') border-rose-300 focus:border-rose-500 focus:ring-rose-100 @enderror"
+                                    class="{{ $formControlClass('latitude', "mt-2") }}"
                                     placeholder="-6.2000000" required>
                                 @error('latitude') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
                             </div>
@@ -368,7 +385,7 @@ $mapConfig = [
                                         class="text-rose-500">*</span></label>
                                 <input type="number" step="any" id="longitude" name="longitude"
                                     value="{{ $longitudeValue }}"
-                                    class="mt-2 w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm transition focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 @error('longitude') border-rose-300 focus:border-rose-500 focus:ring-rose-100 @enderror"
+                                    class="{{ $formControlClass('longitude', "mt-2") }}"
                                     placeholder="106.8166667" required>
                                 @error('longitude') <p class="mt-2 text-sm text-rose-600">{{ $message }}</p> @enderror
                             </div>
