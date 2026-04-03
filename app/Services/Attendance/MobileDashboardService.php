@@ -19,6 +19,14 @@ class MobileDashboardService
 {
     private const DEFAULT_TIMEZONE = 'Asia/Jakarta';
     private const RECENT_ATTENDANCE_LIMIT = 5;
+    private const LOCATION_STATUS_VALID = 'valid';
+    private const LOCATION_STATUS_INVALID = 'invalid';
+    private const LOCATION_STATUS_SUSPICIOUS = 'suspicious';
+    private const ACCURACY_LEVEL_GOOD = 'good';
+    private const ACCURACY_LEVEL_FAIR = 'fair';
+    private const ACCURACY_LEVEL_POOR = 'poor';
+    private const ACCURACY_GOOD_MAX_METER = 50.0;
+    private const ACCURACY_FAIR_MAX_METER = 100.0;
 
     public function __construct(
         private readonly AttendanceDailyStatusResolverService $dailyStatusResolverService,
@@ -460,6 +468,16 @@ class MobileDashboardService
             'last_known_accuracy_meter' => null,
             'location_status' => null,
             'location_reason' => null,
+            'has_location_fix' => false,
+            'accuracy_meter' => null,
+            'distance_meter' => null,
+            'status' => null,
+            'status_label' => $this->resolveLocationStatusLabel(null),
+            'accuracy_level' => null,
+            'accuracy_label' => $this->resolveAccuracyLabel(null),
+            'reason' => null,
+            'is_valid' => null,
+            'is_suspicious' => null,
         ];
 
         if ($attendance === null) {
@@ -472,11 +490,17 @@ class MobileDashboardService
             return $readiness;
         }
 
-        if ($policy === null) {
-            $readiness['last_known_accuracy_meter'] = $lastKnown['accuracy_meter'];
-            $readiness['location_reason'] = 'Attendance policy is not available to validate latest location.';
+        $accuracyMeter = $lastKnown['accuracy_meter'] !== null ? (float) $lastKnown['accuracy_meter'] : null;
 
-            return $readiness;
+        $readiness['has_location_fix'] = true;
+        $readiness = $this->withLocationAccuracy($readiness, $accuracyMeter);
+
+        if ($policy === null) {
+            return $this->withLocationStatus(
+                readiness: $readiness,
+                status: null,
+                reason: 'Attendance policy is not available to validate latest location.',
+            );
         }
 
         try {
@@ -484,25 +508,114 @@ class MobileDashboardService
                 policy: $policy,
                 latitude: (float) $lastKnown['latitude'],
                 longitude: (float) $lastKnown['longitude'],
-                accuracyMeter: $lastKnown['accuracy_meter'] !== null ? (float) $lastKnown['accuracy_meter'] : null,
+                accuracyMeter: $accuracyMeter,
             );
 
             $readiness['last_known_distance_meter'] = $result->distanceMeter;
-            $readiness['last_known_accuracy_meter'] = $result->accuracyMeter;
-            $readiness['location_status'] = $result->isSuspicious ? 'suspicious' : 'valid';
-            $readiness['location_reason'] = $result->reason ? $this->humanizeReason($result->reason) : null;
+            $readiness['distance_meter'] = $result->distanceMeter;
+            $readiness = $this->withLocationAccuracy($readiness, $result->accuracyMeter);
 
-            return $readiness;
+            return $this->withLocationStatus(
+                readiness: $readiness,
+                status: $result->isSuspicious ? self::LOCATION_STATUS_SUSPICIOUS : self::LOCATION_STATUS_VALID,
+                reason: $result->reason ? $this->humanizeReason($result->reason) : null,
+            );
         } catch (AttendanceException $exception) {
             $context = $exception->getContext();
+            $distanceMeter = isset($context['distance_meter']) ? (float) $context['distance_meter'] : null;
 
-            $readiness['last_known_distance_meter'] = isset($context['distance_meter']) ? (float) $context['distance_meter'] : null;
-            $readiness['last_known_accuracy_meter'] = $lastKnown['accuracy_meter'];
-            $readiness['location_status'] = 'invalid';
-            $readiness['location_reason'] = $exception->getMessage();
+            $readiness['last_known_distance_meter'] = $distanceMeter;
+            $readiness['distance_meter'] = $distanceMeter;
+            $readiness = $this->withLocationAccuracy($readiness, $accuracyMeter);
 
-            return $readiness;
+            return $this->withLocationStatus(
+                readiness: $readiness,
+                status: self::LOCATION_STATUS_INVALID,
+                reason: $exception->getMessage(),
+            );
         }
+    }
+
+    private function withLocationAccuracy(array $readiness, ?float $accuracyMeter): array
+    {
+        $accuracyLevel = $this->resolveAccuracyLevel($accuracyMeter);
+
+        $readiness['last_known_accuracy_meter'] = $accuracyMeter;
+        $readiness['accuracy_meter'] = $accuracyMeter;
+        $readiness['accuracy_level'] = $accuracyLevel;
+        $readiness['accuracy_label'] = $this->resolveAccuracyLabel($accuracyMeter);
+
+        return $readiness;
+    }
+
+    private function withLocationStatus(array $readiness, ?string $status, ?string $reason): array
+    {
+        $normalizedStatus = $this->normalizeLocationStatus($status);
+
+        $readiness['location_status'] = $normalizedStatus;
+        $readiness['status'] = $normalizedStatus;
+        $readiness['status_label'] = $this->resolveLocationStatusLabel($normalizedStatus);
+        $readiness['location_reason'] = $reason;
+        $readiness['reason'] = $reason;
+        $readiness['is_valid'] = match ($normalizedStatus) {
+            self::LOCATION_STATUS_VALID => true,
+            self::LOCATION_STATUS_INVALID, self::LOCATION_STATUS_SUSPICIOUS => false,
+            default => null,
+        };
+        $readiness['is_suspicious'] = match ($normalizedStatus) {
+            self::LOCATION_STATUS_SUSPICIOUS => true,
+            self::LOCATION_STATUS_VALID, self::LOCATION_STATUS_INVALID => false,
+            default => null,
+        };
+
+        return $readiness;
+    }
+
+    private function normalizeLocationStatus(?string $status): ?string
+    {
+        return match ($status) {
+            self::LOCATION_STATUS_VALID,
+            self::LOCATION_STATUS_INVALID,
+            self::LOCATION_STATUS_SUSPICIOUS => $status,
+            default => null,
+        };
+    }
+
+    private function resolveLocationStatusLabel(?string $status): string
+    {
+        return match ($status) {
+            self::LOCATION_STATUS_VALID => 'Dalam Radius',
+            self::LOCATION_STATUS_INVALID => 'Di Luar Radius',
+            self::LOCATION_STATUS_SUSPICIOUS => 'Perlu Validasi',
+            default => 'Status lokasi tidak tersedia',
+        };
+    }
+
+    private function resolveAccuracyLevel(?float $accuracyMeter): ?string
+    {
+        if ($accuracyMeter === null) {
+            return null;
+        }
+
+        if ($accuracyMeter < self::ACCURACY_GOOD_MAX_METER) {
+            return self::ACCURACY_LEVEL_GOOD;
+        }
+
+        if ($accuracyMeter <= self::ACCURACY_FAIR_MAX_METER) {
+            return self::ACCURACY_LEVEL_FAIR;
+        }
+
+        return self::ACCURACY_LEVEL_POOR;
+    }
+
+    private function resolveAccuracyLabel(?float $accuracyMeter): string
+    {
+        return match ($this->resolveAccuracyLevel($accuracyMeter)) {
+            self::ACCURACY_LEVEL_GOOD => 'GPS Baik',
+            self::ACCURACY_LEVEL_FAIR => 'GPS Cukup',
+            self::ACCURACY_LEVEL_POOR => 'GPS Lemah',
+            default => 'Akurasi tidak tersedia',
+        };
     }
 
     private function buildDayContext(DailyAttendanceStatusData $statusData): array

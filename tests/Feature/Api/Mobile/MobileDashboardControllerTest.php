@@ -99,6 +99,13 @@ class MobileDashboardControllerTest extends TestCase
                     ],
                 ],
             ])
+            ->assertJsonPath('data.location_readiness.has_location_fix', true)
+            ->assertJsonPath('data.location_readiness.status', 'valid')
+            ->assertJsonPath('data.location_readiness.status_label', 'Dalam Radius')
+            ->assertJsonPath('data.location_readiness.accuracy_level', 'good')
+            ->assertJsonPath('data.location_readiness.accuracy_label', 'GPS Baik')
+            ->assertJsonPath('data.location_readiness.is_valid', true)
+            ->assertJsonPath('data.location_readiness.is_suspicious', false)
             ->assertJsonStructure([
                 'success',
                 'message',
@@ -171,6 +178,16 @@ class MobileDashboardControllerTest extends TestCase
                         'last_known_accuracy_meter',
                         'location_status',
                         'location_reason',
+                        'has_location_fix',
+                        'accuracy_meter',
+                        'distance_meter',
+                        'status',
+                        'status_label',
+                        'accuracy_level',
+                        'accuracy_label',
+                        'reason',
+                        'is_valid',
+                        'is_suspicious',
                     ],
                     'day_context' => [
                         'is_off_day',
@@ -183,6 +200,108 @@ class MobileDashboardControllerTest extends TestCase
                     'alerts',
                 ],
             ]);
+    }
+
+    public function test_it_returns_strict_unknown_location_readiness_when_no_location_fix_is_available(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-30 10:00:00', 'Asia/Jakarta'));
+
+        $office = $this->createOfficeLocation();
+        $this->createAttendanceSetting($office);
+
+        $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/mobile/dashboard');
+
+        $response->assertOk()
+            ->assertJsonPath('data.location_readiness.has_location_fix', false)
+            ->assertJsonPath('data.location_readiness.status', null)
+            ->assertJsonPath('data.location_readiness.status_label', 'Status lokasi tidak tersedia')
+            ->assertJsonPath('data.location_readiness.accuracy_meter', null)
+            ->assertJsonPath('data.location_readiness.accuracy_label', 'Akurasi tidak tersedia')
+            ->assertJsonPath('data.location_readiness.is_valid', null)
+            ->assertJsonPath('data.location_readiness.is_suspicious', null);
+    }
+
+    public function test_it_returns_suspicious_location_status_when_accuracy_is_fair_but_not_invalid(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-30 10:00:00', 'Asia/Jakarta'));
+
+        $office = $this->createOfficeLocation();
+        $this->createAttendanceSetting($office, [
+            'min_location_accuracy_meter' => 50,
+        ]);
+
+        $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
+
+        $this->createAttendance($user, $office, null, [
+            'work_date' => '2026-03-30',
+            'check_in_at' => Carbon::parse('2026-03-30 09:05:00', 'Asia/Jakarta'),
+            'check_in_status' => AttendanceCheckInStatus::ON_TIME,
+            'check_in_latitude' => -6.2000500,
+            'check_in_longitude' => 106.8166200,
+            'check_in_accuracy_meter' => 75,
+            'check_out_at' => null,
+            'check_out_status' => AttendanceCheckOutStatus::NONE,
+            'record_status' => AttendanceRecordStatus::ONGOING,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/mobile/dashboard');
+
+        $response->assertOk()
+            ->assertJsonPath('data.location_readiness.has_location_fix', true)
+            ->assertJsonPath('data.location_readiness.status', 'suspicious')
+            ->assertJsonPath('data.location_readiness.status_label', 'Perlu Validasi')
+            ->assertJsonPath('data.location_readiness.accuracy_meter', 75)
+            ->assertJsonPath('data.location_readiness.accuracy_level', 'fair')
+            ->assertJsonPath('data.location_readiness.accuracy_label', 'GPS Cukup')
+            ->assertJsonPath('data.location_readiness.is_valid', false)
+            ->assertJsonPath('data.location_readiness.is_suspicious', true);
+    }
+
+    public function test_it_returns_invalid_location_status_when_accuracy_is_too_low(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-30 10:00:00', 'Asia/Jakarta'));
+
+        $office = $this->createOfficeLocation();
+        $this->createAttendanceSetting($office, [
+            'min_location_accuracy_meter' => 50,
+        ]);
+
+        $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
+
+        $this->createAttendance($user, $office, null, [
+            'work_date' => '2026-03-30',
+            'check_in_at' => Carbon::parse('2026-03-30 09:05:00', 'Asia/Jakarta'),
+            'check_in_status' => AttendanceCheckInStatus::ON_TIME,
+            'check_in_latitude' => -6.2000500,
+            'check_in_longitude' => 106.8166200,
+            'check_in_accuracy_meter' => 120,
+            'check_out_at' => null,
+            'check_out_status' => AttendanceCheckOutStatus::NONE,
+            'record_status' => AttendanceRecordStatus::ONGOING,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/mobile/dashboard');
+
+        $response->assertOk()
+            ->assertJsonPath('data.location_readiness.has_location_fix', true)
+            ->assertJsonPath('data.location_readiness.status', 'invalid')
+            ->assertJsonPath('data.location_readiness.status_label', 'Di Luar Radius')
+            ->assertJsonPath('data.location_readiness.accuracy_meter', 120)
+            ->assertJsonPath('data.location_readiness.accuracy_level', 'poor')
+            ->assertJsonPath('data.location_readiness.accuracy_label', 'GPS Lemah')
+            ->assertJsonPath('data.location_readiness.is_valid', false)
+            ->assertJsonPath('data.location_readiness.is_suspicious', false);
     }
 
     public function test_it_returns_predictable_error_shape_when_dashboard_service_throws_attendance_exception(): void
