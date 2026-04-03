@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CostSettingsSeeder::class);
         $this->call(RoleSeeder::class);
         $this->call(UserAndDivisionSeeder::class);
+        $this->call(OfficeLocationAndAkbarSeeder::class);
         $this->call([
             ReimbursementSeeder::class,
             OvertimeSeeder::class,
@@ -24,5 +25,6 @@ class DatabaseSeeder extends Seeder
             LeaveSeeder::class,
         ]);
         $this->call(FeatureSettingsSeeder::class);
+        $this->call(AttendanceOfficeEmployeeSeeder::class);
     }
 }
