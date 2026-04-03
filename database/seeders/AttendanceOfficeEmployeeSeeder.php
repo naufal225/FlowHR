@@ -18,9 +18,7 @@ class AttendanceOfficeEmployeeSeeder extends Seeder
     private const LATE_TOLERANCE_MINUTES = 10;
     private const CHECK_IN_BEFORE_LATE_TOLERANCE_MINUTES = 4;
     private const CHECK_IN_WINDOW_MINUTES = 60;
-    private const CHECK_OUT_WINDOW_MINUTES = 60;
     private const WORK_DURATION_HOURS = 8;
-    private const CHECK_OUT_OFFSET_MINUTES = 30;
     private const DEFAULT_QR_ROTATION_SECONDS = 30;
     private const DEFAULT_MIN_LOCATION_ACCURACY_METER = 50;
 
@@ -110,24 +108,6 @@ class AttendanceOfficeEmployeeSeeder extends Seeder
                 $workStartAt->copy()->addMinutes(self::CHECK_IN_WINDOW_MINUTES),
             );
 
-            $checkOutAt = $this->clampToWindow(
-                $workEndAt->copy()->addMinutes(self::CHECK_OUT_OFFSET_MINUTES),
-                $workEndAt->copy()->subMinutes(self::CHECK_OUT_WINDOW_MINUTES),
-                $workEndAt->copy()->addMinutes(self::CHECK_OUT_WINDOW_MINUTES),
-            );
-
-            $checkOutStatus = AttendanceCheckOutStatus::NORMAL;
-            $earlyLeaveMinutes = 0;
-            $overtimeMinutes = 0;
-
-            if ($checkOutAt->lt($workEndAt)) {
-                $checkOutStatus = AttendanceCheckOutStatus::EARLY_LEAVE;
-                $earlyLeaveMinutes = (int) $checkOutAt->diffInMinutes($workEndAt);
-            } elseif ($checkOutAt->gt($workEndAt)) {
-                $checkOutStatus = AttendanceCheckOutStatus::OVERTIME;
-                $overtimeMinutes = (int) $workEndAt->diffInMinutes($checkOutAt);
-            }
-
             Attendance::query()->updateOrCreate(
                 [
                     'user_id' => $employee->id,
@@ -138,20 +118,19 @@ class AttendanceOfficeEmployeeSeeder extends Seeder
                     'check_in_at' => $checkInAt->format('Y-m-d H:i:s'),
                     'check_in_recorded_at' => $checkInAt->copy()->addSeconds(15)->format('Y-m-d H:i:s'),
                     'check_in_status' => AttendanceCheckInStatus::ON_TIME,
-                    'check_out_at' => $checkOutAt->format('Y-m-d H:i:s'),
-                    'check_out_recorded_at' => $checkOutAt->copy()->addSeconds(15)->format('Y-m-d H:i:s'),
-                    'check_out_status' => $checkOutStatus,
-                    'record_status' => AttendanceRecordStatus::COMPLETE,
+                    'check_out_at' => null,
+                    'check_out_recorded_at' => null,
+                    'check_out_status' => AttendanceCheckOutStatus::NONE,
+                    'record_status' => AttendanceRecordStatus::INCOMPLETE,
                     'late_minutes' => 0,
-                    'early_leave_minutes' => $earlyLeaveMinutes,
-                    'overtime_minutes' => $overtimeMinutes,
+                    'early_leave_minutes' => 0,
+                    'overtime_minutes' => 0,
                     'is_suspicious' => false,
                     'suspicious_reason' => null,
                     'notes' => sprintf(
-                        'Seeded: late tolerance %d menit, check-in %d menit sebelum batas terlambat, window check-in/check-out +/- %d menit.',
+                        'Seeded: late tolerance %d menit, check-in %d menit sebelum batas terlambat. Status checkout diset belum checkout.',
                         self::LATE_TOLERANCE_MINUTES,
                         self::CHECK_IN_BEFORE_LATE_TOLERANCE_MINUTES,
-                        self::CHECK_IN_WINDOW_MINUTES,
                     ),
                 ]
             );
