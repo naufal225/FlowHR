@@ -100,10 +100,6 @@ class LeaveController extends Controller
             $query->where('roles.id', $managerRole->id);
         })->first();
 
-        Leave::whereNull('seen_by_manager_at')
-            // ->whereHas('employee', fn($q) => $q->where('division_id', auth()->user()->division_id))
-            ->update(['seen_by_manager_at' => now()]);
-
         return view('manager.leave-request.index', compact(
             'ownRequests',
             'allUsersRequests',
@@ -233,7 +229,6 @@ class LeaveController extends Controller
         return $pdf->download('leave-details.pdf');
     }
 }
-
 
 
 

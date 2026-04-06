@@ -18,97 +18,39 @@
             <span class="font-medium">Dashboard</span>
         </a>
 
-        @php
-        // Sinkronkan definisi "pekerjaan Manager" dengan event LevelAdvanced
-        // - Leave: hanya jika pengaju adalah Leader/Approver dan status_1 pending
-        // - Reimbursement/Overtime/OfficialTravel: status_1 approved dan status_2 pending
-
-        $leaderIds = \App\Models\Division::pluck('leader_id')->filter()->all();
-
-        $unseenLeaveCount = \App\Models\Leave::where('status_1', 'pending')
-            ->where(function ($q) use ($leaderIds) {
-                $q->whereIn('employee_id', $leaderIds)
-                  ->orWhereHas('employee.roles', function ($r) {
-                      $r->where('name', \App\Enums\Roles::Approver->value);
-                  });
-            })
-            ->count();
-
-        $unseenOfficialTravelCount = \App\Models\OfficialTravel::where('status_1', 'approved')
-            ->where('status_2', 'pending')
-            ->count();
-
-        $unseenOvertimeCount = \App\Models\Overtime::where('status_1', 'approved')
-            ->where('status_2', 'pending')
-            ->count();
-
-        $unseenReimbursementCount = \App\Models\Reimbursement::where('status_1', 'approved')
-            ->where('status_2', 'pending')
-            ->count();
-
-        @endphp
-
         @if(\App\Models\FeatureSetting::isActive('cuti'))
-        <a href="{{ route('manager.leaves.index') }}" id="leave-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('manager.leaves.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.leaves.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-plane-departure"></i>
             <span class="font-medium">Leave Requests</span>
-
-            <span id="leave-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenLeaveCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenLeaveCount }}
-            </span>
         </a>
         @endif
 
         @if(\App\Models\FeatureSetting::isActive('reimbursement'))
-        <a href="{{ route('manager.reimbursements.index') }}" id="reimbursement-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('manager.reimbursements.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.reimbursements.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-file-invoice-dollar"></i>
             <span class="font-medium">Reimbursement Requests</span>
-
-            <span id="reimbursement-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenReimbursementCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenReimbursementCount }}
-            </span>
         </a>
         @endif
 
         @if(\App\Models\FeatureSetting::isActive('overtime'))
-        <a href="{{ route('manager.overtimes.index') }}" id="overtime-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('manager.overtimes.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.overtimes.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-clock"></i>
             <span class="font-medium">Overtime Requests</span>
-
-            <span id="overtime-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenOvertimeCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenOvertimeCount }}
-            </span>
         </a>
         @endif
 
         @if(\App\Models\FeatureSetting::isActive('perjalanan_dinas'))
-        <a href="{{ route('manager.official-travels.index') }}" id="official-travel-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('manager.official-travels.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.official-travels.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-briefcase"></i>
             <span class="font-medium">Official Travel Requests</span>
-
-            <span id="official-travel-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenOfficialTravelCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenOfficialTravelCount }}
-            </span>
         </a>
         @endif
 

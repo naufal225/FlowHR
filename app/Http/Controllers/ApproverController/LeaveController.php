@@ -104,10 +104,6 @@ class LeaveController extends Controller
             $query->where('roles.id', $managerRole->id);
         })->first();
 
-        Leave::whereNull('seen_by_approver_at')
-            ->whereHas('employee', fn($q) => $q->where('division_id', auth()->user()->division_id))
-            ->update(['seen_by_approver_at' => now()]);
-
         return view('approver.leave-request.index', compact(
             'ownRequests',
             'allUsersRequests',

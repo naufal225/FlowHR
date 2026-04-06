@@ -115,10 +115,6 @@ class ReimbursementController extends Controller
         $rejectedRequests = Reimbursement::where('status_1', 'rejected')
             ->orWhere('status_2', 'rejected')->count();
 
-        Reimbursement::whereNull('seen_by_manager_at')
-            // ->whereHas('employee', fn($q) => $q->where('division_id', auth()->user()->division_id))
-            ->update(['seen_by_manager_at' => now()]);
-
         $managerRole = Role::where('name', 'manager')->first();
 
         $manager = User::whereHas('roles', function ($query) use ($managerRole) {

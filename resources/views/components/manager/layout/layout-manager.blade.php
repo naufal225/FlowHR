@@ -42,52 +42,6 @@
     @include('components.default-hidden-sync')
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const leaveNav = document.getElementById('leave-nav');
-            const officialTravelNav = document.getElementById('official-travel-nav');
-            const overtimeNav = document.getElementById('overtime-nav');
-            const reimbursementNav = document.getElementById('reimbursement-nav');
-            const badgeLeave = document.getElementById('leave-badge');
-            const badgeTravel = document.getElementById('official-travel-badge');
-            const badgeOvertime = document.getElementById('overtime-badge');
-            const badgeReimbursement = document.getElementById('reimbursement-badge');
-
-            if (!leaveNav || !officialTravelNav || !reimbursementNav || !overtimeNav || !window.Echo) return;
-
-            let roles = [];
-            try { roles = JSON.parse(leaveNav.dataset.roles || '[]'); } catch (e) { roles = []; }
-            const divisionId = leaveNav.dataset.divisionId;
-
-            function incrementBadge(badgeElement) {
-                if (!badgeElement) return;
-                let current = parseInt(badgeElement.textContent) || 0;
-                badgeElement.textContent = current + 1;
-                badgeElement.style.display = 'inline-flex';
-            }
-           if (roles.includes('approver') || roles.includes('manager')) {
-                window.Echo.private(`manager.approval`)
-                    .listen('.leave.level-advanced', (e) => {
-                        console.log('[Echo] leave.level-advanced received', e);
-                        incrementBadge(badgeLeave);
-                    })
-                    .listen('.official-travel.level-advanced', (e) => {
-                        console.log('[Echo] official-travel.level-advanced received', e);
-                        incrementBadge(badgeTravel);
-                    })
-                    .listen('.overtime.level-advanced', (e) => {
-                        console.log('[Echo] overtime.level-advanced received', e);
-                        incrementBadge(badgeOvertime);
-                    })
-                    .listen('.reimbursement.level-advanced', (e) => {
-                        console.log('[Echo] reimbursement.level-advanced received', e);
-                        incrementBadge(badgeReimbursement);
-                    });
-            }
-
-        });
-    </script>
-
-    <script>
         // Sidebar Toggle Functionality - Fixed
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const sidebar = document.getElementById('sidebar');

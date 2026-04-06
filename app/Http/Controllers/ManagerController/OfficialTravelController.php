@@ -107,11 +107,7 @@ class OfficialTravelController extends Controller
         $rejectedRequests = OfficialTravel::where('status_1', 'rejected')
             ->orWhere('status_2', 'rejected')->count();
 
-        OfficialTravel::whereNull('seen_by_manager_at')
-            // ->whereHas('employee', fn($q) => $q->where('division_id', auth()->user()->division_id))
-            ->update(['seen_by_manager_at' => now()]);
-
-         $managerRole = Role::where('name', 'manager')->first();
+        $managerRole = Role::where('name', 'manager')->first();
 
         $manager = User::whereHas('roles', function ($query) use ($managerRole) {
             $query->where('roles.id', $managerRole->id);

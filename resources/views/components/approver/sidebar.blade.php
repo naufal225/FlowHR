@@ -18,110 +18,45 @@
             <span class="font-medium">Dashboard</span>
         </a>
 
-        @php
-        $divisionId = Auth::user()->division_id;
-        $pendingAttendanceCorrectionCount = \App\Models\AttendanceCorrection::where('status', 'pending')
-        ->whereHas('attendance.user', function ($query) {
-            $query->whereHas('roles', fn($roleQuery) => $roleQuery->where('name', \App\Enums\Roles::Employee->value))
-                ->whereHas('division', fn($divisionQuery) => $divisionQuery->where('leader_id', Auth::id()));
-        })
-        ->count();
-        $unseenLeaveCount = 0;
-        $unseenOfficialTravelCount = 0;
-        $unseenOvertimeCount = 0;
-        $unseenReimbursementCount = 0;
-        $unseenLeaveCount = \App\Models\Leave::whereNull('seen_by_approver_at')
-        ->orWhere('status_1', 'pending')
-        ->whereHas('employee', fn($q)=>$q->where('division_id', $divisionId))
-        ->count();
-        $unseenOfficialTravelCount = \App\Models\OfficialTravel::whereNull('seen_by_approver_at')
-        ->orWhere('status_1','pending')
-        ->whereHas('employee', fn($q)=>$q->where('division_id', $divisionId))
-        ->count();
-        $unseenOvertimeCount = \App\Models\Overtime::whereNull('seen_by_approver_at')
-        ->orWhere('status_1','pending')
-        ->whereHas('employee', fn($q)=>$q->where('division_id', $divisionId))
-        ->count();
-        $unseenReimbursementCount = \App\Models\Reimbursement::whereNull('seen_by_approver_at')
-        ->orWhere('status_1','pending')
-        ->whereHas('employee', fn($q)=>$q->where('division_id', $divisionId))
-        ->count();
-
-        @endphp
-
         <a href="{{ route('approver.attendance.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.attendance.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
             <i class="w-5 mr-3 text-center fas fa-user-clock"></i>
             <span class="font-medium">Attendance</span>
-
-            <span
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $pendingAttendanceCorrectionCount > 0 ? '' : 'display: none' }}">
-                {{ $pendingAttendanceCorrectionCount }}
-            </span>
         </a>
 
         @if(\App\Models\FeatureSetting::isActive('cuti'))
-        <a href="{{ route('approver.leaves.index') }}" id="leave-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('approver.leaves.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.leaves.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-plane-departure"></i>
             <span class="font-medium">Leave Requests</span>
-
-            <span id="leave-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenLeaveCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenLeaveCount }}
-            </span>
         </a>
         @endif
 
         @if(\App\Models\FeatureSetting::isActive('reimbursement'))
-        <a href="{{ route('approver.reimbursements.index') }}" id="reimbursement-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('approver.reimbursements.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.reimbursements.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-file-invoice-dollar"></i>
             <span class="font-medium">Reimbursement Requests</span>
-
-            <span id="reimbursement-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenReimbursementCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenReimbursementCount }}
-            </span>
         </a>
         @endif
 
         @if(\App\Models\FeatureSetting::isActive('overtime'))
-        <a href="{{ route('approver.overtimes.index') }}" id="overtime-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('approver.overtimes.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.overtimes.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-clock"></i>
             <span class="font-medium">Overtime Requests</span>
-
-            <span id="overtime-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenOvertimeCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenOvertimeCount }}
-            </span>
         </a>
         @endif
 
         @if(\App\Models\FeatureSetting::isActive('perjalanan_dinas'))
-        <a href="{{ route('approver.official-travels.index') }}" id="official-travel-nav"
-            data-roles='@json(Auth::user()->roles->pluck("name"))' data-division-id="{{ Auth::user()->division_id }}"
+        <a href="{{ route('approver.official-travels.index') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.official-travels.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
 
             <i class="w-5 mr-3 text-center fas fa-briefcase"></i>
             <span class="font-medium">Official Travel Requests</span>
-
-            <span id="official-travel-badge"
-                class="ml-auto inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold px-1 py-0.5 min-w-[1.25rem]"
-                style="{{ $unseenOfficialTravelCount > 0 ? '' : 'display: none' }}">
-                {{ $unseenOfficialTravelCount }}
-            </span>
         </a>
         @endif
 

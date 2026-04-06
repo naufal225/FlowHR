@@ -38,53 +38,6 @@
     @yield('partial-modal')
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const leaveNav = document.getElementById('leave-nav');
-            const officialTravelNav = document.getElementById('official-travel-nav');
-            const overtimeNav = document.getElementById('overtime-nav');
-            const reimbursementlNav = document.getElementById('reimbursement-nav');
-            const badgeLeave = document.getElementById('leave-badge');
-            const badgeTravel = document.getElementById('official-travel-badge');
-            const badgeOvertime = document.getElementById('overtime-badge');
-            const badgeReimbursement = document.getElementById('reimbursement-badge');
-            if (!leaveNav || !badgeLeave || !officialTravelNav || !badgeTravel || !reimbursementlNav || !badgeReimbursement || !overtimeNav || !badgeOvertime || !window.Echo) return;
-
-            const roles = leaveNav.dataset.roles;
-            const divisionId = leaveNav.dataset.divisionId;
-
-            function incrementBadge(badgeElement) {
-                if (!badgeElement) return;
-                let current = parseInt(badgeElement.textContent) || 0;
-                badgeElement.textContent = current + 1;
-                badgeElement.style.display = 'inline-flex';
-            }
-
-            if (roles.includes('approver') || roles.includes('manager')) {
-
-                window.Echo.private(`approver.division.${divisionId}`)
-                    .listen('.leave.submitted', (e) => {
-                        console.log('[Echo] leave.submitted received', e);
-                        incrementBadge(badgeLeave);
-                    })
-                    .listen('.official-travel.submitted', (e) => {
-                        console.log('[Echo] official-travel.submitted received', e);
-                        incrementBadge(badgeTravel);
-                    })
-                    .listen('.overtime.submitted', (e) => {
-                        console.log('[Echo] overtime.submitted received', e);
-                        incrementBadge(badgeOvertime);
-                    })
-                    .listen('.reimbursement.submitted', (e) => {
-                        console.log('[Echo] reimbursement.submitted received', e);
-                        incrementBadge(badgeReimbursement);
-                    });
-            }
-
-        });
-    </script>
-
-
-    <script>
         // Sidebar Toggle Functionality - Fixed
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const sidebar = document.getElementById('sidebar');
