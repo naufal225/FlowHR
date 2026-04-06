@@ -38,8 +38,13 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $isMobileApiRequest = static fn (Request $request): bool => $request->is('api/mobile/*');
+        $authNoCacheHeaders = static fn (): array => [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => 'Fri, 01 Jan 1990 00:00:00 GMT',
+        ];
         $isLocalDevelopment = static fn (): bool => app()->environment(['local', 'development']) && (bool) config('app.debug');
-        $debugContext = static function (Throwable $e) use ($isLocalDevelopment): array {
+        $debugContext = static function (\Throwable $e) use ($isLocalDevelopment): array {
             if (! $isLocalDevelopment()) {
                 return [];
             }
@@ -90,6 +95,29 @@ return Application::configure(basePath: dirname(__DIR__))
                 'code' => $e->getErrorCode(),
                 ...$debugContext($e),
             ], $e->getStatusCode());
+        });
+
+        $exceptions->render(function (
+            HttpExceptionInterface $e,
+            Request $request
+        ) use ($isMobileApiRequest, $authNoCacheHeaders) {
+            if ($isMobileApiRequest($request)) {
+                return null;
+            }
+
+            if ($e->getStatusCode() !== 419) {
+                return null;
+            }
+
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            return redirect()
+                ->route('login')
+                ->with('error', 'Sesi keamanan halaman sudah kedaluwarsa. Silakan login ulang.')
+                ->withHeaders($authNoCacheHeaders());
         });
 
         $exceptions->render(function (
@@ -169,7 +197,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (
-            Throwable $e,
+            \Throwable $e,
             Request $request
         ) use ($isMobileApiRequest, $debugContext, $isLocalDevelopment) {
             if (! $isMobileApiRequest($request)) {

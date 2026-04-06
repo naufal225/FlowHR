@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Mobile\Attendance\CheckOutController;
 use App\Http\Controllers\Api\Mobile\MobileAuthController;
 use App\Http\Controllers\Api\Mobile\MobileDashboardController;
 use App\Http\Controllers\Api\Mobile\MobileLeavePageController;
+use App\Http\Controllers\Api\Mobile\MobileProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,9 @@ Route::prefix('mobile')->group(function () {
     Route::middleware(['auth:sanctum', 'mobile.employee'])->group(function () {
         Route::get('/auth/me', [MobileAuthController::class, 'me']);
         Route::post('/auth/logout', [MobileAuthController::class, 'logout']);
+        Route::post('/profile', [MobileProfileController::class, 'updateProfile']);
+        Route::put('/profile', [MobileProfileController::class, 'updateProfile']);
+        Route::put('/profile/password', [MobileProfileController::class, 'updatePassword']);
         Route::get('/dashboard', MobileDashboardController::class);
         Route::get('/employee/leave', MobileLeavePageController::class);
 

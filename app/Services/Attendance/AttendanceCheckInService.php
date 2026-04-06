@@ -179,6 +179,7 @@ class AttendanceCheckInService
             context: [
                 'user_id' => $data->userId,
                 'office_location_id' => $policy->officeLocationId,
+                'reason' => 'CHECK_IN_WINDOW_CLOSED',
             ]
         );
     }

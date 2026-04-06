@@ -8,13 +8,17 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (Auth::check()) {
             return $this->redirectToDashboardOrRoleSelection();
         }
 
-        return view('auth.index');
+        $request->session()->regenerateToken();
+
+        return response()
+            ->view('auth.index')
+            ->withHeaders($this->authNoCacheHeaders());
     }
 
     public function login(Request $request)
@@ -44,7 +48,10 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()
+            ->route('login')
+            ->with('success', 'Anda telah logout. Silakan login kembali.')
+            ->withHeaders($this->authNoCacheHeaders());
     }
 
     /**
@@ -112,5 +119,19 @@ class AuthController extends Controller
             Roles::Finance->value => redirect()->route('finance.dashboard'),
             default => abort(403),
         };
+    }
+
+    /**
+     * Hindari form login lama dari cache browser yang bisa memicu mismatch CSRF.
+     *
+     * @return array<string, string>
+     */
+    private function authNoCacheHeaders(): array
+    {
+        return [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => 'Fri, 01 Jan 1990 00:00:00 GMT',
+        ];
     }
 }

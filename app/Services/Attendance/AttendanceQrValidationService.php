@@ -90,15 +90,15 @@ class AttendanceQrValidationService
 
         $policyData = $this->attendancePolicyService->getPolicyForUser($userId, $now);
 
-        $expiresAt = $this->normalizeToPolicyTimezone(Carbon::parse($qrToken->expires_at), $policyData);
+        $expiredAt = $this->normalizeToPolicyTimezone(Carbon::parse($qrToken->expired_at), $policyData);
 
-        if ($expiresAt && $expiresAt->lte($now)) {
+        if ($expiredAt && $expiredAt->lte($now)) {
             throw new ExpiredQrTokenException(
                 message: 'QR token sudah expired.',
                 context: [
                     'qr_token_id' => $qrToken->id,
                     'office_location_id' => $qrToken->office_location_id,
-                    'expires_at' => $expiresAt->toDateTimeString(),
+                    'expired_at' => $expiredAt->toDateTimeString(),
                     'token_preview' => $this->maskToken($normalizedToken),
                 ]
             );

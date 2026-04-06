@@ -25,6 +25,6 @@ class DatabaseSeeder extends Seeder
             LeaveSeeder::class,
         ]);
         $this->call(FeatureSettingsSeeder::class);
-        $this->call(AttendanceOfficeEmployeeSeeder::class);
+        // $this->call(AttendanceOfficeEmployeeSeeder::class);
     }
 }

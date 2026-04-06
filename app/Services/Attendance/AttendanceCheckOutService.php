@@ -100,6 +100,7 @@ class AttendanceCheckOutService
             context: [
                 'office_location_id' => $policy->officeLocationId,
                 'timezone' => $policy->timezone,
+                'reason' => 'CHECK_OUT_WINDOW_CLOSED',
             ]
         );
     }
@@ -212,6 +213,7 @@ class AttendanceCheckOutService
                 context: [
                     'user_id' => $data->userId,
                     'work_date' => $workDate->toDateString(),
+                    'reason' => 'ATTENDANCE_NOT_FOUND',
                 ]
             );
         }
@@ -237,6 +239,7 @@ class AttendanceCheckOutService
                     'attendance_id' => $attendance->id,
                     'user_id' => $data->userId,
                     'work_date' => $workDate->toDateString(),
+                    'reason' => 'CHECK_IN_NOT_FOUND',
                 ]
             );
         }
@@ -262,6 +265,7 @@ class AttendanceCheckOutService
                     'attendance_id' => $attendance->id,
                     'user_id' => $data->userId,
                     'work_date' => $workDate->toDateString(),
+                    'reason' => 'ALREADY_CHECKED_OUT',
                 ]
             );
         }
@@ -292,6 +296,7 @@ class AttendanceCheckOutService
                     'user_id' => $data->userId,
                     'work_date' => $workDate->toDateString(),
                     'record_status' => $attendance->record_status?->value ?? (string) $attendance->record_status,
+                    'reason' => 'INVALID_RECORD_STATUS',
                 ]
             );
         }

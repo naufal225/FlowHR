@@ -77,7 +77,9 @@ class CheckOutControllerTest extends TestCase
         $service = $this->createMock(AttendanceCheckOutService::class);
         $service->expects($this->once())
             ->method('checkOut')
-            ->willThrowException(new AttendanceNotAllowedException('Check-out ditolak.'));
+            ->willThrowException(new AttendanceNotAllowedException('Check-out ditolak.', [
+                'reason' => 'CHECK_IN_NOT_FOUND',
+            ]));
 
         $this->app->instance(AttendanceCheckOutService::class, $service);
 
@@ -95,6 +97,9 @@ class CheckOutControllerTest extends TestCase
                 'success' => false,
                 'message' => 'Check-out ditolak.',
                 'code' => 'ATTENDANCE_NOT_ALLOWED',
+                'context' => [
+                    'reason' => 'CHECK_IN_NOT_FOUND',
+                ],
             ]);
     }
 }

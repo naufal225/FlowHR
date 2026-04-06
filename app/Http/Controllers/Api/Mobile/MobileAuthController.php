@@ -9,6 +9,7 @@ use App\Exceptions\Attendance\MobileAuthNotAllowedException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mobile\LoginRequest;
 use App\Models\User;
+use App\Support\MobileUserTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -43,7 +44,7 @@ class MobileAuthController extends Controller
             'data' => [
                 'token' => $token->plainTextToken,
                 'token_type' => 'Bearer',
-                'user' => $this->transformUser($user),
+                'user' => MobileUserTransformer::transform($user),
             ],
         ]);
     }
@@ -58,7 +59,7 @@ class MobileAuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profil mobile berhasil dimuat.',
-            'data' => $this->transformUser($user),
+            'data' => MobileUserTransformer::transform($user),
         ]);
     }
 
@@ -84,23 +85,4 @@ class MobileAuthController extends Controller
         }
     }
 
-    private function transformUser(User $user): array
-    {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'mobile_scope' => Roles::Employee->value,
-            'division' => [
-                'id' => $user->division?->id,
-                'name' => $user->division?->name,
-            ],
-            'office_location' => [
-                'id' => $user->officeLocation?->id,
-                'name' => $user->officeLocation?->name,
-                'address' => $user->officeLocation?->address,
-            ],
-            'roles' => $user->roles->pluck('name')->values()->all(),
-        ];
-    }
 }
