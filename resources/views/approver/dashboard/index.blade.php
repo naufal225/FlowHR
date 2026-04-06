@@ -12,6 +12,7 @@
         'perjalanan_dinas' => \App\Models\FeatureSetting::isActive('perjalanan_dinas'),
     ];
 @endphp
+<x-dashboard.attendance-state-card :dashboardAttendanceState="$dashboardAttendanceState" />
 <!-- Stats Cards - Light Neutral Background (15%) -->
 <div class="mb-6">
     <p class="text-gray-600">Showing data for {{ now()->format('F Y') }}</p>

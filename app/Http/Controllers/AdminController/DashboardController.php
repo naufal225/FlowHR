@@ -14,7 +14,6 @@ use App\Models\Role;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -72,11 +71,16 @@ class DashboardController extends Controller
         }
 
         $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-        $usedDays = (int) Leave::where('employee_id', Auth::id())
-                ->where('status_1', 'approved')
-                ->whereYear('date_start', now()->year)
-                ->select(DB::raw('SUM(DATEDIFF(date_end, date_start) + 1) as total_days'))
-                ->value('total_days');
+        $usedDays = Leave::where('employee_id', Auth::id())
+            ->where('status_1', 'approved')
+            ->whereYear('date_start', now()->year)
+            ->get(['date_start', 'date_end'])
+            ->sum(function (Leave $leave): int {
+                $start = Carbon::parse($leave->date_start);
+                $end = Carbon::parse($leave->date_end);
+
+                return $start->diffInDays($end) + 1;
+            });
         $sisaCuti = $annual - $usedDays;
 
         $recentRequests = $this->getRecentRequests(Auth::id());

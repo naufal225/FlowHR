@@ -25,6 +25,7 @@
         + ($flags['overtime'] ? $rejectedOvertimes : 0)
         + ($flags['perjalanan_dinas'] ? $rejectedTravels : 0);
 @endphp
+<x-dashboard.attendance-state-card :dashboardAttendanceState="$dashboardAttendanceState" />
 <!-- Statistics Cards - Adjusted for mobile -->
 <div class="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-5 md:mb-8">
     <!-- Pending Approvals Card -->

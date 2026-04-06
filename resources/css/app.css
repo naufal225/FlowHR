@@ -23,6 +23,26 @@
     h3 {
         @apply text-lg font-semibold text-neutral-800;
     }
+
+    /*
+     * Global combobox style:
+     * Keep visual parity with .form-select used in super-admin reimbursements,
+     * but avoid forcing width so existing compact/inline layouts stay intact.
+     */
+    select {
+        @apply rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 shadow-sm transition-all duration-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-100;
+    }
+
+    /*
+     * Keep date/time pickers visually and vertically aligned with combo boxes.
+     * This applies to native picker inputs that do not always use .form-input.
+     */
+    input[type='date'],
+    input[type='time'],
+    input[type='datetime-local'] {
+        @apply rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 shadow-sm transition-all duration-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-neutral-100;
+        min-height: 42px;
+    }
 }
 
 @layer components {
@@ -56,6 +76,22 @@
 
     .badge-draft {
         @apply inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700;
+    }
+
+    .request-tabs {
+        @apply mb-4 inline-flex items-center gap-1 rounded-xl bg-neutral-100 p-1;
+    }
+
+    .request-tabs__button {
+        @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold text-neutral-600 transition-all duration-200;
+    }
+
+    .request-tabs__button.is-active {
+        @apply bg-white text-primary-700 shadow-sm;
+    }
+
+    .request-tabs__button:focus-visible {
+        @apply outline-none ring-2 ring-primary-200;
     }
 
     .form-input,

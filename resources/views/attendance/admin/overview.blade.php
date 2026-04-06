@@ -18,7 +18,7 @@
 
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <form method="GET" action="{{ route($routePrefix . '.attendance.index') }}" class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <form method="GET" action="{{ route($routePrefix . '.attendance.index') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
                     <select id="office_location_id" name="office_location_id"

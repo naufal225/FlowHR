@@ -169,9 +169,11 @@
         <!-- Divider -->
         <div class="mt-6 mb-10 transform scale-y-50 border-t border-gray-300/80"></div>
 
+        <x-request-tabs />
+
         <!-- Leaves You Employee Table -->
-        <p class="mb-2 text-sm text-neutral-500 ms-4">Your leave requests are listed below.</p>
-        <div class="mb-8 overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200">
+        <p class="mb-2 text-sm text-neutral-500 ms-4" data-request-tab-panel="my">Your leave requests are listed below.</p>
+        <div class="mb-8 overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200" data-request-tab-panel="my">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-neutral-200">
                     <thead class="bg-neutral-50">
@@ -306,8 +308,8 @@
         </div>
 
         <!-- Leaves All Employee Table -->
-        <p class="mb-2 text-sm text-neutral-500 ms-4">All employee leave requests are listed below.</p>
-        <div class="overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200">
+        <p class="mb-2 text-sm text-neutral-500 ms-4 hidden" data-request-tab-panel="all">All employee leave requests are listed below.</p>
+        <div class="overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200 hidden" data-request-tab-panel="all">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-neutral-200">
                     <thead class="bg-neutral-50">

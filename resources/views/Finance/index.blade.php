@@ -31,6 +31,8 @@
         </div>
     </div>
 
+    <x-dashboard.attendance-state-card :dashboardAttendanceState="$dashboardAttendanceState" />
+
     <!-- Statistics All Employee Approved Cards -->
     <p class="mb-2 text-sm text-neutral-500 ms-4">All Requests</p>
     <div class="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-5 md:mb-6">

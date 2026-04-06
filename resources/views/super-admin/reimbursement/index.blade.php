@@ -145,7 +145,8 @@
     </div>
 
     <!-- First Table: My Reimbursement Requests -->
-    <div class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-xl">
+        <x-request-tabs />
+    <div class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-xl" data-request-tab-panel="my">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900">My Reimbursement Requests</h3>
@@ -286,7 +287,7 @@
     </div>
 
     <!-- Second Table: All Users' reimbursement Requests -->
-    <div class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-xl">
+        <div class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-xl hidden" data-request-tab-panel="all">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900">All Reimbursement Requests</h3>
