@@ -1,8 +1,5 @@
 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
     <div class="space-y-2">
-        @if(!empty($eyebrow))
-            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">{{ $eyebrow }}</p>
-        @endif
         <div>
             <h1 class="text-2xl font-bold text-slate-900">{{ $title }}</h1>
             @if(!empty($subtitle))

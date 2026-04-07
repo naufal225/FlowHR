@@ -20,7 +20,6 @@
 
 <div class="space-y-6">
     @include('components.attendance.page-header', [
-        'eyebrow' => 'Employee Attendance',
         'title' => 'Attendance',
         'subtitle' => 'Today is the main operational page for your attendance status.',
         'sideMeta' => ['label' => 'Today', 'value' => $todayState['date_label']],

@@ -16,8 +16,8 @@ class HolidayDateService
      */
     public function getDateStringsForYear(int $year): array
     {
-        $from = Carbon::create($year, 1, 1, self::DEFAULT_TIMEZONE)->startOfDay();
-        $to = Carbon::create($year, 12, 31, self::DEFAULT_TIMEZONE)->startOfDay();
+        $from = Carbon::createFromDate($year, 1, 1, self::DEFAULT_TIMEZONE)->startOfDay();
+        $to = Carbon::createFromDate($year, 12, 31, self::DEFAULT_TIMEZONE)->startOfDay();
 
         return $this->getDateStrings($from, $to);
     }

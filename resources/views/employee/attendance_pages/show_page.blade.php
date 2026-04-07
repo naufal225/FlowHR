@@ -7,7 +7,6 @@
 @section('content')
 <div class="space-y-6">
     @include('components.attendance.page-header', [
-        'eyebrow' => 'Employee Attendance',
         'title' => 'Attendance Detail',
         'subtitle' => 'Review the full daily record before submitting any correction.',
         'backHref' => route('employee.attendance.history'),

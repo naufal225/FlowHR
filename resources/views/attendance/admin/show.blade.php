@@ -7,7 +7,6 @@
 @section('content')
 <div class="space-y-6">
     @include('components.attendance.page-header', [
-        'eyebrow' => strtoupper(str_replace('-', ' ', $routePrefix)) . ' Attendance',
         'title' => $headerTitle,
         'subtitle' => $headerSubtitle,
         'backHref' => route($routePrefix . '.attendance.records'),

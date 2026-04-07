@@ -7,7 +7,6 @@
 @section('content')
 <div class="space-y-6">
     @include('components.attendance.page-header', [
-        'eyebrow' => 'Employee Attendance',
         'title' => 'Attendance History',
         'subtitle' => 'Filter your attendance records, inspect suspicious states, and open record details for correction.',
     ])

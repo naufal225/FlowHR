@@ -13,7 +13,6 @@
     @endphp
 
     @include('components.attendance.page-header', [
-        'eyebrow' => strtoupper(str_replace('-', ' ', $routePrefix)) . ' Attendance',
         'title' => $headerTitle,
         'subtitle' => $headerSubtitle,
         'backHref' => route($routePrefix . '.attendance.corrections.index'),
@@ -30,7 +29,7 @@
                 <div>
                     <h2 class="text-lg font-semibold text-slate-900">{{ $correction->attendance?->user?->name ?? '-' }}</h2>
                     <p class="mt-1 text-sm text-slate-600">{{ $correction->attendance?->user?->email ?? '-' }}</p>
-                    <p class="mt-1 text-sm text-slate-500">{{ $correction->attendance?->work_date?->translatedFormat('D, d M Y') ?? '-' }} · {{ $correction->attendance?->officeLocation?->name ?? '-' }}</p>
+                    <p class="mt-1 text-sm text-slate-500">{{ $correction->attendance?->work_date?->translatedFormat('D, d M Y') ?? '-' }} - {{ $correction->attendance?->officeLocation?->name ?? '-' }}</p>
                 </div>
             </div>
             <div class="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:w-[32rem]">
