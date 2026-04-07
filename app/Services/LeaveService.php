@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Leave;
 use App\Models\User;
 use App\Models\ApprovalLink;
-use App\Models\Holiday;
 use App\Enums\Roles;
 use App\Models\Role;
 use Carbon\Carbon;
@@ -17,12 +16,13 @@ use Illuminate\Support\Str;
 
 class LeaveService
 {
+    public function __construct(
+        private readonly HolidayDateService $holidayDateService,
+    ) {}
+
     public function sisaCutiForYear(User $user, int $tahun, $excludeLeaveId = null): int
     {
-        $hariLibur = Holiday::whereYear('holiday_date', $tahun)
-            ->pluck('holiday_date')
-            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahun);
 
         $cutiList = Leave::where('employee_id', $user->id)
             ->where('status_1', 'approved')
@@ -86,10 +86,7 @@ class LeaveService
     {
         $tahunSekarang = now()->year;
 
-        $hariLibur = Holiday::whereYear('holiday_date', $tahunSekarang)
-            ->pluck('holiday_date')
-            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahunSekarang);
 
         $cutiList = Leave::where('employee_id', $user->id)
             ->where('status_1', 'approved')
@@ -116,10 +113,7 @@ class LeaveService
         $user = Auth::user();
         $tahunSekarang = now()->year;
 
-        $hariLibur = Holiday::whereYear('holiday_date', $tahunSekarang)
-            ->pluck('holiday_date')
-            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahunSekarang);
 
         $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, $hariLibur);
         $sisaCuti = $this->sisaCuti($user);
@@ -168,10 +162,7 @@ class LeaveService
         $user = Auth::user();
         $tahunSekarang = now()->year;
 
-        $hariLibur = Holiday::whereYear('holiday_date', $tahunSekarang)
-            ->pluck('holiday_date')
-            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahunSekarang);
 
         // Hitung cuti baru
         $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, $hariLibur);

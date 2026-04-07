@@ -6,7 +6,6 @@ use App\Helpers\CostSettingsHelper;
 use App\Enums\Roles;
 use App\Models\OfficialTravel;
 use App\Models\ApprovalLink;
-use App\Models\Holiday;
 use App\Models\Role;
 use App\Models\User;
 use App\Mail\SendMessage;
@@ -20,6 +19,10 @@ use Illuminate\Support\Str;
 
 class OfficialTravelService
 {
+    public function __construct(
+        private readonly HolidayDateService $holidayDateService,
+    ) {}
+
     public function store(array $data): OfficialTravel
     {
         return DB::transaction(function () use ($data) {
@@ -35,10 +38,7 @@ class OfficialTravelService
             $weekDayCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_DAY', 150000);
             $weekEndCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_END', 225000);
 
-            // Ambil semua holiday dari DB
-            $holidayDates = Holiday::pluck('holiday_date')
-                ->map(fn($d) => Carbon::parse($d)->toDateString())
-                ->toArray();
+            $holidayDates = $this->holidayDateService->getDateStrings($start, $end);
 
             $period = CarbonPeriod::create($start, $end);
 
@@ -129,9 +129,7 @@ class OfficialTravelService
         $weekDayCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_DAY', 150000);
         $weekEndCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_END', 225000);
 
-        $holidayDates = Holiday::pluck('holiday_date')
-            ->map(fn($d) => Carbon::parse($d)->toDateString())
-            ->toArray();
+        $holidayDates = $this->holidayDateService->getDateStrings($start, $end);
 
         $period = CarbonPeriod::create($start, $end);
 

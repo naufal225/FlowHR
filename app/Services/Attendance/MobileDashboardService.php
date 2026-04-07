@@ -621,8 +621,14 @@ class MobileDashboardService
     private function buildDayContext(DailyAttendanceStatusData $statusData): array
     {
         $message = match ($statusData->status) {
-            'off_day' => 'Today is a non-working day.',
-            'on_leave' => 'You are on approved leave today.',
+            'off_day' => $statusData->reason
+                ?? ($statusData->label !== null
+                    ? 'Today is marked as: ' . $statusData->label . '.'
+                    : 'Today is a non-working day.'),
+            'on_leave' => $statusData->reason
+                ?? ($statusData->label !== null
+                    ? 'Leave status: ' . $statusData->label . '.'
+                    : 'You are on approved leave today.'),
             default => $statusData->reason ?: ($statusData->label ?: 'No additional day context.'),
         };
 
@@ -685,17 +691,24 @@ class MobileDashboardService
             $alerts[] = [
                 'type' => 'info',
                 'title' => 'Off Day',
-                'message' => 'Today is marked as a non-working day.',
+                'message' => $statusData->reason
+                    ?? ($statusData->label !== null
+                        ? 'Today is marked as: ' . $statusData->label . '.'
+                        : 'Today is marked as a non-working day.'),
             ];
         }
 
         if ($statusData->status === 'on_leave') {
+            $leaveAlertMessage = $statusData->reason;
+
+            if ($leaveAlertMessage === null && $approvedLeave?->reason) {
+                $leaveAlertMessage = 'Approved leave: ' . $approvedLeave->reason;
+            }
+
             $alerts[] = [
                 'type' => 'info',
                 'title' => 'On Leave',
-                'message' => $approvedLeave?->reason
-                    ? 'Approved leave: ' . $approvedLeave->reason
-                    : 'You are covered by approved leave for today.',
+                'message' => $leaveAlertMessage ?? 'You are covered by approved leave for today.',
             ];
         }
 
@@ -754,23 +767,29 @@ class MobileDashboardService
         ?Attendance $attendance,
         ?Leave $approvedLeave,
     ): DailyAttendanceStatusData {
-        if ($date->isWeekend()) {
+        $offDayContext = $this->dailyStatusResolverService->getOffDayContext($date);
+
+        if ($offDayContext !== null) {
             return DailyAttendanceStatusData::fromArray([
                 'user_id' => $user->id,
                 'date' => $date,
                 'status' => 'off_day',
-                'label' => 'Hari libur',
-                'reason' => 'The selected date is a non-working day.',
+                'label' => $offDayContext['label'] ?? 'Hari libur',
+                'reason' => $offDayContext['reason'] ?? 'The selected date is a non-working day.',
             ]);
         }
 
         if ($approvedLeave !== null) {
+            $leaveReason = trim((string) $approvedLeave->reason);
+
             return DailyAttendanceStatusData::fromArray([
                 'user_id' => $user->id,
                 'date' => $date,
                 'status' => 'on_leave',
                 'label' => 'Sedang cuti',
-                'reason' => 'Approved leave exists for this date.',
+                'reason' => $leaveReason !== ''
+                    ? 'Approved leave: ' . $leaveReason
+                    : 'Approved leave exists for this date.',
             ]);
         }
 

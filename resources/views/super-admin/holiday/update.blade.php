@@ -1,6 +1,6 @@
 @extends('components.super-admin.layout.layout-super-admin')
 @section('header', 'Edit Holiday')
-@section('subtitle', 'Modify holiday details')
+@section('subtitle', 'Modify holiday period details')
 
 @section('content')
 <div class="max-w-3xl mx-auto">
@@ -40,7 +40,7 @@
     <div class="bg-white border rounded-xl shadow-soft border-neutral-200">
         <div class="px-6 py-4 border-b border-neutral-200">
             <h2 class="text-lg font-bold text-neutral-900">Edit Holiday: {{ $holiday->name }}</h2>
-            <p class="text-sm text-neutral-600">Update the holiday information</p>
+            <p class="text-sm text-neutral-600">Update the holiday period information</p>
         </div>
 
         @if ($errors->any())
@@ -66,13 +66,25 @@
                     placeholder="e.g., New Year's Day" required>
             </div>
 
-            <div>
-                <label for="holiday_date" class="block mb-2 text-sm font-semibold text-neutral-700">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                <label for="start_from" class="block mb-2 text-sm font-semibold text-neutral-700">
                     <i class="mr-2 fas fa-calendar-alt text-primary-600"></i>
-                    Holiday Date
+                    Start From
                 </label>
-                <input type="date" id="holiday_date" name="holiday_date" class="form-input"
-                    value="{{ old('holiday_date', $holiday->holiday_date->format('Y-m-d')) }}" required>
+                <input type="date" id="start_from" name="start_from" class="form-input"
+                    value="{{ old('start_from', optional($holiday->start_from)->format('Y-m-d')) }}" required>
+                </div>
+
+                <div>
+                <label for="end_at" class="block mb-2 text-sm font-semibold text-neutral-700">
+                    <i class="mr-2 fas fa-calendar-check text-primary-600"></i>
+                    End Date (Optional)
+                </label>
+                <input type="date" id="end_at" name="end_at" class="form-input"
+                    value="{{ old('end_at', optional($holiday->end_at ?? $holiday->start_from)->format('Y-m-d')) }}">
+                <p class="mt-2 text-xs text-neutral-500">Leave same as start date for a single-day holiday.</p>
+                </div>
             </div>
 
             <div class="flex justify-end pt-6 space-x-4 border-t border-neutral-200">

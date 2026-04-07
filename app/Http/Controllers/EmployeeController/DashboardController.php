@@ -15,9 +15,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\User;
+use App\Services\HolidayDateService;
+use App\Services\LeaveService;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private HolidayDateService $holidayDateService,
+        private LeaveService $leaveService,
+    ) {}
+
     public function index()
     {
         $user = Auth::user();
@@ -103,43 +110,12 @@ class DashboardController extends Controller
 
         // Ambil daftar libur dari tabel holidays
         $holidays = $featureActive['cuti']
-            ? \App\Models\Holiday::whereYear('holiday_date', $tahunSekarang)
-                ->pluck('holiday_date')
-                ->map(fn($d) => \Carbon\Carbon::parse($d)->toDateString())
-                ->toArray()
+            ? $this->holidayDateService->getDateStringsForYear($tahunSekarang)
             : [];
 
-        $sisaCuti = 0;
-        if ($featureActive['cuti'] && $queryClone) {
-            $totalHariCuti = $queryClone
-                ->where('status_1', 'approved')
-                ->where(function ($q) use ($tahunSekarang) {
-                    $q->whereYear('date_start', $tahunSekarang)
-                        ->orWhereYear('date_end', $tahunSekarang);
-                })
-                ->get()
-                ->sum(function ($cuti) use ($tahunSekarang, $holidays) {
-                    $start = \Carbon\Carbon::parse($cuti->date_start);
-                    $end = \Carbon\Carbon::parse($cuti->date_end);
-
-                    if ($start->year < $tahunSekarang) {
-                        $start = \Carbon\Carbon::create($tahunSekarang, 1, 1);
-                    }
-                    if ($end->year > $tahunSekarang) {
-                        $end = \Carbon\Carbon::create($tahunSekarang, 12, 31);
-                    }
-
-                    return $start->lte($end)
-                        ? collect(\Carbon\CarbonPeriod::create($start, $end))->filter(function ($date) use ($holidays) {
-                            return !$date->isWeekend() && !in_array($date->toDateString(), $holidays);
-                        })->count()
-                        : 0;
-
-                });
-
-            $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-            $sisaCuti = $annual - $totalHariCuti;
-        }
+        $sisaCuti = $featureActive['cuti']
+            ? $this->leaveService->sisaCuti($user)
+            : 0;
 
         // Data cuti semua karyawan untuk kalender
         $cutiPerTanggal = [];

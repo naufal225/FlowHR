@@ -1,6 +1,6 @@
 @extends('components.super-admin.layout.layout-super-admin')
 @section('header', 'Create Holiday')
-@section('subtitle', 'Add a new holiday date')
+@section('subtitle', 'Add a new holiday period')
 
 @section('content')
 <div class="max-w-3xl mx-auto">
@@ -33,7 +33,7 @@
     <div class="bg-white border rounded-xl shadow-soft border-neutral-200">
         <div class="px-6 py-4 border-b border-neutral-200">
             <h2 class="text-lg font-bold text-neutral-900">Add New Holiday</h2>
-            <p class="text-sm text-neutral-600">Fill in the details for the new holiday</p>
+            <p class="text-sm text-neutral-600">Fill in the details for the new holiday period</p>
         </div>
 
         @if ($errors->any())
@@ -58,13 +58,25 @@
                     placeholder="e.g., New Year's Day" required>
             </div>
 
-            <div>
-                <label for="holiday_date" class="block mb-2 text-sm font-semibold text-neutral-700">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                <label for="start_from" class="block mb-2 text-sm font-semibold text-neutral-700">
                     <i class="mr-2 fas fa-calendar-alt text-primary-600"></i>
-                    Holiday Date
+                    Start From
                 </label>
-                <input type="date" id="holiday_date" name="holiday_date" class="form-input"
-                    value="{{ old('holiday_date') }}" required min="{{ date('Y-m-d') }}">
+                <input type="date" id="start_from" name="start_from" class="form-input"
+                    value="{{ old('start_from') }}" required>
+                </div>
+
+                <div>
+                <label for="end_at" class="block mb-2 text-sm font-semibold text-neutral-700">
+                    <i class="mr-2 fas fa-calendar-check text-primary-600"></i>
+                    End Date (Optional)
+                </label>
+                <input type="date" id="end_at" name="end_at" class="form-input"
+                    value="{{ old('end_at') }}" min="{{ old('start_from', date('Y-m-d')) }}">
+                <p class="mt-2 text-xs text-neutral-500">Leave empty for a single-day holiday.</p>
+                </div>
             </div>
 
             <div class="flex justify-end pt-6 space-x-4 border-t border-neutral-200">

@@ -14,9 +14,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\User;
+use App\Services\HolidayDateService;
+use App\Services\LeaveService;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private HolidayDateService $holidayDateService,
+        private LeaveService $leaveService,
+    ) {}
+
     public function index()
     {
         // Hanya user dengan role Finance yang boleh masuk
@@ -36,9 +43,9 @@ class DashboardController extends Controller
             'perjalanan_dinas' => FeatureSetting::isActive('perjalanan_dinas'),
         ];
 
-        $holidays = \App\Models\Holiday::pluck('holiday_date')
-            ->map(fn($d) => Carbon::parse($d)->toDateString())
-            ->toArray();
+        $holidays = $featureActive['cuti']
+            ? $this->holidayDateService->getDateStringsForYear($thisYear)
+            : [];
 
         // =========================
         // DATA PRIBADI FINANCE (YOURS)
@@ -203,38 +210,9 @@ class DashboardController extends Controller
         // =========================
         // TOTAL CUTI & SISA CUTI USER FINANCE
         // =========================
-        $sisaCuti = 0;
-        if ($featureActive['cuti']) {
-            $totalHariCuti = Leave::where('employee_id', $userId)
-                ->where('status_1', 'approved')
-                ->where(function ($q) use ($thisYear) {
-                    $q->whereYear('date_start', $thisYear)
-                        ->orWhereYear('date_end', $thisYear);
-                })
-                ->get()
-                ->sum(function ($cuti) use ($thisYear, $holidays) {
-                    $start = \Carbon\Carbon::parse($cuti->date_start);
-                    $end = \Carbon\Carbon::parse($cuti->date_end);
-
-                    if ($start->year < $thisYear)
-                        $start = \Carbon\Carbon::create($thisYear, 1, 1);
-                    if ($end->year > $thisYear)
-                        $end = \Carbon\Carbon::create($thisYear, 12, 31);
-
-                    if ($start->lte($end)) {
-                        $period = \Carbon\CarbonPeriod::create($start, $end);
-                        return collect($period)->filter(
-                            fn($d) =>
-                            !$d->isWeekend() &&
-                            !in_array($d->toDateString(), $holidays)
-                        )->count();
-                    }
-                    return 0;
-                });
-
-            $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-            $sisaCuti = $annual - $totalHariCuti;
-        }
+        $sisaCuti = $featureActive['cuti']
+            ? $this->leaveService->sisaCuti($user)
+            : 0;
         $recentRequests = $this->getRecentRequests();
 
         // =========================

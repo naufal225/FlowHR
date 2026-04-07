@@ -149,10 +149,7 @@
                 <div class="box">
                     @php
                     $tahunSekarang = now()->year;
-                    $hariLibur = \App\Models\Holiday::whereYear('holiday_date', $tahunSekarang)
-                    ->pluck('holiday_date')
-                    ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-                    ->toArray();
+                    $hariLibur = app(\App\Services\HolidayDateService::class)->getDateStringsForYear($tahunSekarang);
 
                     $start = \Carbon\Carbon::parse($leave->date_start);
                     $end = \Carbon\Carbon::parse($leave->date_end);

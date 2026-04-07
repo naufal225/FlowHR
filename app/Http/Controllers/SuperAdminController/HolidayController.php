@@ -15,17 +15,28 @@ class HolidayController extends Controller
      */
     public function index(Request $request)
     {
-        $holidays = Holiday::orderBy('holiday_date', 'desc')->paginate(10);
+        $query = Holiday::query()
+            ->orderByDesc('start_from');
 
         if ($request->filled('from_date')) {
-            $fromDate = Carbon::parse($request->from_date)->startOfDay()->timezone('Asia/Jakarta');
-            $holidays->where('holiday_date', '>=', $fromDate);
+            $fromDate = Carbon::parse($request->from_date)->toDateString();
+            $query->where(function ($builder) use ($fromDate): void {
+                $builder
+                    ->whereDate('end_at', '>=', $fromDate)
+                    ->orWhere(function ($subQuery) use ($fromDate): void {
+                        $subQuery
+                            ->whereNull('end_at')
+                            ->whereDate('start_from', '>=', $fromDate);
+                    });
+            });
         }
 
         if ($request->filled('to_date')) {
-            $toDate = Carbon::parse($request->to_date)->endOfDay()->timezone('Asia/Jakarta');
-            $holidays->where('holiday_date', '<=', $toDate);
+            $toDate = Carbon::parse($request->to_date)->toDateString();
+            $query->whereDate('start_from', '<=', $toDate);
         }
+
+        $holidays = $query->paginate(10)->withQueryString();
 
         return view('super-admin.holiday.index', compact('holidays'));
     }
@@ -45,7 +56,8 @@ class HolidayController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'holiday_date' => 'required|date|unique:holidays,holiday_date',
+            'start_from' => 'required|date|unique:holidays,start_from',
+            'end_at' => 'nullable|date|after_or_equal:start_from',
         ]);
 
         if ($validator->fails()) {
@@ -54,7 +66,7 @@ class HolidayController extends Controller
                 ->withInput();
         }
 
-        Holiday::create($request->all());
+        Holiday::create($validator->validated());
 
         return redirect()->route('super-admin.holidays.index')
             ->with('success', 'Holiday created successfully.');
@@ -83,7 +95,8 @@ class HolidayController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'holiday_date' => 'required|date|unique:holidays,holiday_date,' . $holiday->id,
+            'start_from' => 'required|date|unique:holidays,start_from,' . $holiday->id,
+            'end_at' => 'nullable|date|after_or_equal:start_from',
         ]);
 
         if ($validator->fails()) {
@@ -92,7 +105,7 @@ class HolidayController extends Controller
                 ->withInput();
         }
 
-        $holiday->update($request->all());
+        $holiday->update($validator->validated());
 
         return redirect()->route('super-admin.holidays.index')
             ->with('success', 'Holiday updated successfully.');

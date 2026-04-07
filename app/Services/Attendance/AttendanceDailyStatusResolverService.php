@@ -6,8 +6,10 @@ namespace App\Services\Attendance;
 
 use App\Data\Attendance\DailyAttendanceStatusData;
 use App\Models\Attendance;
+use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\User;
+use App\Services\HolidayDateService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -18,14 +20,17 @@ class AttendanceDailyStatusResolverService
 
     public function __construct(
         private AttendancePolicyService $attendancePolicyService,
+        private HolidayDateService $holidayDateService,
     ) {}
 
     public function resolveForUser(User $user, Carbon $date): DailyAttendanceStatusData
     {
         $date = $this->normalizeDate($date);
 
-        if ($this->isOffDay($date)) {
-            return $this->buildOffDayStatus($user, $date);
+        $offDayContext = $this->getOffDayContext($date);
+
+        if ($offDayContext !== null) {
+            return $this->buildOffDayStatus($user, $date, $offDayContext);
         }
 
         $attendance = $this->findAttendanceForDate($user->id, $date);
@@ -62,21 +67,43 @@ class AttendanceDailyStatusResolverService
             ->startOfDay();
     }
 
-    private function isOffDay(Carbon $date): bool
+    public function getOffDayContext(Carbon $date): ?array
     {
-        // Scope awal: weekend = off day.
-        // Nanti bisa di-upgrade dengan holiday table / calendar kerja kantor.
-        return $date->isWeekend();
+        $date = $this->normalizeDate($date);
+
+        $holiday = $this->findHolidayForDate($date);
+
+        if ($holiday !== null) {
+            $holidayName = trim((string) $holiday->name);
+
+            return [
+                'type' => 'holiday',
+                'label' => $holidayName !== '' ? $holidayName : 'Hari libur nasional',
+                'reason' => $holidayName !== ''
+                    ? 'Today is a holiday: ' . $holidayName . '.'
+                    : 'Today is a holiday.',
+            ];
+        }
+
+        if ($date->isWeekend()) {
+            return [
+                'type' => 'weekend',
+                'label' => 'Hari libur akhir pekan',
+                'reason' => 'The selected date falls on a weekend.',
+            ];
+        }
+
+        return null;
     }
 
-    private function buildOffDayStatus(User $user, Carbon $date): DailyAttendanceStatusData
+    private function buildOffDayStatus(User $user, Carbon $date, array $offDayContext): DailyAttendanceStatusData
     {
         return DailyAttendanceStatusData::fromArray([
             'user_id' => $user->id,
             'date' => $date,
             'status' => 'off_day',
-            'label' => 'Hari libur',
-            'reason' => 'The selected date is a non-working day.',
+            'label' => $offDayContext['label'] ?? 'Hari libur',
+            'reason' => $offDayContext['reason'] ?? 'The selected date is a non-working day.',
         ]);
     }
 
@@ -96,6 +123,11 @@ class AttendanceDailyStatusResolverService
             ->whereDate('date_start', '<=', $date->toDateString())
             ->whereDate('date_end', '>=', $date->toDateString())
             ->first();
+    }
+
+    private function findHolidayForDate(Carbon $date): ?Holiday
+    {
+        return $this->holidayDateService->findHolidayForDate($date);
     }
 
     private function resolveFromAttendance(
@@ -187,12 +219,16 @@ class AttendanceDailyStatusResolverService
         ?Leave $leave = null,
     ): DailyAttendanceStatusData {
         if ($leave !== null) {
+            $leaveReason = trim((string) $leave->reason);
+
             return DailyAttendanceStatusData::fromArray([
                 'user_id' => $user->id,
                 'date' => $date,
                 'status' => 'on_leave',
                 'label' => 'Sedang cuti',
-                'reason' => 'Approved leave exists for this date.',
+                'reason' => $leaveReason !== ''
+                    ? 'Approved leave: ' . $leaveReason
+                    : 'Approved leave exists for this date.',
             ]);
         }
 

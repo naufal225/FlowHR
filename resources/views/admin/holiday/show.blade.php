@@ -35,6 +35,10 @@
             <h2 class="text-lg font-bold text-neutral-900">Holiday Details</h2>
         </div>
         <div class="p-6">
+            @php
+            $startDate = $holiday->start_from;
+            $endDate = $holiday->end_at ?? $startDate;
+            @endphp
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div class="space-y-2">
                     <label class="text-sm font-semibold text-neutral-700">Holiday Name</label>
@@ -45,11 +49,21 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label class="text-sm font-semibold text-neutral-700">Holiday Date</label>
+                    <label class="text-sm font-semibold text-neutral-700">Start From</label>
                     <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
                         <i class="mr-3 fas fa-calendar-alt text-primary-600"></i>
                         <span class="font-medium text-neutral-900">
-                            {{ $holiday->holiday_date->format('l, M d, Y') }}
+                            {{ optional($startDate)->format('l, M d, Y') }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-neutral-700">End Date</label>
+                    <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                        <i class="mr-3 fas fa-calendar-check text-primary-600"></i>
+                        <span class="font-medium text-neutral-900">
+                            {{ optional($endDate)->format('l, M d, Y') }}
                         </span>
                     </div>
                 </div>

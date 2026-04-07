@@ -13,6 +13,7 @@ use App\Models\Leave;
 use App\Models\User;
 use App\Models\Division;
 use App\Models\Role;
+use App\Services\HolidayDateService;
 use App\Services\LeaveService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -25,7 +26,10 @@ use Illuminate\Support\Str;
 
 class LeaveController extends Controller
 {
-    public function __construct(private LeaveService $leaveService)
+    public function __construct(
+        private LeaveService $leaveService,
+        private HolidayDateService $holidayDateService,
+    )
     {
     }
     public function index(Request $request)
@@ -99,31 +103,7 @@ class LeaveController extends Controller
         $approvedYoursRequests = $countsYours ? (int) $countsYours->approved : 0;
         $rejectedYoursRequests = $countsYours ? (int) $countsYours->rejected : 0;
 
-        // Hitung total cuti
-        $tahunSekarang = now()->year;
-
-        // Ambil hari libur dari tabel holidays
-        $hariLibur = \App\Models\Holiday::whereYear('holiday_date', $tahunSekarang)
-            ->pluck('holiday_date')
-            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
-
-        $totalHariCuti = Leave::where('employee_id', Auth::id())
-            ->where('status_1', 'approved')
-            ->where(function ($q) use ($tahunSekarang) {
-                $q->whereYear('date_start', $tahunSekarang)
-                    ->orWhereYear('date_end', $tahunSekarang);
-            })
-            ->get()
-            ->sum(function ($cuti) use ($tahunSekarang, $hariLibur) {
-                $start = Carbon::parse($cuti->date_start);
-                $end = Carbon::parse($cuti->date_end);
-
-                return $this->hitungHariCuti($start, $end, $tahunSekarang, $hariLibur);
-            });
-
-        $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-        $sisaCuti = $annual - $totalHariCuti;
+        $sisaCuti = $this->leaveService->sisaCuti(Auth::user());
 
         $managerRole = Role::where('name', 'manager')->first();
 
@@ -150,65 +130,8 @@ class LeaveController extends Controller
      */
     public function create()
     {
-        $tahunSekarang = now()->year;
-
-        // Ambil daftar hari libur dalam tahun ini
-        $hariLibur = \App\Models\Holiday::whereYear('holiday_date', $tahunSekarang)
-            ->pluck('holiday_date')
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
-
-        $holidays = \App\Models\Holiday::pluck('holiday_date')
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
-
-
-        // Hitung total cuti yang sudah diambil
-        $totalHariCuti = (int) Leave::where('employee_id', Auth::id())
-            ->with(['employee', 'approver1'])
-            ->orderBy('created_at', 'desc')
-            ->where('status_1', 'approved')
-            ->where(function ($q) use ($tahunSekarang) {
-                $q->whereYear('date_start', $tahunSekarang)
-                    ->orWhereYear('date_end', $tahunSekarang);
-            })
-            ->get()
-            ->sum(function ($cuti) use ($tahunSekarang, $hariLibur) {
-                $start = \Carbon\Carbon::parse($cuti->date_start);
-                $end = \Carbon\Carbon::parse($cuti->date_end);
-
-                // Batasi tanggal ke dalam tahun berjalan
-                if ($start->year < $tahunSekarang) {
-                    $start = \Carbon\Carbon::create($tahunSekarang, 1, 1);
-                }
-                if ($end->year > $tahunSekarang) {
-                    $end = \Carbon\Carbon::create($tahunSekarang, 12, 31);
-                }
-
-                $hariCuti = 0;
-
-                while ($start->lte($end)) {
-                    // Skip kalau Sabtu/Minggu
-                    if ($start->isWeekend()) {
-                        $start->addDay();
-                        continue;
-                    }
-
-                    // Skip kalau hari libur
-                    if (in_array($start->format('Y-m-d'), $hariLibur)) {
-                        $start->addDay();
-                        continue;
-                    }
-
-                    $hariCuti++;
-                    $start->addDay();
-                }
-
-                return $hariCuti;
-            });
-
-        $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-        $sisaCuti = $annual - $totalHariCuti;
+        $holidays = $this->holidayDateService->getDateStringsForForm();
+        $sisaCuti = $this->leaveService->sisaCuti(Auth::user());
 
         if ($sisaCuti <= 0) {
             abort(422, 'Sisa cuti tidak cukup.');
@@ -237,46 +160,12 @@ class LeaveController extends Controller
             'reason.max' => 'Alasan tidak boleh lebih dari 1000 karakter.',
         ]);
 
-        $tahunSekarang = now()->year;
-
-        // Ambil semua hari libur di tahun ini
-        $hariLibur = \App\Models\Holiday::whereYear('holiday_date', $tahunSekarang)
-            ->pluck('holiday_date')
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
-
-        // Hitung cuti yang sudah terpakai
-        $totalHariCuti = (int) Leave::where('employee_id', Auth::id())
-            ->where('status_1', 'approved')
-            ->where(function ($q) use ($tahunSekarang) {
-                $q->whereYear('date_start', $tahunSekarang)
-                    ->orWhereYear('date_end', $tahunSekarang);
-            })
-            ->get()
-            ->sum(function ($cuti) use ($tahunSekarang, $hariLibur) {
-                $start = \Carbon\Carbon::parse($cuti->date_start);
-                $end = \Carbon\Carbon::parse($cuti->date_end);
-                return $this->hitungHariCuti($start, $end, $tahunSekarang, $hariLibur);
-            });
-
-        // Hitung cuti yang sedang diajukan
-        $startBaru = \Carbon\Carbon::parse($request->date_start);
-        $endBaru = \Carbon\Carbon::parse($request->date_end);
-        $hariCutiBaru = $this->hitungHariCuti($startBaru, $endBaru, $tahunSekarang, $hariLibur);
-
-        $jatahTahunan = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-        $sisaCuti = $jatahTahunan - $totalHariCuti;
-
-        if ($hariCutiBaru > $sisaCuti) {
-            return back()->with('error', "Sisa cuti hanya {$sisaCuti} hari, tidak bisa ajukan {$hariCutiBaru} hari.");
-        }
-
         try {
-            $this->leaveService->store([
-                'date_start' => $request->date_start,
-                'date_end' => $request->date_end,
-                'reason' => $request->reason,
-            ]);
+            $this->leaveService->store($request->only([
+                'date_start',
+                'date_end',
+                'reason',
+            ]));
         } catch (Exception $e) {
             return back()
                 ->withInput()
@@ -285,41 +174,6 @@ class LeaveController extends Controller
 
         return redirect()->route('finance.leaves.index')
             ->with('success', 'Leave request submitted successfully.');
-    }
-
-    /**
-     * Count leave days excluding weekends and holidays.
-     */
-    public function hitungHariCuti($start, $end, $tahunSekarang, $hariLibur)
-    {
-        // clone supaya tidak merusak object asli
-        $start = $start->copy();
-        $end = $end->copy();
-
-        if ($start->year < $tahunSekarang) {
-            $start = \Carbon\Carbon::create($tahunSekarang, 1, 1);
-        }
-        if ($end->year > $tahunSekarang) {
-            $end = \Carbon\Carbon::create($tahunSekarang, 12, 31);
-        }
-
-        $hariCuti = 0;
-        while ($start->lte($end)) {
-            if ($start->isWeekend()) {
-                $start->addDay();
-                continue;
-            }
-
-            if (in_array($start->format('Y-m-d'), $hariLibur)) {
-                $start->addDay();
-                continue;
-            }
-
-            $hariCuti++;
-            $start->addDay();
-        }
-
-        return $hariCuti;
     }
 
     /**
@@ -414,9 +268,7 @@ class LeaveController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $holidays = \App\Models\Holiday::pluck('holiday_date')
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+        $holidays = $this->holidayDateService->getDateStringsForForm();
 
         // Only allow editing if the leave is still pending
         if ($leave->status_1 !== 'pending') {

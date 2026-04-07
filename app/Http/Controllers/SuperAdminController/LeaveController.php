@@ -11,6 +11,7 @@ use App\Models\Leave;
 use App\Models\User;
 use App\Enums\Roles;
 use App\Models\Role;
+use App\Services\HolidayDateService;
 use App\Services\LeaveApprovalService;
 use App\Services\LeaveService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,7 +27,11 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class LeaveController extends Controller
 {
-    public function __construct(private LeaveService $leaveService, private LeaveApprovalService $leaveApprovalService)
+    public function __construct(
+        private LeaveService $leaveService,
+        private LeaveApprovalService $leaveApprovalService,
+        private HolidayDateService $holidayDateService,
+    )
     {
     }
 
@@ -120,9 +125,7 @@ class LeaveController extends Controller
     {
         $sisaCuti = $this->leaveService->sisaCuti(Auth::user());
 
-        $holidays = \App\Models\Holiday::pluck('holiday_date')
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+        $holidays = $this->holidayDateService->getDateStringsForForm();
 
         if ($sisaCuti <= 0) {
             abort(422, 'Sisa cuti tidak cukup.');
@@ -151,9 +154,7 @@ class LeaveController extends Controller
 
         $sisaCuti = $this->leaveService->sisaCuti(Auth::user());
 
-        $holidays = \App\Models\Holiday::pluck('holiday_date')
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
+        $holidays = $this->holidayDateService->getDateStringsForForm();
 
         // Only allow editing if the leave is still pending
         if ($leave->status_1 !== 'pending') {

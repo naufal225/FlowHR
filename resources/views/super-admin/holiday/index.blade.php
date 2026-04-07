@@ -65,7 +65,7 @@
                 <thead class="bg-neutral-50">
                     <tr>
                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
-                            Date</th>
+                            Date Range</th>
                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
                             Holiday Name</th>
                         <th class="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-neutral-500">
@@ -76,13 +76,21 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-neutral-200">
                     @forelse($holidays as $holiday)
+                    @php
+                    $startDate = $holiday->start_from;
+                    $endDate = $holiday->end_at ?? $startDate;
+                    $totalDays = $startDate && $endDate ? \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate)) + 1 : 1;
+                    @endphp
                     <tr class="transition-colors duration-200 hover:bg-neutral-50">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-neutral-900">
-                                {{ \Carbon\Carbon::parse($holiday->holiday_date)->format('M d, Y') }}
+                                {{ optional($startDate)->format('M d, Y') }}
+                                @if(optional($endDate)->toDateString() !== optional($startDate)->toDateString())
+                                - {{ optional($endDate)->format('M d, Y') }}
+                                @endif
                             </div>
                             <div class="text-sm text-neutral-500">
-                                {{ \Carbon\Carbon::parse($holiday->holiday_date)->format('l') }}
+                                {{ $totalDays }} {{ $totalDays > 1 ? 'days' : 'day' }}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

@@ -22,9 +22,14 @@ use Illuminate\Support\Facades\DB;
 use ZipArchive;
 use Illuminate\Support\Str;
 use Exception;
+use App\Services\HolidayDateService;
 
 class OfficialTravelController extends Controller
 {
+    public function __construct(
+        private HolidayDateService $holidayDateService,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -241,8 +246,7 @@ class OfficialTravelController extends Controller
         $weekDayCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_DAY', 150000);
         $weekEndCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_END', 225000);
 
-        // Ambil semua holiday dari DB
-        $holidayDates = \App\Models\Holiday::pluck('holiday_date')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
+        $holidayDates = $this->holidayDateService->getDateStrings($start, $end);
 
         $period = CarbonPeriod::create($start, $end);
 
@@ -490,8 +494,7 @@ class OfficialTravelController extends Controller
         $weekDayCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_DAY', 150000);
         $weekEndCost = (int) CostSettingsHelper::get('TRAVEL_COSTS_WEEK_END', 225000);
 
-        // Ambil semua holiday dari DB
-        $holidayDates = \App\Models\Holiday::pluck('holiday_date')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
+        $holidayDates = $this->holidayDateService->getDateStrings($start, $end);
 
         $period = CarbonPeriod::create($start, $end);
 
