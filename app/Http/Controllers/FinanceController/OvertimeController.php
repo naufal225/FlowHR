@@ -276,12 +276,20 @@ class OvertimeController extends Controller
 
             $overtime->total = $totalOvertime;
 
-            // Cek apakah user adalah leader division
-            $isLeader = \App\Models\Division::where('leader_id', Auth::id())->exists();
+            $submitter = Auth::user();
+            $isTeamLeader = $submitter->userHasRole('team-leader');
+            $isManager = $submitter->userHasRole('manager');
 
-            if ($isLeader) {
+            if ($isManager) {
+                $overtime->status_1 = 'approved';
+                $overtime->status_2 = 'approved';
+                $overtime->approver_1_id = $submitter->id;
+                $overtime->approver_2_id = $submitter->id;
+                $overtime->approved_date = now();
+            } elseif ($isTeamLeader) {
                 $overtime->status_1 = 'approved';
                 $overtime->status_2 = 'pending';
+                $overtime->approver_1_id = $submitter->id;
             } else {
                 $overtime->status_1 = 'pending';
                 $overtime->status_2 = 'pending';
@@ -291,7 +299,9 @@ class OvertimeController extends Controller
 
             $token = null;
 
-            if ($isLeader) {
+            if ($isManager) {
+                return;
+            } elseif ($isTeamLeader) {
                 // --- Jika leader, langsung kirim ke Manager (level 2)
                 $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
 
@@ -310,16 +320,11 @@ class OvertimeController extends Controller
 
                 DB::afterCommit(function () use ($overtime, $token) {
                     $fresh = $overtime->fresh();
-                    $emp = $fresh->employee;
-                    $isLeader = $emp && \App\Models\Division::where('leader_id', $emp->id)->exists();
-                    $isApprover = $emp && $emp->roles()->where('name', \App\Enums\Roles::Approver->value)->exists();
-                    if ($isLeader || $isApprover) {
-                        event(new \App\Events\OvertimeLevelAdvanced(
-                            $fresh,
-                            $emp->division_id ?? (Auth::user()->division_id ?? 0),
-                            'manager'
-                        ));
-                    }
+                    event(new \App\Events\OvertimeLevelAdvanced(
+                        $fresh,
+                        $fresh?->employee?->division_id ?? (Auth::user()->division_id ?? 0),
+                        'manager'
+                    ));
 
                     if (!$fresh || !$token) {
                         return;
@@ -401,9 +406,9 @@ class OvertimeController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
-        if (($isLeader && $overtime->status_2 !== 'pending') || (!$isLeader && $overtime->status_1 !== 'pending' || $overtime->status_2 !== 'pending')) {
+        if (($isTeamLeader && $overtime->status_2 !== 'pending') || (!$isTeamLeader && $overtime->status_1 !== 'pending' || $overtime->status_2 !== 'pending')) {
             return redirect()->route('finance.overtimes.show', $overtime->id)
                 ->with('error', 'You cannot edit an overtime request that has already been processed.');
         }
@@ -425,9 +430,9 @@ class OvertimeController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
-        if (($isLeader && $overtime->status_2 !== 'pending') || (!$isLeader && $overtime->status_1 !== 'pending' || $overtime->status_2 !== 'pending')) {
+        if (($isTeamLeader && $overtime->status_2 !== 'pending') || (!$isTeamLeader && $overtime->status_1 !== 'pending' || $overtime->status_2 !== 'pending')) {
             return redirect()->route('finance.overtimes.show', $overtime->id)
                 ->with('error', 'You cannot update an overtime request that has already been processed.');
         }
@@ -479,12 +484,28 @@ class OvertimeController extends Controller
 
         // Reset status dan catatan
 
-        if ($isLeader) {
+        $submitter = Auth::user();
+        $isTeamLeader = $submitter->userHasRole('team-leader');
+        $isManager = $submitter->userHasRole('manager');
+
+        if ($isManager) {
+            $overtime->status_1 = 'approved';
+            $overtime->status_2 = 'approved';
+            $overtime->approver_1_id = $submitter->id;
+            $overtime->approver_2_id = $submitter->id;
+            $overtime->approved_date = now();
+        } elseif ($isTeamLeader) {
             $overtime->status_1 = 'approved';
             $overtime->status_2 = 'pending';
+            $overtime->approver_1_id = $submitter->id;
+            $overtime->approver_2_id = null;
+            $overtime->approved_date = null;
         } else {
             $overtime->status_1 = 'pending';
             $overtime->status_2 = 'pending';
+            $overtime->approver_1_id = null;
+            $overtime->approver_2_id = null;
+            $overtime->approved_date = null;
         }
 
         $overtime->note_1 = NULL;
@@ -493,7 +514,10 @@ class OvertimeController extends Controller
 
         $token = null;
 
-        if ($isLeader) {
+        if ($isManager) {
+            return redirect()->route('finance.overtimes.index')
+                ->with('success', 'Overtime request updated successfully. Total overtime: ' . $overtimeHours . ' hours ' . $overtimeMinutes . ' minutes');
+        } elseif ($isTeamLeader) {
             // --- Jika leader, langsung kirim ke Manager (level 2)
             $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
 
@@ -512,16 +536,11 @@ class OvertimeController extends Controller
 
             DB::afterCommit(function () use ($overtime, $token) {
                 $fresh = $overtime->fresh();
-                $emp = $fresh->employee;
-                $isLeader = $emp && \App\Models\Division::where('leader_id', $emp->id)->exists();
-                $isApprover = $emp && $emp->roles()->where('name', \App\Enums\Roles::Approver->value)->exists();
-                if ($isLeader || $isApprover) {
-                    event(new \App\Events\OvertimeLevelAdvanced(
-                        $fresh,
-                        $emp->division_id ?? (Auth::user()->division_id ?? 0),
-                        'manager'
-                    ));
-                }
+                event(new \App\Events\OvertimeLevelAdvanced(
+                    $fresh,
+                    $fresh?->employee?->division_id ?? (Auth::user()->division_id ?? 0),
+                    'manager'
+                ));
 
                 if (!$fresh || !$token) {
                     return;
@@ -693,9 +712,9 @@ class OvertimeController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
-        if (($isLeader && $overtime->status_2 !== 'pending') || (!$isLeader && $overtime->status_1 !== 'pending')) {
+        if (($isTeamLeader && $overtime->status_2 !== 'pending') || (!$isTeamLeader && $overtime->status_1 !== 'pending')) {
             return redirect()->route('finance.overtimes.show', $overtime->id)
                 ->with('error', 'You cannot delete an overtime request that has already been processed.');
         }

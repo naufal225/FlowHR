@@ -250,15 +250,21 @@ class ReimbursementController extends Controller
             $reimbursement->total = $request->total;
             $reimbursement->date = $request->date;
 
-            // Cek apakah user adalah leader division
-            $isLeader = \App\Models\Division::where('leader_id', Auth::id())->exists();
+            $submitter = Auth::user();
+            $isTeamLeader = $submitter->userHasRole('team-leader');
+            $isManager = $submitter->userHasRole('manager');
 
-            if ($isLeader) {
-                // Kalau leader submit → status_1 auto approved
+            if ($isManager) {
+                $reimbursement->status_1 = 'approved';
+                $reimbursement->status_2 = 'approved';
+                $reimbursement->approver_1_id = $submitter->id;
+                $reimbursement->approver_2_id = $submitter->id;
+                $reimbursement->approved_date = now();
+            } elseif ($isTeamLeader) {
                 $reimbursement->status_1 = 'approved';
                 $reimbursement->status_2 = 'pending';
+                $reimbursement->approver_1_id = $submitter->id;
             } else {
-                // Kalau bukan leader → jalur normal
                 $reimbursement->status_1 = 'pending';
                 $reimbursement->status_2 = 'pending';
             }
@@ -272,7 +278,9 @@ class ReimbursementController extends Controller
 
             $token = null;
 
-            if ($isLeader) {
+            if ($isManager) {
+                return;
+            } elseif ($isTeamLeader) {
                 // --- Jika leader, langsung kirim ke Manager (level 2)
                 $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
 
@@ -291,16 +299,11 @@ class ReimbursementController extends Controller
 
                 DB::afterCommit(function () use ($reimbursement, $token) {
                     $fresh = $reimbursement->fresh();
-                    $emp = $fresh->employee;
-                    $isLeader = $emp && \App\Models\Division::where('leader_id', $emp->id)->exists();
-                    $isApprover = $emp && $emp->roles()->where('name', \App\Enums\Roles::Approver->value)->exists();
-                    if ($isLeader || $isApprover) {
-                        event(new \App\Events\ReimbursementLevelAdvanced(
-                            $fresh,
-                            $emp->division_id ?? (Auth::user()->division_id ?? 0),
-                            'manager'
-                        ));
-                    }
+                    event(new \App\Events\ReimbursementLevelAdvanced(
+                        $fresh,
+                        $fresh?->employee?->division_id ?? (Auth::user()->division_id ?? 0),
+                        'manager'
+                    ));
 
                     if (!$fresh || !$token) {
                         return;
@@ -377,10 +380,10 @@ class ReimbursementController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
         // Only allow editing if the reimbursement is still pending
-        if (($isLeader && $reimbursement->status_2 !== 'pending') || (!$isLeader && $reimbursement->status_1 !== 'pending' || $reimbursement->status_2 !== 'pending')) {
+        if (($isTeamLeader && $reimbursement->status_2 !== 'pending') || (!$isTeamLeader && $reimbursement->status_1 !== 'pending' || $reimbursement->status_2 !== 'pending')) {
             return redirect()->route('finance.reimbursements.show', $reimbursement->id)
                 ->with('error', 'You cannot edit a reimbursement request that has already been processed.');
         }
@@ -399,9 +402,9 @@ class ReimbursementController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
-        if (($isLeader && $reimbursement->status_2 !== 'pending') || (!$isLeader && $reimbursement->status_1 !== 'pending' || $reimbursement->status_2 !== 'pending')) {
+        if (($isTeamLeader && $reimbursement->status_2 !== 'pending') || (!$isTeamLeader && $reimbursement->status_1 !== 'pending' || $reimbursement->status_2 !== 'pending')) {
             return redirect()->route('finance.reimbursements.show', $reimbursement->id)
                 ->with('error', 'You cannot update a reimbursement request that has already been processed.');
         }
@@ -432,20 +435,26 @@ class ReimbursementController extends Controller
         $reimbursement->reimbursement_type_id = $request->reimbursement_type_id;
         $reimbursement->date = $request->date;
 
-        if ($isLeader) {
-            // Kalau leader submit → status_1 auto approved
-            $reimbursement->status_1 = 'approved';
-            $reimbursement->status_2 = 'pending';
-        } else {
-            // Kalau bukan leader → jalur normal
-            $reimbursement->status_1 = 'pending';
-            $reimbursement->status_2 = 'pending';
-        }
+            $submitter = Auth::user();
+            $isTeamLeader = $submitter->userHasRole('team-leader');
+            $isManager = $submitter->userHasRole('manager');
 
-        $reimbursement->note_1 = NULL;
-        $reimbursement->note_2 = NULL;
+            if ($isManager) {
+                $reimbursement->status_1 = 'approved';
+                $reimbursement->status_2 = 'approved';
+                $reimbursement->approver_1_id = $submitter->id;
+                $reimbursement->approver_2_id = $submitter->id;
+                $reimbursement->approved_date = now();
+            } elseif ($isTeamLeader) {
+                $reimbursement->status_1 = 'approved';
+                $reimbursement->status_2 = 'pending';
+                $reimbursement->approver_1_id = $submitter->id;
+            } else {
+                $reimbursement->status_1 = 'pending';
+                $reimbursement->status_2 = 'pending';
+            }
 
-        if ($request->hasFile('invoice_path')) {
+            if ($request->hasFile('invoice_path')) {
             if ($reimbursement->invoice_path) {
                 Storage::disk('public')->delete($reimbursement->invoice_path);
             }
@@ -462,7 +471,10 @@ class ReimbursementController extends Controller
 
         $token = null;
 
-        if ($isLeader) {
+        if ($isManager) {
+            return redirect()->route('finance.reimbursements.show', $reimbursement->id)
+                ->with('success', 'Reimbursement request updated successfully.');
+        } elseif ($isTeamLeader) {
             // --- Jika leader, langsung kirim ke Manager (level 2)
             $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
             if ($manager) {
@@ -480,16 +492,11 @@ class ReimbursementController extends Controller
 
             DB::afterCommit(function () use ($reimbursement, $token) {
                 $fresh = $reimbursement->fresh();
-                $emp = $fresh->employee;
-                $isLeader = $emp && \App\Models\Division::where('leader_id', $emp->id)->exists();
-                $isApprover = $emp && $emp->roles()->where('name', \App\Enums\Roles::Approver->value)->exists();
-                if ($isLeader || $isApprover) {
-                    event(new \App\Events\ReimbursementLevelAdvanced(
-                        $fresh,
-                        $emp->division_id ?? (Auth::user()->division_id ?? 0),
-                        'manager'
-                    ));
-                }
+                event(new \App\Events\ReimbursementLevelAdvanced(
+                    $fresh,
+                    $fresh?->employee?->division_id ?? (Auth::user()->division_id ?? 0),
+                    'manager'
+                ));
                 if (!$fresh || !$token) {
                     return;
                 }
@@ -676,10 +683,10 @@ class ReimbursementController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
         // Only allow deleting if the reimbursement is still pending
-        if (($isLeader && $reimbursement->status_2 !== 'pending') || (!$isLeader && $reimbursement->status_1 !== 'pending')) {
+        if (($isTeamLeader && $reimbursement->status_2 !== 'pending') || (!$isTeamLeader && $reimbursement->status_1 !== 'pending')) {
             return redirect()->route('finance.reimbursements.show', $reimbursement->id)
                 ->with('error', 'You cannot delete a reimbursement request that has already been processed.');
         }
@@ -698,3 +705,5 @@ class ReimbursementController extends Controller
             ->with('success', 'Reimbursement request deleted successfully.');
     }
 }
+
+

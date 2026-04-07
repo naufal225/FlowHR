@@ -129,15 +129,25 @@ class LeaveService
         }
 
         return DB::transaction(function () use ($data, $user) {
+            $isTeamLeader = $user->userHasRole('team-leader');
+            $isManager = $user->userHasRole('manager');
+            $isAutoApproved = $isTeamLeader || $isManager;
+
             $leave = new Leave();
             $leave->employee_id = $user->id;
             $leave->date_start = $data['date_start'];
             $leave->date_end = $data['date_end'];
             $leave->reason = $data['reason'];
-            $leave->status_1 = 'pending';
+            $leave->status_1 = $isAutoApproved ? 'approved' : 'pending';
+            $leave->approver_1_id = $isAutoApproved ? $user->id : null;
+            $leave->approved_date = $isAutoApproved ? now() : null;
             $leave->save();
 
             $fresh = $leave->fresh();
+
+            if ($isAutoApproved) {
+                return $leave;
+            }
 
             [$approverUser, $newLevel] = $this->resolveApprover(Auth::user());
 
@@ -176,15 +186,25 @@ class LeaveService
             throw new Exception("Sisa cuti tidak cukup untuk memperpanjang cuti. Tersisa {$sisaCuti} hari.");
         }
 
+        $isTeamLeader = $user->userHasRole('team-leader');
+        $isManager = $user->userHasRole('manager');
+        $isAutoApproved = $isTeamLeader || $isManager;
+
         $leave->update([
             'date_start' => $data['date_start'],
             'date_end' => $data['date_end'],
             'reason' => $data['reason'],
-            'status_1' => 'pending',
+            'status_1' => $isAutoApproved ? 'approved' : 'pending',
+            'approver_1_id' => $isAutoApproved ? $user->id : null,
+            'approved_date' => $isAutoApproved ? now() : null,
             'note_1' => null,
         ]);
 
         $fresh = $leave->fresh();
+
+        if ($isAutoApproved) {
+            return $leave;
+        }
 
         [$approverUser, $newLevel] = $this->resolveApprover(Auth::user());
 

@@ -271,53 +271,17 @@ class LeaveController extends Controller
             return back()->with('error', "Sisa cuti hanya {$sisaCuti} hari, tidak bisa ajukan {$hariCutiBaru} hari.");
         }
 
-        DB::transaction(function () use ($request) {
-            $leave = new Leave();
-            $leave->employee_id = Auth::id();
-            $leave->date_start = $request->date_start;
-            $leave->date_end = $request->date_end;
-            $leave->reason = $request->reason;
-            $leave->status_1 = 'pending';
-            $leave->save();
-
-            $tokenRaw = null;
-            $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
-            if ($manager) {
-                $token = Str::random(48);
-                ApprovalLink::create([
-                    'model_type' => get_class($leave),   // App\Models\Leave
-                    'model_id' => $leave->id,
-                    'approver_user_id' => $manager->id,
-                    'level' => 2,
-                    'scope' => 'both',             // boleh approve & reject
-                    'token' => hash('sha256', $token), // simpan hash, kirim raw
-                    'expires_at' => now()->addDays(3),  // masa berlaku
-                ]);
-            }
-
-            // pastikan broadcast SETELAH commit
-            DB::afterCommit(function () use ($leave, $request, $tokenRaw, $manager) {
-                $fresh = $leave->fresh(); // ambil ulang (punya created_at dll)
-
-                event(new \App\Events\LeaveLevelAdvanced($fresh, $fresh->employee->division_id ?? (Auth::user()->division_id ?? 0), 'manager'));
-
-                if (!$fresh || !$fresh->approver || !$tokenRaw) {
-                    return;
-                }
-
-                $linkTanggapan = route('public.approval.show', $tokenRaw); // pastikan route param sesuai
-
-                // Gunakan queue
-                Mail::to($manager->email)->queue(
-                    new \App\Mail\SendMessage(
-                        namaPengaju: $leave->employee->name,
-                        namaApprover: $manager->name,
-                        linkTanggapan: $linkTanggapan,
-                        emailPengaju: $leave->employee->email
-                    )
-                );
-            });
-        });
+        try {
+            $this->leaveService->store([
+                'date_start' => $request->date_start,
+                'date_end' => $request->date_end,
+                'reason' => $request->reason,
+            ]);
+        } catch (Exception $e) {
+            return back()
+                ->withInput()
+                ->with('error', $e->getMessage());
+        }
 
         return redirect()->route('finance.leaves.index')
             ->with('success', 'Leave request submitted successfully.');

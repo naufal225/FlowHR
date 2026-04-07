@@ -127,6 +127,25 @@ class User extends Authenticatable
         return $this->roles->contains('name', $roleName);
     }
 
+    public function userHasRole(string $roleName): bool
+    {
+        $normalizedRole = Str::of($roleName)
+            ->lower()
+            ->replace('_', '-')
+            ->trim()
+            ->toString();
+
+        $mappedRole = match ($normalizedRole) {
+            'team-leader', 'teamleader' => Roles::Approver->value,
+            'manager' => Roles::Manager->value,
+            default => $normalizedRole,
+        };
+
+        return $this->roles()
+            ->whereRaw('LOWER(name) = ?', [Str::lower($mappedRole)])
+            ->exists();
+    }
+
     public function hasActiveRole(string $roleName): bool
     {
         return Session::get('active_role') === $roleName;

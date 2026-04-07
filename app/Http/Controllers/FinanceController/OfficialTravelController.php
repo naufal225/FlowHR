@@ -266,12 +266,20 @@ class OfficialTravelController extends Controller
             $officialTravel->date_end = $end;
             $officialTravel->total = $totalCost;
 
-            // Cek apakah user adalah leader division
-            $isLeader = \App\Models\Division::where('leader_id', Auth::id())->exists();
+            $submitter = Auth::user();
+            $isTeamLeader = $submitter->userHasRole('team-leader');
+            $isManager = $submitter->userHasRole('manager');
 
-            if ($isLeader) {
+            if ($isManager) {
+                $officialTravel->status_1 = 'approved';
+                $officialTravel->status_2 = 'approved';
+                $officialTravel->approver_1_id = $submitter->id;
+                $officialTravel->approver_2_id = $submitter->id;
+                $officialTravel->approved_date = now();
+            } elseif ($isTeamLeader) {
                 $officialTravel->status_1 = 'approved';
                 $officialTravel->status_2 = 'pending';
+                $officialTravel->approver_1_id = $submitter->id;
             } else {
                 $officialTravel->status_1 = 'pending';
                 $officialTravel->status_2 = 'pending';
@@ -281,7 +289,9 @@ class OfficialTravelController extends Controller
 
             $token = null;
 
-            if ($isLeader) {
+            if ($isManager) {
+                return;
+            } elseif ($isTeamLeader) {
                 // --- Jika leader, langsung kirim ke Manager (level 2)
                 $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
 
@@ -300,16 +310,11 @@ class OfficialTravelController extends Controller
 
                 DB::afterCommit(function () use ($officialTravel, $token) {
                     $fresh = $officialTravel->fresh();
-                    $emp = $fresh->employee;
-                    $isLeader = $emp && \App\Models\Division::where('leader_id', $emp->id)->exists();
-                    $isApprover = $emp && $emp->roles()->where('name', \App\Enums\Roles::Approver->value)->exists();
-                    if ($isLeader || $isApprover) {
-                        event(new \App\Events\OfficialTravelLevelAdvanced(
-                            $fresh,
-                            $emp->division_id ?? (Auth::user()->division_id ?? 0),
-                            'manager'
-                        ));
-                    }
+                    event(new \App\Events\OfficialTravelLevelAdvanced(
+                        $fresh,
+                        $fresh?->employee?->division_id ?? (Auth::user()->division_id ?? 0),
+                        'manager'
+                    ));
 
                     if (!$fresh || !$token) {
                         return;
@@ -431,9 +436,9 @@ class OfficialTravelController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
-        if (($isLeader && $officialTravel->status_2 !== 'pending') || (!$isLeader && $officialTravel->status_1 !== 'pending' || $officialTravel->status_2 !== 'pending')) {
+        if (($isTeamLeader && $officialTravel->status_2 !== 'pending') || (!$isTeamLeader && $officialTravel->status_1 !== 'pending' || $officialTravel->status_2 !== 'pending')) {
             return redirect()->route('finance.official-travels.show', $officialTravel->id)
                 ->with('error', 'You cannot edit a travel request that has already been processed.');
         }
@@ -453,9 +458,9 @@ class OfficialTravelController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
-        if (($isLeader && $officialTravel->status_2 !== 'pending') || (!$isLeader && $officialTravel->status_1 !== 'pending' || $officialTravel->status_2 !== 'pending')) {
+        if (($isTeamLeader && $officialTravel->status_2 !== 'pending') || (!$isTeamLeader && $officialTravel->status_1 !== 'pending' || $officialTravel->status_2 !== 'pending')) {
             return redirect()->route('finance.official-travels.show', $officialTravel->id)
                 ->with('error', 'You cannot update a travel request that has already been processed.');
         }
@@ -506,12 +511,28 @@ class OfficialTravelController extends Controller
         $officialTravel->date_start = $request->date_start;
         $officialTravel->date_end = $request->date_end;
 
-        if ($isLeader) {
+        $submitter = Auth::user();
+        $isTeamLeader = $submitter->userHasRole('team-leader');
+        $isManager = $submitter->userHasRole('manager');
+
+        if ($isManager) {
+            $officialTravel->status_1 = 'approved';
+            $officialTravel->status_2 = 'approved';
+            $officialTravel->approver_1_id = $submitter->id;
+            $officialTravel->approver_2_id = $submitter->id;
+            $officialTravel->approved_date = now();
+        } elseif ($isTeamLeader) {
             $officialTravel->status_1 = 'approved';
             $officialTravel->status_2 = 'pending';
+            $officialTravel->approver_1_id = $submitter->id;
+            $officialTravel->approver_2_id = null;
+            $officialTravel->approved_date = null;
         } else {
             $officialTravel->status_1 = 'pending';
             $officialTravel->status_2 = 'pending';
+            $officialTravel->approver_1_id = null;
+            $officialTravel->approver_2_id = null;
+            $officialTravel->approved_date = null;
         }
 
         $officialTravel->note_1 = NULL;
@@ -521,7 +542,10 @@ class OfficialTravelController extends Controller
 
         $token = null;
 
-        if ($isLeader) {
+        if ($isManager) {
+            return redirect()->route('finance.official-travels.show', $officialTravel->id)
+                ->with('success', 'Official travel request updated successfully. Total days: ' . $totalDays);
+        } elseif ($isTeamLeader) {
             // --- Jika leader, langsung kirim ke Manager (level 2)
             $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
 
@@ -540,16 +564,11 @@ class OfficialTravelController extends Controller
 
             DB::afterCommit(function () use ($officialTravel, $token) {
                 $fresh = $officialTravel->fresh();
-                $emp = $fresh->employee;
-                $isLeader = $emp && \App\Models\Division::where('leader_id', $emp->id)->exists();
-                $isApprover = $emp && $emp->roles()->where('name', \App\Enums\Roles::Approver->value)->exists();
-                if ($isLeader || $isApprover) {
-                    event(new \App\Events\OfficialTravelLevelAdvanced(
-                        $fresh,
-                        $emp->division_id ?? (Auth::user()->division_id ?? 0),
-                        'manager'
-                    ));
-                }
+                event(new \App\Events\OfficialTravelLevelAdvanced(
+                    $fresh,
+                    $fresh?->employee?->division_id ?? (Auth::user()->division_id ?? 0),
+                    'manager'
+                ));
 
                 if (!$fresh || !$token) {
                     return;
@@ -621,9 +640,9 @@ class OfficialTravelController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $isLeader = \App\Models\Division::where('leader_id', $user->id)->exists();
+        $isTeamLeader = $user->userHasRole('team-leader');
 
-        if (($isLeader && $officialTravel->status_2 !== 'pending') || (!$isLeader && $officialTravel->status_1 !== 'pending')) {
+        if (($isTeamLeader && $officialTravel->status_2 !== 'pending') || (!$isTeamLeader && $officialTravel->status_1 !== 'pending')) {
             return redirect()->route('finance.official-travels.show', $officialTravel->id)
                 ->with('error', 'You cannot delete a travel request that has already been processed.');
         }
