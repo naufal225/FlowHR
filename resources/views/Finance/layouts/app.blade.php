@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>@yield('title', 'Employee Portal')</title>
     @vite('resources/css/app.css')
-    <link rel="icon" type="image/x-icon" href="{{ asset('yaztech-icon.jpg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('FlowHR_logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -27,9 +27,9 @@
         <!-- Sidebar -->
         <div class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary-800 shadow-medium lg:relative lg:translate-x-0"
             id="sidebar">
-            <div class="flex items-center justify-between px-6 py-4 bg-primary-900">
+            <div class="flex items-center justify-between h-32 px-6 py-4">
                 <div class="w-full">
-                    <img src="{{ asset('yaztech-logo-web.webp') }}" alt="Yaztech Logo" class="w-auto h-12 mx-auto">
+                    <img src="{{ asset('FlowHR_logo.png') }}" alt="FlowHR Logo" class="w-24 h-auto max-w-full mx-auto md:w-48 rounded-xl">
                 </div>
                 <button class="z-30 text-white lg:hidden hover:text-primary-200" id="btnNav">
                     <i class="text-lg fas fa-times"></i>

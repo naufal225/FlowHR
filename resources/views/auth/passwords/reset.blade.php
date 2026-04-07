@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Reset Password - {{ config('app.name') }}</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('yaztech-icon.jpg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('FlowHR_logo.png') }}">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>

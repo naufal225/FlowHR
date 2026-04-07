@@ -48,9 +48,9 @@ class Overtime extends Model
         return $this->belongsTo(User::class, 'employee_id');
     }
 
-    public function approver(): ?User
+    public function approver(): BelongsTo
     {
-        return $this->employee?->division?->leader;
+        return $this->belongsTo(User::class, 'approver_1_id');
     }
 
     public function approver1(): BelongsTo

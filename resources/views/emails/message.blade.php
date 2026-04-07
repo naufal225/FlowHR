@@ -77,7 +77,7 @@
 <body>
     <div class="email-container">
         <div class="email-header">
-            <h1 style="margin: 0; font-size: 22px;">YAZTECH ENGINEERING SOLUSINDO</h1>
+            <h1 style="margin: 0; font-size: 22px;">FLOWHR</h1>
         </div>
 
         <div class="email-body">
@@ -107,7 +107,7 @@
         </div>
 
         <div class="footer">
-            <p style="margin: 5px 0;">© {{ date('Y') }} Yaztech Engineering Solusindo</p>
+            <p style="margin: 5px 0;">© {{ date('Y') }} FlowHR</p>
             <p style="margin: 5px 0; font-size: 11px;">Email ini dikirim secara otomatis, harap tidak membalas langsung.
             </p>
         </div>

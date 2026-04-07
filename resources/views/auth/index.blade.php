@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - YES</title>
     @vite('resources/css/app.css')
-    <link rel="icon" type="image/x-icon" href="{{ asset('yaztech-icon.jpg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('FlowHR_logo.png') }}">
 </head>
 <body class="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 to-sky-50">
     <!-- Main Container - Light Neutral Background (15%) -->
@@ -13,11 +13,9 @@
         <div class="overflow-hidden bg-white border border-gray-100 shadow-xl rounded-2xl">
             <!-- Header Section - Primary Blue (35%) -->
             <div class="px-8 py-12 text-center bg-gradient-to-r from-blue-600 to-blue-700">
-                <div class="flex items-center justify-center mx-auto mb-4">
-                    <img src="{{ asset('yaztech-logo-web.png') }}" alt="Yaztech Logo" class="w-auto h-24 mx-auto">
+                <div class="flex items-center justify-center mx-auto">
+                    <img src="{{ asset('FlowHR_logo.png') }}" alt="FlowHR Logo" class="w-auto h-48 mx-auto rounded-lg">
                 </div>
-                <h1 class="mb-2 text-2xl font-bold text-white">Welcome Back</h1>
-                <p class="text-blue-100">Sign in to your account</p>
             </div>
 
             <!-- Form Section -->

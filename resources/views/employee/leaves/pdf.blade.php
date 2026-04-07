@@ -111,7 +111,7 @@
             <br>
             {{ $leave->employee->email }}
         </div>
-        <img src="{{ public_path('yaztech-logo-web.png') }}" alt="Yaztech Engineering Solusindo" style="
+        <img src="{{ public_path('FlowHR_logo.png') }}" alt="FlowHR" style="
                     position: absolute;
                     bottom: 20px;
                     right: 20px;

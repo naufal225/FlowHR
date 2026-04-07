@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Approver Dashboard</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('yaztech-icon.jpg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('FlowHR_logo.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/js/app.js', 'resources/css/app.css'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

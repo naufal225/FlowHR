@@ -24,11 +24,11 @@ class OfficeLocationAndAkbarSeeder extends Seeder
         );
 
         $user = User::query()
-            ->where('email', 'akbar@yaztech.co.id')
+            ->where('email', 'akbar@flowhr.co.id')
             ->first();
 
         if ($user === null) {
-            $this->command->warn('User akbar@yaztech.co.id tidak ditemukan. Office berhasil dibuat, assignment user dilewati.');
+            $this->command->warn('User akbar@flowhr.co.id tidak ditemukan. Office berhasil dibuat, assignment user dilewati.');
 
             return;
         }

@@ -16,7 +16,7 @@
                 </div>
                 @endif
 
-                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700">
+                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
                     <div class="flex items-center justify-between">
                         <div>
                             <h1 class="text-xl font-bold text-white">Leave Request #LY{{ $leave->id }}</h1>

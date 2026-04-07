@@ -24,7 +24,7 @@ $minutes = $overtimeMinutes % 60;
         <div class="space-y-6 lg:col-span-2">
             <!-- Header -->
             <div class="overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200">
-                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700">
+                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
                     @if($errors->any())
                     <div class="flex items-start p-4 mb-6 border border-red-200 bg-red-50 rounded-xl">
                         <div class="flex-shrink-0">

@@ -170,8 +170,8 @@
             background-color: rgba(255, 255, 255, 0.2);
             z-index: 9999;
         ">
-            <img src="{{ public_path('yaztech-logo-web.png') }}" 
-                alt="Yaztech Engineering Solusindo"
+            <img src="{{ public_path('FlowHR_logo.png') }}" 
+                alt="FlowHR"
                 style="
                     position: absolute;
                     bottom: 20px;

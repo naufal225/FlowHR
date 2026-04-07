@@ -31,7 +31,7 @@
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
             <div class="overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200">
-                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700">
+                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
                     <div class="flex items-center justify-between">
                         <div>
                             <h1 class="text-xl font-bold text-white">Official Travel Request #TY{{ $officialTravel->id

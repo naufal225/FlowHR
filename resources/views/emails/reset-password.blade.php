@@ -131,7 +131,7 @@
     <div class="email-container">
         <div class="email-header">
             <div class="icon">🔐</div>
-            <h1 style="margin: 0; font-size: 22px;">YAZTECH ENGINEERING SOLUSINDO</h1>
+            <h1 style="margin: 0; font-size: 22px;">FLOWHR</h1>
             <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Password Reset Request</p>
         </div>
 
@@ -192,7 +192,7 @@
         </div>
 
         <div class="footer">
-            <p style="margin: 5px 0; font-weight: 600;">© {{ date('Y') }} Yaztech Engineering Solusindo</p>
+            <p style="margin: 5px 0; font-weight: 600;">© {{ date('Y') }} FlowHR</p>
             <p style="margin: 5px 0; font-size: 11px;">This email was sent automatically, please do not reply directly.</p>
             <p style="margin: 15px 0 5px 0; font-size: 11px;">
                 <strong class="warning-text">Security Reminder:</strong> Never share your password or reset links with anyone.
@@ -200,11 +200,11 @@
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
                 <p style="margin: 5px 0; font-size: 11px;">
                     📞 Need help? Contact us at:
-                    <a href="mailto:support@yaztech.com" style="color: #4f46e5; text-decoration: none;">support@yaztech.com</a>
+                    <a href="mailto:support@flowhr.com" style="color: #4f46e5; text-decoration: none;">support@flowhr.com</a>
                 </p>
                 <p style="margin: 5px 0; font-size: 11px;">
                     🌐 Visit our website:
-                    <a href="https://yaztech.com" style="color: #4f46e5; text-decoration: none;">www.yaztech.com</a>
+                    <a href="https://flowhr.com" style="color: #4f46e5; text-decoration: none;">www.flowhr.com</a>
                 </p>
             </div>
         </div>
