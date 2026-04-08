@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Enums\Roles;
 use App\Models\Role;
 use App\Models\FeatureSetting;
+use App\Services\Dashboard\DashboardLeaveCalendarService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ class DashboardController extends Controller
 {
     use HelperController;
 
-    public function index()
+    public function index(DashboardLeaveCalendarService $dashboardLeaveCalendarService)
     {
         $featureActive = [
             'cuti' => FeatureSetting::isActive('cuti'),
@@ -109,29 +110,16 @@ class DashboardController extends Controller
 
         // Data cuti per tanggal untuk kalender (hanya dari divisi leader)
         $cutiPerTanggal = [];
+        $holidayDates = [];
+        $holidaysByDate = [];
         if ($featureActive['cuti']) {
-            $karyawanCuti = Leave::with(['employee:id,name,email,url_profile'])
-                ->forLeader(Auth::id())
-                ->where('status_1', 'approved')
-                ->where(function ($q) {
-                    $q->whereYear('date_start', now()->year)
-                        ->orWhereYear('date_end', now()->year);
-                })
-                ->get(['id', 'employee_id', 'date_start', 'date_end']);
-
-            foreach ($karyawanCuti as $cuti) {
-                $start = Carbon::parse($cuti->date_start);
-                $end = Carbon::parse($cuti->date_end);
-                while ($start->lte($end)) {
-                    $tanggal = $start->format('Y-m-d');
-                    $cutiPerTanggal[$tanggal][] = [
-                        'employee' => $cuti->employee->name,
-                        'email' => $cuti->employee->email,
-                        'url_profile' => $cuti->employee->url_profile,
-                    ];
-                    $start->addDay();
-                }
-            }
+            $calendarData = $dashboardLeaveCalendarService->build(
+                Leave::query()->forLeader(Auth::id()),
+                now()->year,
+            );
+            $cutiPerTanggal = $calendarData['approved_by_date'];
+            $holidayDates = $calendarData['holiday_dates'];
+            $holidaysByDate = $calendarData['holidays_by_date'];
         }
 
         return view('approver.dashboard.index', compact([
@@ -148,6 +136,8 @@ class DashboardController extends Controller
             'sisaCuti',
             'recentRequests',
             'cutiPerTanggal',
+            'holidayDates',
+            'holidaysByDate',
             'featureActive'
         ]));
     }

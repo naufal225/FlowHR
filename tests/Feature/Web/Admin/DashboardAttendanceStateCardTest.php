@@ -3,6 +3,7 @@
 namespace Tests\Feature\Web\Admin;
 
 use App\Enums\Roles;
+use App\Models\FeatureSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -19,6 +20,7 @@ class DashboardAttendanceStateCardTest extends TestCase
         string $routeName,
         string $activeRole,
     ): void {
+        $this->enableDashboardFeatures();
         $office = $this->createOfficeLocation();
         $this->createAttendanceSetting($office);
 
@@ -35,6 +37,11 @@ class DashboardAttendanceStateCardTest extends TestCase
             ->assertSee('State Absensi Sekarang', false)
             ->assertSee('Check In', false)
             ->assertSee('Check Out', false)
+            ->assertSee('data-leave-calendar-widget', false)
+            ->assertSee('Approved Leave', false)
+            ->assertSee('Holiday', false)
+            ->assertSee('Detail Tanggal', false)
+            ->assertSee('Tidak ada leave dan tidak ada holiday pada tanggal ini.', false)
             ->assertViewHas('dashboardAttendanceState', function (mixed $state): bool {
                 if (! is_array($state)) {
                     return false;
@@ -46,7 +53,10 @@ class DashboardAttendanceStateCardTest extends TestCase
                     $state['check_in'],
                     $state['check_out']
                 );
-            });
+            })
+            ->assertViewHas('cutiPerTanggal', static fn (mixed $data): bool => is_array($data))
+            ->assertViewHas('holidayDates', static fn (mixed $dates): bool => is_array($dates))
+            ->assertViewHas('holidaysByDate', static fn (mixed $data): bool => is_array($data));
     }
 
     /**
@@ -74,5 +84,15 @@ class DashboardAttendanceStateCardTest extends TestCase
         }
 
         return $user;
+    }
+
+    private function enableDashboardFeatures(): void
+    {
+        foreach (['cuti', 'reimbursement', 'overtime', 'perjalanan_dinas'] as $feature) {
+            FeatureSetting::query()->updateOrCreate(
+                ['feature_name' => $feature],
+                ['is_enabled' => true]
+            );
+        }
     }
 }

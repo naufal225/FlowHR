@@ -11,6 +11,7 @@ use App\Models\Reimbursement;
 use App\Models\User;
 use App\Enums\Roles;
 use App\Models\Role;
+use App\Services\Dashboard\DashboardLeaveCalendarService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ class DashboardController extends Controller
 {
     use HelperController;
 
-    public function index()
+    public function index(DashboardLeaveCalendarService $dashboardLeaveCalendarService)
     {
         $models = [
             "reimbursements" => Reimbursement::class,
@@ -86,30 +87,11 @@ class DashboardController extends Controller
 
         $recentRequests = $this->getRecentRequests(Auth::id());
 
-        $cutiPerTanggal = [];
+        $calendarData = $dashboardLeaveCalendarService->build(Leave::query(), now()->year);
+        $cutiPerTanggal = $calendarData['approved_by_date'];
+        $holidayDates = $calendarData['holiday_dates'];
+        $holidaysByDate = $calendarData['holidays_by_date'];
 
-        $karyawanCuti = Leave::with(['employee:id,name,email,url_profile'])
-            ->where('status_1', 'approved')
-            ->where(function ($q) {
-                $q->whereYear('date_start', now()->year)
-                    ->orWhereYear('date_end', now()->year);
-            })
-            ->get(['id', 'employee_id', 'date_start', 'date_end']);
-
-        foreach ($karyawanCuti as $cuti) {
-            $start = Carbon::parse($cuti->date_start);
-            $end = Carbon::parse($cuti->date_end);
-            while ($start->lte($end)) {
-                $tanggal = $start->format('Y-m-d');
-                $cutiPerTanggal[$tanggal][] = [
-                    'employee' => $cuti->employee->name,
-                    'email' => $cuti->employee->email,
-                    'url_profile' => $cuti->employee->url_profile,
-                ];
-                $start->addDay();
-            }
-
-        }
         return view('super-admin.dashboard.index', compact([
             'total_employees',
             'total_pending',
@@ -123,7 +105,9 @@ class DashboardController extends Controller
             'reimbursementsRupiahChartData',
             'sisaCuti',
             'recentRequests',
-            'cutiPerTanggal'
+            'cutiPerTanggal',
+            'holidayDates',
+            'holidaysByDate',
         ]));
 
     }

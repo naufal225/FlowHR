@@ -12,15 +12,14 @@ use App\Enums\Roles;
 use App\Models\Role;
 use App\Traits\HelperController;
 use App\Models\FeatureSetting;
+use App\Services\Dashboard\DashboardLeaveCalendarService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     use HelperController;
-    public function index()
+    public function index(DashboardLeaveCalendarService $dashboardLeaveCalendarService)
     {
         $featureActive = [
             'cuti' => FeatureSetting::isActive('cuti'),
@@ -92,39 +91,40 @@ class DashboardController extends Controller
         $sisaCuti = 0;
         if ($featureActive['cuti']) {
             $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
+            $usedLeaveDays = Leave::query()
+                ->where('employee_id', Auth::id())
+                ->where('status_1', 'approved')
+                ->whereYear('date_start', now()->year)
+                ->get(['date_start', 'date_end'])
+                ->sum(static function (Leave $leave): int {
+                    if ($leave->date_start === null) {
+                        return 0;
+                    }
+
+                    $start = $leave->date_start->copy()->startOfDay();
+                    $end = $leave->date_end?->copy()->startOfDay() ?? $start->copy();
+
+                    if ($end->lt($start)) {
+                        $end = $start->copy();
+                    }
+
+                    return $start->diffInDays($end) + 1;
+                });
+
             $sisaCuti = $annual
-                - (int) Leave::where('employee_id', Auth::id())
-                    ->where('status_1', 'approved')
-                    ->whereYear('date_start', now()->year)
-                    ->select(DB::raw('SUM(DATEDIFF(date_end, date_start) + 1) as total_days'))
-                    ->value('total_days');
+                - (int) $usedLeaveDays;
         }
 
         $recentRequests = $this->getRecentRequests(Auth::id());
 
         $cutiPerTanggal = [];
+        $holidayDates = [];
+        $holidaysByDate = [];
         if ($featureActive['cuti']) {
-            $karyawanCuti = Leave::with(['employee:id,name,email,url_profile'])
-                ->where('status_1', 'approved')
-                ->where(function ($q) {
-                    $q->whereYear('date_start', now()->year)
-                        ->orWhereYear('date_end', now()->year);
-                })
-                ->get(['id', 'employee_id', 'date_start', 'date_end']);
-
-            foreach ($karyawanCuti as $cuti) {
-                $start = Carbon::parse($cuti->date_start);
-                $end = Carbon::parse($cuti->date_end);
-                while ($start->lte($end)) {
-                    $tanggal = $start->format('Y-m-d');
-                    $cutiPerTanggal[$tanggal][] = [
-                        'employee' => $cuti->employee->name,
-                        'email' => $cuti->employee->email,
-                        'url_profile' => $cuti->employee->url_profile,
-                    ];
-                    $start->addDay();
-                }
-            }
+            $calendarData = $dashboardLeaveCalendarService->build(Leave::query(), now()->year);
+            $cutiPerTanggal = $calendarData['approved_by_date'];
+            $holidayDates = $calendarData['holiday_dates'];
+            $holidaysByDate = $calendarData['holidays_by_date'];
         }
         return view('manager.dashboard.index', compact([
             'total_employees',
@@ -140,6 +140,8 @@ class DashboardController extends Controller
             'sisaCuti',
             'recentRequests',
             'cutiPerTanggal',
+            'holidayDates',
+            'holidaysByDate',
             'featureActive'
         ]));
 

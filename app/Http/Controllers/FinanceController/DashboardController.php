@@ -14,13 +14,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\User;
-use App\Services\HolidayDateService;
+use App\Services\Dashboard\DashboardLeaveCalendarService;
 use App\Services\LeaveService;
 
 class DashboardController extends Controller
 {
     public function __construct(
-        private HolidayDateService $holidayDateService,
+        private DashboardLeaveCalendarService $dashboardLeaveCalendarService,
         private LeaveService $leaveService,
     ) {}
 
@@ -42,10 +42,6 @@ class DashboardController extends Controller
             'overtime' => FeatureSetting::isActive('overtime'),
             'perjalanan_dinas' => FeatureSetting::isActive('perjalanan_dinas'),
         ];
-
-        $holidays = $featureActive['cuti']
-            ? $this->holidayDateService->getDateStringsForYear($thisYear)
-            : [];
 
         // =========================
         // DATA PRIBADI FINANCE (YOURS)
@@ -182,29 +178,13 @@ class DashboardController extends Controller
         // CUTI PER TANGGAL
         // =========================
         $cutiPerTanggal = [];
+        $holidayDates = [];
+        $holidaysByDate = [];
         if ($featureActive['cuti']) {
-            $karyawanCuti = Leave::with(['employee:id,name,email,url_profile'])
-                ->where('status_1', 'approved')
-                ->where(function ($q) use ($thisYear) {
-                    $q->whereYear('date_start', $thisYear)
-                        ->orWhereYear('date_end', $thisYear);
-                })
-                ->get(['id', 'employee_id', 'date_start', 'date_end']);
-
-            foreach ($karyawanCuti as $cuti) {
-                $period = \Carbon\CarbonPeriod::create($cuti->date_start, $cuti->date_end);
-
-                foreach ($period as $date) {
-                    if (!$date->isWeekend() && !in_array($date->toDateString(), $holidays)) {
-                        $tanggal = $date->format('Y-m-d');
-                        $cutiPerTanggal[$tanggal][] = [
-                            'employee' => $cuti->employee->name,
-                            'email' => $cuti->employee->email,
-                            'url_profile' => $cuti->employee->url_profile,
-                        ];
-                    }
-                }
-            }
+            $calendarData = $this->dashboardLeaveCalendarService->build(Leave::query(), $thisYear);
+            $cutiPerTanggal = $calendarData['approved_by_date'];
+            $holidayDates = $calendarData['holiday_dates'];
+            $holidaysByDate = $calendarData['holidays_by_date'];
         }
 
         // =========================
@@ -230,6 +210,8 @@ class DashboardController extends Controller
             'reimbursementsRupiahChartData',
             'officialTravelsChartData',
             'cutiPerTanggal',
+            'holidayDates',
+            'holidaysByDate',
             'pendingYoursLeaves',
             'pendingYoursOvertimes',
             'pendingYoursReimbursements',

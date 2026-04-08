@@ -15,13 +15,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\User;
-use App\Services\HolidayDateService;
+use App\Services\Dashboard\DashboardLeaveCalendarService;
 use App\Services\LeaveService;
 
 class DashboardController extends Controller
 {
     public function __construct(
-        private HolidayDateService $holidayDateService,
+        private DashboardLeaveCalendarService $dashboardLeaveCalendarService,
         private LeaveService $leaveService,
     ) {}
 
@@ -108,44 +108,19 @@ class DashboardController extends Controller
         // Hitung total cuti tahun berjalan
         $tahunSekarang = now()->year;
 
-        // Ambil daftar libur dari tabel holidays
-        $holidays = $featureActive['cuti']
-            ? $this->holidayDateService->getDateStringsForYear($tahunSekarang)
-            : [];
-
         $sisaCuti = $featureActive['cuti']
             ? $this->leaveService->sisaCuti($user)
             : 0;
 
         // Data cuti semua karyawan untuk kalender
         $cutiPerTanggal = [];
+        $holidayDates = [];
+        $holidaysByDate = [];
         if ($featureActive['cuti']) {
-            $karyawanCuti = Leave::with(['employee:id,name,email,url_profile'])
-                ->where('status_1', 'approved')
-                ->where(function ($q) {
-                    $q->whereYear('date_start', now()->year)
-                        ->orWhereYear('date_end', now()->year);
-                })
-                ->get(['id', 'employee_id', 'date_start', 'date_end']);
-
-            foreach ($karyawanCuti as $cuti) {
-                $start = \Carbon\Carbon::parse($cuti->date_start);
-                $end = \Carbon\Carbon::parse($cuti->date_end);
-                while ($start->lte($end)) {
-                    $tanggal = $start->format('Y-m-d');
-
-                    // Skip weekend & holiday
-                    if (!$start->isWeekend() && !in_array($tanggal, $holidays)) {
-                        $cutiPerTanggal[$tanggal][] = [
-                            'employee' => $cuti->employee->name,
-                            'email' => $cuti->employee->email,
-                            'url_profile' => $cuti->employee->url_profile,
-                        ];
-                    }
-
-                    $start->addDay();
-                }
-            }
+            $calendarData = $this->dashboardLeaveCalendarService->build(Leave::query(), $tahunSekarang);
+            $cutiPerTanggal = $calendarData['approved_by_date'];
+            $holidayDates = $calendarData['holiday_dates'];
+            $holidaysByDate = $calendarData['holidays_by_date'];
         }
 
         return view('Employee.index', compact(
@@ -165,6 +140,8 @@ class DashboardController extends Controller
             'recentRequests',
             'sisaCuti',
             'cutiPerTanggal',
+            'holidayDates',
+            'holidaysByDate',
             'featureActive'
         ));
     }
