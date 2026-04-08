@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('queue:once')
             ->everyMinute()
             ->withoutOverlapping();
+
+        $schedule->command('report-exports:cleanup')
+            ->dailyAt('02:00')
+            ->withoutOverlapping();
     })
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
@@ -214,5 +218,6 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withCommands([
         \App\Console\Commands\RunQueueOnce::class,
+        \App\Console\Commands\CleanupReportExportsCommand::class,
     ])->create();
 

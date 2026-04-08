@@ -665,22 +665,36 @@ class OfficialTravelController extends Controller
      */
     public function bulkExport(Request $request)
     {
-        $dateFrom = $request->input('from_date');
-        $dateTo = $request->input('date_to');
+        $request->validate([
+            'from_date' => ['required', 'date'],
+            'to_date' => ['required', 'date', 'after_or_equal:from_date'],
+            'status' => ['nullable', 'in:approved,rejected,pending'],
+        ]);
+
+        $dateFrom = Carbon::parse((string) $request->input('from_date'), 'Asia/Jakarta')->startOfDay();
+        $dateTo = Carbon::parse((string) $request->input('to_date'), 'Asia/Jakarta')->endOfDay();
+
+        if ($dateFrom->diffInDays($dateTo) > 31) {
+            return back()->with('error', 'Maximum export range is 31 days.');
+        }
+
+        $startedAt = microtime(true);
 
         $query = OfficialTravel::with('employee')->where('status_1', 'approved')->where('status_2', 'approved')->where('marked_down', true);
 
-        if ($dateFrom && $dateTo) {
-            $query->where(function ($q) use ($dateFrom, $dateTo) {
-                $q->whereDate('date_start', '<=', $dateTo)
-                    ->whereDate('date_end', '>=', $dateFrom);
-            });
-        }
+        $query->where(function ($q) use ($dateFrom, $dateTo) {
+            $q->whereDate('date_start', '<=', $dateTo->toDateString())
+                ->whereDate('date_end', '>=', $dateFrom->toDateString());
+        });
 
         $officialTravels = $query->get();
 
         if ($officialTravels->isEmpty()) {
             return back()->with('error', 'Tidak ada data untuk filter tersebut.');
+        }
+
+        if ($officialTravels->count() > 300) {
+            return back()->with('error', 'Export limit exceeded. Maximum 300 records per request.');
         }
 
         $zipFileName = 'OfficialTravelsRequests_' . Carbon::now()->format('YmdHis') . '.zip';
@@ -717,6 +731,14 @@ class OfficialTravelController extends Controller
             @unlink($file);
         }
         Storage::disk('public')->deleteDirectory($tempFolder);
+
+        \Log::info('Finance official travel bulk export completed.', [
+            'user_id' => Auth::id(),
+            'count' => $officialTravels->count(),
+            'from_date' => $request->input('from_date'),
+            'to_date' => $request->input('to_date'),
+            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+        ]);
 
         // Return download
         return response()->download($zipPath)->deleteFileAfterSend(true);

@@ -155,14 +155,16 @@
                     <i class="mr-2 fas fa-refresh"></i> Reset
                 </button>
 
-                <!-- Bulk Request -->
-                <button type="button" onclick="window.location.href='{{ route('finance.overtimes.bulkExport', [
-                            'status' => request('status'),
-                            'from_date' => request('from_date'),
-                            'to_date' => request('to_date'),
-                        ]) }}'"
+                <button
+                    type="button"
+                    data-report-export-trigger
+                    data-module="overtime"
+                    data-export-type="summary"
+                    data-status-selector="#status"
+                    data-from-selector="input[name='from_date']"
+                    data-to-selector="input[name='to_date']"
                     class="flex items-center w-full px-4 py-2 text-sm font-medium text-white transition-all duration-300 bg-green-600 shadow-sm justify-center-safe rounded-xl hover:bg-green-700 hover:shadow-md sm:w-auto">
-                    <i class="mr-2 fas fa-layer-group"></i> Bulk Request
+                    <i class="mr-2 fas fa-file-pdf"></i> Export Summary PDF
                 </button>
             </div>
         </form>

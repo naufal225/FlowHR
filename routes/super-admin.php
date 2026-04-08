@@ -15,6 +15,7 @@ use App\Http\Controllers\SuperAdminController\OfficialTravelController;
 use App\Http\Controllers\SuperAdminController\OvertimeController;
 use App\Http\Controllers\SuperAdminController\ProfileController;
 use App\Http\Controllers\SuperAdminController\ReimbursementController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\Attendance\AdminAttendanceController as AttendanceController;
 use Illuminate\Support\Facades\Route;
 
@@ -73,8 +74,6 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
     Route::get('/reimbursements/export', [ReimbursementController::class, 'export'])
         ->name('reimbursements.export');
     Route::get('reimbursements/{reimbursement}/export-pdf', [ReimbursementController::class, 'exportPdf'])->name('reimbursements.exportPdf');
-    Route::get('/reimbursements/export/pdf/all', [ReimbursementController::class, 'exportPdfAllData'])
-        ->name('reimbursements.export.pdf.all');
     Route::resource('reimbursements', ReimbursementController::class)
         ->parameters([
             "reimbursements" => "reimbursement"
@@ -89,16 +88,22 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
     Route::get('/overtimes/export', [OvertimeController::class, 'export'])
         ->name('overtimes.export');
     Route::get('overtimes/{overtime}/export-pdf', [OvertimeController::class, 'exportPdf'])->name('overtimes.exportPdf');
-    Route::get('/overtimes/export/pdf/all', [OvertimeController::class, 'exportPdfAllData'])
-        ->name('overtimes.export.pdf.all');
     Route::resource('overtimes', OvertimeController::class);
 
     Route::get('/official-travels/export', [OfficialTravelController::class, 'export'])
         ->name('official-travels.export');
     Route::get('official-travels/{officialTravel}/export-pdf', [OfficialTravelController::class, 'exportPdf'])->name('official-travels.exportPdf');
-    Route::get('/official-travels/export/pdf/all', [OfficialTravelController::class, 'exportPdfAllData'])
-        ->name('official-travels.export.pdf.all');
     Route::resource('official-travels', OfficialTravelController::class);
+
+    Route::controller(ReportExportController::class)
+        ->prefix('report-exports')
+        ->name('report-exports.')
+        ->group(function () {
+            Route::get('/', 'index')->defaults('role_scope', 'super-admin')->name('index');
+            Route::post('/', 'store')->defaults('role_scope', 'super-admin')->name('store');
+            Route::get('{reportExport}', 'show')->defaults('role_scope', 'super-admin')->name('show');
+            Route::get('{reportExport}/download', 'download')->defaults('role_scope', 'super-admin')->name('download');
+        });
 
 
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');

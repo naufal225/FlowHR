@@ -61,6 +61,15 @@
 
     @yield('partial-modal')
 
+    <x-report-export.floating-panel
+        :index-url="route('super-admin.report-exports.index')"
+        :store-url="route('super-admin.report-exports.store')"
+        :show-url-template="route('super-admin.report-exports.show', ['reportExport' => '__ID__'])"
+        :download-url-template="route('super-admin.report-exports.download', ['reportExport' => '__ID__'])"
+        :user-id="auth()->id() ?? 0"
+        role-scope="super-admin"
+    />
+
     @stack('scripts')
     @include('components.default-hidden-sync')
 

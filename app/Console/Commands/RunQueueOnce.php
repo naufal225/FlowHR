@@ -12,6 +12,7 @@ class RunQueueOnce extends Command
     public function handle()
     {
         $this->call('queue:work', [
+            '--queue' => 'reports,default',
             '--once' => true, // hanya sekali jalan
             '--stop-when-empty' => true,
         ]);

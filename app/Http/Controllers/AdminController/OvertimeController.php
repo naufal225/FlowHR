@@ -241,6 +241,23 @@ class OvertimeController extends Controller
                 abort(403, 'Unauthorized action.');
             }
 
+            $request->validate([
+                'from_date' => ['required', 'date'],
+                'to_date' => ['required', 'date', 'after_or_equal:from_date'],
+                'status' => ['nullable', 'in:approved,rejected,pending'],
+            ]);
+
+            $fromDate = Carbon::parse((string) $request->input('from_date'), 'Asia/Jakarta')->startOfDay();
+            $toDate = Carbon::parse((string) $request->input('to_date'), 'Asia/Jakarta')->endOfDay();
+
+            if ($fromDate->diffInDays($toDate) > 31) {
+                return response()->json([
+                    'error' => 'Maximum export range is 31 days.',
+                ], 422);
+            }
+
+            $startedAt = microtime(true);
+
             // (opsional) disable debugbar
             if (app()->bound('debugbar')) {
                 app('debugbar')->disable();
@@ -289,20 +306,20 @@ class OvertimeController extends Controller
             }
 
             // Terapkan filter tanggal
-            if ($request->filled('from_date')) {
-                $fromDate = Carbon::parse($request->from_date)->startOfDay()->timezone('Asia/Jakarta');
-                $query->where('created_at', '>=', $fromDate);
-            }
-            if ($request->filled('to_date')) {
-                $toDate = Carbon::parse($request->to_date)->endOfDay()->timezone('Asia/Jakarta');
-                $query->where('created_at', '<=', $toDate);
-            }
+            $query->where('created_at', '>=', $fromDate)
+                ->where('created_at', '<=', $toDate);
 
             // Ambil data
             $overtimes = $query->get();
 
             if ($overtimes->isEmpty()) {
                 return response()->json(['message' => 'No data found for the selected filters.'], 404);
+            }
+
+            if ($overtimes->count() > 300) {
+                return response()->json([
+                    'error' => 'Export limit exceeded. Maximum 300 records per request.',
+                ], 422);
             }
 
             // Buat direktori sementara untuk menyimpan PDF
@@ -352,6 +369,15 @@ class OvertimeController extends Controller
             if (File::exists($tempDir)) {
                 File::deleteDirectory($tempDir);
             }
+
+            Log::info('Admin overtime exportPdfAllData completed.', [
+                'user_id' => Auth::id(),
+                'count' => $overtimes->count(),
+                'status' => $request->input('status'),
+                'from_date' => $request->input('from_date'),
+                'to_date' => $request->input('to_date'),
+                'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            ]);
 
             // Return file ZIP sebagai download
             // deleteFileAfterSend(true) akan menghapus file ZIP setelah dikirim ke browser

@@ -151,6 +151,15 @@
         </div>
     </div>
 
+    <x-report-export.floating-panel
+        :index-url="route('finance.report-exports.index')"
+        :store-url="route('finance.report-exports.store')"
+        :show-url-template="route('finance.report-exports.show', ['reportExport' => '__ID__'])"
+        :download-url-template="route('finance.report-exports.download', ['reportExport' => '__ID__'])"
+        :user-id="auth()->id() ?? 0"
+        role-scope="finance"
+    />
+
     <script>
         const btnNav = document.getElementById("btnNav");
     btnNav.addEventListener('click', toggleSidebar);

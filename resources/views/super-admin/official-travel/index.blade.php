@@ -19,14 +19,17 @@
                         New Official Travel Request
                     </button>
                 </div>
-                <button id="exportAllOfficialTravelsPdf"
+                <button
+                    type="button"
+                    data-report-export-trigger
+                    data-module="official_travel"
+                    data-export-type="summary"
+                    data-status-selector="#statusFilter"
+                    data-from-selector="#fromDateFilter"
+                    data-to-selector="#toDateFilter"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-all duration-200 transform rounded-lg shadow-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover:scale-105">
                     <i class="mr-2 fa-solid fa-file-pdf"></i>
-                    <span id="exportPdfButtonText">Export PDF (All)</span>
-                    <svg id="exportPdfSpinner" class="hidden w-4 h-4 ml-2 -mr-1 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <span>Export Summary PDF</span>
                 </button>
                 <button id="exportOfficialTravelsData"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-all duration-200 transform rounded-lg shadow-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 hover:scale-105">
@@ -576,64 +579,6 @@ function hideToast() {
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeDeleteFunctionality();
-
-    const exportPdfButton = document.getElementById('exportAllOfficialTravelsPdf');
-    const exportPdfButtonText = document.getElementById('exportPdfButtonText');
-    const exportPdfSpinner = document.getElementById('exportPdfSpinner');
-
-    if (exportPdfButton) {
-        exportPdfButton.addEventListener('click', async function() {
-            exportPdfButtonText.textContent = 'Exporting...';
-            exportPdfSpinner.classList.remove('hidden');
-            exportPdfButton.disabled = true;
-
-            try {
-                const status = document.getElementById('statusFilter')?.value || '';
-                const fromDate = document.getElementById('fromDateFilter')?.value || '';
-                const toDate = document.getElementById('toDateFilter')?.value || '';
-
-                const params = new URLSearchParams();
-                if (status) params.append('status', status);
-                if (fromDate) params.append('from_date', fromDate);
-                if (toDate) params.append('to_date', toDate);
-
-                const exportPdfUrl = `{{ route('super-admin.official-travels.export.pdf.all') }}?${params.toString()}`;
-
-                const response = await fetch(exportPdfUrl, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.message || `Export failed with status ${response.status}`);
-                }
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-                link.href = url;
-                link.download = `official-travel-requests-all-${timestamp}.zip`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-
-                showToast('PDF Export (All) completed successfully!', 'success');
-            } catch (error) {
-                console.error('Export PDF (All) error:', error);
-                showToast('Export PDF (All) failed: ' + error.message, 'error');
-            } finally {
-                exportPdfButtonText.textContent = 'Export PDF (All)';
-                exportPdfSpinner.classList.add('hidden');
-                exportPdfButton.disabled = false;
-            }
-        });
-    }
 
     const exportButton = document.getElementById('exportOfficialTravelsData');
     const exportButtonText = document.getElementById('exportButtonText');

@@ -141,11 +141,6 @@
             background-color: #f8f8f8;
         }
 
-        /* Hide legacy blocks we keep for reference */
-        .hide-old {
-            display: none;
-        }
-
         img.invoice {
             width: auto;
             max-width: 100%;
@@ -301,56 +296,6 @@
         </table>
     </div>
 
-    <!-- Hidden legacy content -->
-    <div class="section hide-old">
-        <h3>Reimbursement Details</h3>
-        <table class="details-table">
-            <tr>
-                <td class="label-col">Date of Expanse:</td>
-                <td class="data-col">
-                    <div class="box">{{ \Carbon\Carbon::parse($reimbursement->date)->format('l, M d, Y') }}</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="label-col">Customer:</td>
-                <td class="data-col">
-                    <div class="box">{{ $reimbursement->customer ?? 'N/A' }}</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="label-col">Total Amount:</td>
-                <td class="data-col">
-                    <div class="box">Rp {{ number_format($reimbursement->total, 0, ',', '.') }}</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="label-col">Type Reimbursement:</td>
-                <td class="data-col">
-                    <div class="box">{{ $reimbursement->type->name ?? 'N/A' }}</div>
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="section page-break hide-old">
-        <h3>Invoice</h3>
-        @php
-            $path = storage_path('app/public/' . $reimbursement->invoice_path);
-            $base64 = '';
-            if (file_exists($path)) {
-                $type = pathinfo($path, PATHINFO_EXTENSION);
-                $data = file_get_contents($path);
-                $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
-            }
-        @endphp
-        <div class="box" style="padding:0; line-height:0; overflow:hidden;">
-            @if($base64)
-                <img src="{{ $base64 }}" alt="Invoice" class="invoice">
-            @else
-                <span style="color:#777; font-style: italic;">No image available</span>
-            @endif
-        </div>
-    </div>
 </body>
 </html>
 
