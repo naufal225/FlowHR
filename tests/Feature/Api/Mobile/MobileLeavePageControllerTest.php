@@ -6,6 +6,7 @@ use App\Enums\AttendanceCheckInStatus;
 use App\Enums\AttendanceCheckOutStatus;
 use App\Enums\AttendanceRecordStatus;
 use App\Enums\Roles;
+use App\Models\Holiday;
 use App\Models\Leave;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,6 +76,8 @@ class MobileLeavePageControllerTest extends TestCase
             ->assertJsonPath('data.today_context.attendance_status_label', 'Sedang Cuti')
             ->assertJsonPath('data.today_context.attendance_note', 'Anda tidak perlu check-in hari ini.')
             ->assertJsonPath('data.today_context.is_working_day', true)
+            ->assertJsonPath('data.today_context.is_holiday', false)
+            ->assertJsonPath('data.today_context.holiday_name', null)
             ->assertJsonPath('data.today_context.leave.id', $activeLeave->id)
             ->assertJsonPath('data.today_context.leave.status', 'approved')
             ->assertJsonPath('data.today_context.leave.status_label', 'Disetujui')
@@ -97,6 +100,7 @@ class MobileLeavePageControllerTest extends TestCase
             ->assertJsonPath('data.history.pagination.total_items', 2)
             ->assertJsonPath('data.history.pagination.total_pages', 1)
             ->assertJsonPath('data.history.pagination.has_more', false)
+            ->assertJsonPath('data.holidays', [])
             ->assertJsonPath('meta.server_time', '2026-04-03T08:15:23+07:00')
             ->assertJsonPath('meta.timezone', 'Asia/Jakarta')
             ->assertJsonStructure([
@@ -109,6 +113,8 @@ class MobileLeavePageControllerTest extends TestCase
                         'attendance_status_label',
                         'attendance_note',
                         'is_working_day',
+                        'is_holiday',
+                        'holiday_name',
                         'leave' => [
                             'id',
                             'status',
@@ -163,12 +169,97 @@ class MobileLeavePageControllerTest extends TestCase
                             'has_more',
                         ],
                     ],
+                    'holiday_dates',
+                    'holidays' => [
+                        '*' => [
+                            'id',
+                            'name',
+                            'start_from',
+                            'end_at',
+                        ],
+                    ],
                 ],
                 'meta' => [
                     'server_time',
                     'timezone',
                 ],
             ]);
+    }
+
+    public function test_it_returns_holiday_today_context_and_holiday_dates_when_today_is_holiday_without_leave(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-17 08:00:00', 'Asia/Jakarta'));
+
+        $office = $this->createOfficeLocation([
+            'timezone' => 'Asia/Jakarta',
+        ]);
+        $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
+
+        Holiday::query()->create([
+            'name' => 'Hari Kemerdekaan',
+            'start_from' => '2026-08-17',
+            'end_at' => '2026-08-17',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/mobile/employee/leave');
+
+        $response->assertOk()
+            ->assertJsonPath('data.today_context.attendance_status', 'off_day')
+            ->assertJsonPath('data.today_context.attendance_status_label', 'Hari Kemerdekaan')
+            ->assertJsonPath('data.today_context.attendance_note', 'Today is a holiday: Hari Kemerdekaan.')
+            ->assertJsonPath('data.today_context.is_working_day', false)
+            ->assertJsonPath('data.today_context.is_holiday', true)
+            ->assertJsonPath('data.today_context.holiday_name', 'Hari Kemerdekaan')
+            ->assertJsonPath('data.today_context.leave', null)
+            ->assertJsonPath('data.today_context.attendance', null)
+            ->assertJsonPath('data.holidays.0.name', 'Hari Kemerdekaan')
+            ->assertJsonPath('data.holidays.0.start_from', '2026-08-17')
+            ->assertJsonPath('data.holidays.0.end_at', '2026-08-17');
+
+        $this->assertContains('2026-08-17', $response->json('data.holiday_dates'));
+    }
+
+    public function test_it_keeps_holiday_context_available_when_today_has_holiday_and_approved_leave_overlap(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-12-25 08:00:00', 'Asia/Jakarta'));
+
+        $office = $this->createOfficeLocation([
+            'timezone' => 'Asia/Jakarta',
+        ]);
+        $user = $this->createEmployee([], $office);
+        $this->assignRole($user, Roles::Employee->value);
+
+        Holiday::query()->create([
+            'name' => 'Libur Natal',
+            'start_from' => '2026-12-25',
+            'end_at' => '2026-12-25',
+        ]);
+
+        $leave = Leave::query()->create([
+            'employee_id' => $user->id,
+            'date_start' => '2026-12-25',
+            'date_end' => '2026-12-25',
+            'reason' => 'Cuti pribadi',
+            'status_1' => 'approved',
+            'approved_date' => '2026-12-24 09:00:00',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/mobile/employee/leave');
+
+        $response->assertOk()
+            ->assertJsonPath('data.today_context.attendance_status', 'on_leave')
+            ->assertJsonPath('data.today_context.attendance_status_label', 'Sedang Cuti')
+            ->assertJsonPath('data.today_context.is_holiday', true)
+            ->assertJsonPath('data.today_context.holiday_name', 'Libur Natal')
+            ->assertJsonPath('data.today_context.leave.id', $leave->id)
+            ->assertJsonPath('data.holidays.0.name', 'Libur Natal');
+
+        $this->assertContains('2026-12-25', $response->json('data.holiday_dates'));
     }
 
     public function test_it_returns_checked_in_context_when_no_approved_leave_exists_for_today(): void

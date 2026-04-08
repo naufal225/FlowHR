@@ -12,6 +12,52 @@ class HolidayDateService
     private const DEFAULT_TIMEZONE = 'Asia/Jakarta';
 
     /**
+     * @return array<int, array{id:int,name:?string,start_from:string,end_at:string}>
+     */
+    public function getHolidayItems(?Carbon $from = null, ?Carbon $to = null): array
+    {
+        [$fromDate, $toDate] = $this->normalizeRange($from, $to);
+
+        return $this->queryOverlappingRange($fromDate, $toDate)
+            ->orderBy('start_from')
+            ->orderBy('id')
+            ->get(['id', 'name', 'start_from', 'end_at'])
+            ->map(function (Holiday $holiday) use ($fromDate, $toDate): ?array {
+                $start = $holiday->start_from?->copy();
+
+                if ($start === null) {
+                    return null;
+                }
+
+                $end = $holiday->end_at?->copy() ?? $start->copy();
+
+                if ($end->lt($start)) {
+                    $end = $start->copy();
+                }
+
+                if ($start->lt($fromDate)) {
+                    $start = $fromDate->copy();
+                }
+
+                if ($end->gt($toDate)) {
+                    $end = $toDate->copy();
+                }
+
+                $name = trim((string) $holiday->name);
+
+                return [
+                    'id' => (int) $holiday->id,
+                    'name' => $name !== '' ? $name : null,
+                    'start_from' => $start->toDateString(),
+                    'end_at' => $end->toDateString(),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return string[]
      */
     public function getDateStringsForYear(int $year): array

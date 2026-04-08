@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Leave;
 
 use App\Models\Attendance;
+use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\User;
 use App\Services\Attendance\AttendanceDailyStatusResolverService;
+use App\Services\HolidayDateService;
 use Carbon\Carbon;
 use Throwable;
 
@@ -17,6 +19,7 @@ class MobileLeavePageService
 
     public function __construct(
         private readonly AttendanceDailyStatusResolverService $attendanceDailyStatusResolverService,
+        private readonly HolidayDateService $holidayDateService,
     ) {}
 
     public function buildForUser(User $user, int $page = 1, int $perPage = 10, ?Carbon $now = null): array
@@ -31,6 +34,8 @@ class MobileLeavePageService
                 'summary' => $this->buildSummary($user->id, $today),
                 'active_or_upcoming_leaves' => $this->buildActiveOrUpcomingLeaves($user->id, $today),
                 'history' => $this->buildHistory($user->id, $page, $perPage),
+                'holiday_dates' => $this->holidayDateService->getDateStrings(),
+                'holidays' => $this->holidayDateService->getHolidayItems(),
             ],
             'meta' => [
                 'server_time' => $referenceNow->toIso8601String(),
@@ -45,6 +50,7 @@ class MobileLeavePageService
         $attendance = $approvedLeave === null
             ? $this->findAttendanceForDate((int) $user->id, $today)
             : null;
+        $holiday = $this->holidayDateService->findHolidayForDate($today);
 
         ['status' => $attendanceStatus, 'label' => $attendanceStatusLabel, 'note' => $attendanceNote] =
             $this->resolveTodayAttendanceContext($user, $today, $approvedLeave, $attendance);
@@ -55,7 +61,9 @@ class MobileLeavePageService
             'attendance_status' => $attendanceStatus,
             'attendance_status_label' => $attendanceStatusLabel,
             'attendance_note' => $attendanceNote,
-            'is_working_day' => ! $today->isWeekend(),
+            'is_working_day' => ! $today->isWeekend() && $holiday === null,
+            'is_holiday' => $holiday !== null,
+            'holiday_name' => $this->resolveHolidayName($holiday),
             'leave' => $approvedLeave ? $this->transformLeaveSummary($approvedLeave) : null,
             'attendance' => $attendance ? $this->transformAttendanceContext($attendance) : null,
         ];
@@ -260,7 +268,7 @@ class MobileLeavePageService
     {
         return match ($status) {
             'on_leave' => 'Sedang Cuti',
-            'off_day' => 'Hari Libur',
+            'off_day' => $fallback ?: 'Hari Libur',
             'complete' => 'Absensi Lengkap',
             'checked_in', 'ongoing' => 'Sudah Check-in',
             'absent' => 'Tidak Hadir',
@@ -274,7 +282,7 @@ class MobileLeavePageService
     {
         return match ($status) {
             'on_leave' => 'Anda tidak perlu check-in hari ini.',
-            'off_day' => 'Hari ini bukan hari kerja.',
+            'off_day' => $fallback ?: 'Hari ini bukan hari kerja.',
             'complete' => 'Absensi hari ini sudah lengkap.',
             'checked_in', 'ongoing' => 'Anda sudah check-in, jangan lupa check-out.',
             'absent' => 'Anda belum memiliki absensi hari ini.',
@@ -282,6 +290,17 @@ class MobileLeavePageService
             'not_checked_in_yet' => 'Anda belum check-in hari ini.',
             default => $fallback ?: 'Konteks absensi hari ini belum tersedia.',
         };
+    }
+
+    private function resolveHolidayName(?Holiday $holiday): ?string
+    {
+        if ($holiday === null) {
+            return null;
+        }
+
+        $name = trim((string) $holiday->name);
+
+        return $name !== '' ? $name : null;
     }
 
     private function calculateOverlapDaysInclusive(?Carbon $start, ?Carbon $end, Carbon $rangeStart, Carbon $rangeEnd): int
