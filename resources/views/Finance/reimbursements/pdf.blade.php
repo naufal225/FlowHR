@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -178,37 +178,7 @@
     </div>
 
     @if($reimbursement->marked_down)
-        <div style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.2);
-            z-index: 9999;
-        ">
-            {{-- <div style="
-                    position: absolute;
-                    bottom: 20px;
-                    right: 20px;
-                    font-size: 10px;
-                    color: #444;
-                    z-index: 50;
-                ">
-                Request #RY{{ $reimbursement->id }} | {{ \Carbon\Carbon::parse($reimbursement->created_at)->format('F d, Y \a\t H:i') }} <br>
-                {{ $reimbursement->employee->email }}
-            </div> --}}
-            <img src="{{ public_path('FlowHR_logo.png') }}" 
-                alt="FlowHR"
-                style="
-                    position: absolute;
-                    bottom: 20px;
-                    right: 20px;
-                    width: 12rem;
-                    z-index: 100;
-                    opacity: 1;
-                ">
-        </div>
+        @include('components.pdf.watermark')
     @endif
 
     <div class="section">
@@ -333,3 +303,5 @@
 </body>
 
 </html>
+
+

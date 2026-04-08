@@ -161,26 +161,7 @@
     </div>
 
 @if($overtime->marked_down)
-        <div style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.2);
-            z-index: 9999;
-        ">
-            <img src="{{ public_path('FlowHR_logo.png') }}" 
-                alt="FlowHR"
-                style="
-                    position: absolute;
-                    bottom: 20px;
-                    right: 20px;
-                    width: 12rem;
-                    z-index: 100;
-                    opacity: 1;
-                ">
-        </div>
+        @include('components.pdf.watermark')
     @endif
 
     <div class="section">
@@ -347,3 +328,5 @@
 </body>
 
 </html>
+
+

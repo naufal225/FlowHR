@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -14,7 +14,7 @@
             <!-- Header Section - Primary Blue (35%) -->
             <div class="px-8 py-12 text-center bg-gradient-to-r from-blue-600 to-blue-700">
                 <div class="flex items-center justify-center mx-auto">
-                    <img src="{{ asset('FlowHR_logo.png') }}" alt="FlowHR Logo" class="w-auto h-48 mx-auto rounded-lg">
+                    <img src="{{ asset(config('branding.light_surface_logo')) }}" alt="FlowHR Logo" class="w-auto h-48 mx-auto rounded-lg">
                 </div>
             </div>
 
@@ -307,3 +307,4 @@
     </script>
 </body>
 </html>
+

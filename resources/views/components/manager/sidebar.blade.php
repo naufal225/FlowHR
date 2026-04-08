@@ -1,9 +1,9 @@
-<!-- Sidebar -->
+﻿<!-- Sidebar -->
 <div class="fixed inset-y-0 left-0 z-30 z-50 flex flex-col w-64 text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary-800 shadow-medium lg:relative lg:translate-x-0"
     id="sidebar">
     <div class="flex items-center justify-between h-32 px-6 py-4">
         <div class="w-full">
-            <img src="{{ asset('FlowHR_logo.png') }}" alt="FlowHR Logo" class="w-24 h-auto max-w-full mx-auto md:w-48 rounded-xl">
+            <img src="{{ asset(config('branding.dark_surface_logo')) }}" alt="FlowHR Logo" class="w-24 h-auto max-w-full mx-auto md:w-48 rounded-xl">
         </div>
         <button class="text-white lg:hidden hover:text-primary-200" onclick="toggleSidebar()">
             <i class="text-lg fas fa-times"></i>
@@ -89,3 +89,4 @@
         </form>
     </div>
 </div>
+
