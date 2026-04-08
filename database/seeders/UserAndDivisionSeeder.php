@@ -77,7 +77,7 @@ class UserAndDivisionSeeder extends Seeder
         foreach ($divisions as $divisionName => $data) {
             foreach ($data['members'] as $name) {
                 if (!isset($users[$name])) {
-                    $email = strtolower(str_replace(' ', '', $name)) . '@flowhr.co.id';
+                    $email = strtolower(str_replace(' ', '', $name)) . '@yaztech.co.id';
 
                     $user = User::create([
                         'name' => $name,
