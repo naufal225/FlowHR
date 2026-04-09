@@ -107,58 +107,32 @@ class OvertimeController extends Controller
             ->paginate(5, ['*'], 'all_page_done')
             ->withQueryString();
 
-        // --- Query untuk "All Overtimes Not Marked (lockable)"
-        $allOvertimes = collect();
-        DB::transaction(function () use (&$allOvertimes, $request, $userId) {
-            $query = Overtime::with(['employee', 'approver1', 'approver2'])
-                ->where('status_1', 'approved')
-                ->where('status_2', 'approved')
-                ->where('marked_down', false)
-                ->where(function ($q) use ($userId) {
-                    $q->whereNull('locked_by')
-                        ->orWhere(function ($q2) {
-                            $q2->whereRaw('DATE_ADD(locked_at, INTERVAL 60 MINUTE) < ?', [now()]);
-                        })
-                        ->orWhere(function ($q3) use ($userId) {
-                            $q3->where('locked_by', $userId)
-                                ->whereRaw('DATE_ADD(locked_at, INTERVAL 60 MINUTE) >= ?', [now()]);
-                        });
-                })
-                ->orderBy('created_at', 'asc');
+        // --- Query untuk "All Overtimes Not Marked"
+        $allOvertimesQuery = Overtime::with(['employee', 'approver1', 'approver2'])
+            ->where('status_1', 'approved')
+            ->where('status_2', 'approved')
+            ->where('marked_down', false)
+            ->orderBy('created_at', 'asc');
 
-            if (request()->filled('from_date')) {
-                $query->where(
-                    'date_start',
-                    '>=',
-                    Carbon::parse(request()->from_date)->startOfDay()->timezone('Asia/Jakarta')
-                );
-            }
+        if ($request->filled('from_date')) {
+            $allOvertimesQuery->where(
+                'date_start',
+                '>=',
+                Carbon::parse($request->from_date)->startOfDay()->timezone('Asia/Jakarta')
+            );
+        }
 
-            if (request()->filled('to_date')) {
-                $query->where(
-                    'date_end',
-                    '<=',
-                    Carbon::parse(request()->to_date)->endOfDay()->timezone('Asia/Jakarta')
-                );
-            }
+        if ($request->filled('to_date')) {
+            $allOvertimesQuery->where(
+                'date_end',
+                '<=',
+                Carbon::parse($request->to_date)->endOfDay()->timezone('Asia/Jakarta')
+            );
+        }
 
-            $lockedIds = $query->limit(5)->lockForUpdate()->pluck('id');
-
-            if ($lockedIds->isNotEmpty()) {
-                Overtime::whereIn('id', $lockedIds)
-                    ->update([
-                        'locked_by' => $userId,
-                        'locked_at' => now(),
-                    ]);
-
-                // Fetch ulang data yang udah updated!
-                $allOvertimes = Overtime::with(['employee', 'approver1', 'approver2'])
-                    ->whereIn('id', $lockedIds)
-                    ->get();
-            } else {
-                $allOvertimes = collect();
-            }
-        });
+        $allOvertimes = $allOvertimesQuery
+            ->paginate(5, ['*'], 'all_page')
+            ->withQueryString();
 
         // --- Statistik
         $dataAll = Overtime::where('status_1', 'approved')
@@ -607,32 +581,31 @@ class OvertimeController extends Controller
 
     public function markedDone(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $validated = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $validated['ids'])));
 
         try {
-            DB::transaction(function () use ($ids) {
-                $records = Overtime::whereIn('id', $ids)
-                    ->where('marked_down', false)
-                    ->where('locked_by', Auth::id())
-                    ->lockForUpdate()
-                    ->get();
+            $updated = Overtime::whereIn('id', $ids)
+                ->where('status_1', 'approved')
+                ->where('status_2', 'approved')
+                ->where('marked_down', false)
+                ->update([
+                    'marked_down' => true,
+                    'locked_by' => null,
+                    'locked_at' => null,
+                ]);
 
-                if ($records->isEmpty()) {
-                    throw new Exception('No overtimes available to mark as done.');
-                }
-
-                foreach ($records as $rec) {
-                    $rec->update([
-                        'marked_down' => true,
-                        'locked_by' => null,
-                        'locked_at' => null,
-                    ]);
-                }
-            });
+            if ($updated < 1) {
+                throw new Exception('No overtimes available to mark as done.');
+            }
 
             return redirect()
                 ->route('finance.overtimes.index')
-                ->with('success', 'Selected overtimes marked as done.');
+                ->with('success', $updated . ' overtime request(s) marked as done.');
         } catch (Exception $e) {
             return redirect()
                 ->route('finance.overtimes.index')

@@ -339,7 +339,7 @@
                 <div class="flex flex-row w-full gap-2 sm:w-auto">
                     <button type="button" id="mark-all-btn"
                             class="w-full px-4 py-2 text-white rounded-lg sm:w-auto bg-primary-600 hover:bg-primary-700">
-                        <i class="mr-1 fas fa-list-check"></i> Mark All (Locked)
+                        <i class="mr-1 fas fa-list-check"></i> Mark All
                     </button>
                     <button type="submit"
                             class="w-full px-4 py-2 text-white rounded-lg sm:w-auto bg-success-600 hover:bg-success-700 disabled:opacity-50"
@@ -375,7 +375,7 @@
                             <tr class="transition-colors duration-200 hover:bg-neutral-50">
                                 <!-- Checkbox per row -->
                                 <td class="px-4 py-4">
-                                    @if(!$officialTravel->marked_down && $officialTravel->locked_by === Auth::id())
+                                    @if(!$officialTravel->marked_down)
                                         <input type="checkbox"
                                             name="ids[]"
                                             value="{{ $officialTravel->id }}"
@@ -475,7 +475,7 @@
                                         <a href="{{ route('finance.official-travels.show', $officialTravel->id) }}" class="text-primary-600 hover:text-primary-900" title="View Details">
                                             <i class="text-lg fas fa-eye"></i>
                                         </a>
-                                        @if(!$officialTravel->marked_down && $officialTravel->locked_by === Auth::id())
+                                        @if(!$officialTravel->marked_down)
                                             <form action="{{ route('finance.official-travels.marked') }}" method="POST" class="inline"
                                                   onsubmit="return confirm('Mark this official travel as done?')">
                                                 @csrf
@@ -502,6 +502,12 @@
                     </tbody>
                 </table>
             </div>
+
+            @if($allTravels->hasPages())
+                <div class="px-6 py-4 border-t border-neutral-200">
+                    {{ $allTravels->appends(['tab' => 'all'])->links() }}
+                </div>
+            @endif
         </form>
 
         <!-- Official Travels All Employee (Marked done) Table -->
@@ -644,33 +650,39 @@
     </div>
 @endsection
 @push('scripts')
-    const selectAll = document.getElementById('select-all');
-    const checkboxes = document.querySelectorAll('.row-checkbox');
-    const bulkBtn = document.getElementById('bulk-mark-btn');
-    const markAllBtn = document.getElementById('mark-all-btn');
-    const bulkForm = document.getElementById('bulk-mark-form');
+    <script>
+        const selectAll = document.getElementById('select-all');
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        const bulkBtn = document.getElementById('bulk-mark-btn');
+        const markAllBtn = document.getElementById('mark-all-btn');
+        const bulkForm = document.getElementById('bulk-mark-form');
 
-    function toggleButtons() {
-        const anyChecked = document.querySelectorAll('.row-checkbox:checked').length > 0;
-        bulkBtn.disabled = !anyChecked;
-    }
+        function toggleButtons() {
+            if (!bulkBtn) {
+                return;
+            }
 
-    selectAll?.addEventListener('change', function() {
-        checkboxes.forEach(cb => cb.checked = this.checked);
-        toggleButtons();
-    });
-
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', toggleButtons);
-    });
-
-    markAllBtn?.addEventListener('click', function () {
-        const rows = document.querySelectorAll('.row-checkbox');
-        let any = false;
-        rows.forEach(cb => { if (!cb.disabled) { cb.checked = true; any = true; } });
-        toggleButtons();
-        if (any) {
-            bulkForm.submit();
+            const anyChecked = document.querySelectorAll('.row-checkbox:checked').length > 0;
+            bulkBtn.disabled = !anyChecked;
         }
-    });
+
+        selectAll?.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            toggleButtons();
+        });
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', toggleButtons);
+        });
+
+        markAllBtn?.addEventListener('click', function () {
+            const rows = document.querySelectorAll('.row-checkbox');
+            let any = false;
+            rows.forEach(cb => { if (!cb.disabled) { cb.checked = true; any = true; } });
+            toggleButtons();
+            if (any && bulkForm) {
+                bulkForm.submit();
+            }
+        });
+    </script>
 @endpush

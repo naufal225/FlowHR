@@ -43,7 +43,7 @@
                 </div>
                 @endif
 
-                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
+                <div class="px-6 py-4 text-white bg-gradient-to-r from-primary-600 to-primary-700">
                     <div class="flex items-center justify-between">
                         <div>
                             <h1 class="text-xl font-bold text-white">Reimbursement Claim #RY{{ $reimbursement->id }}
@@ -200,20 +200,20 @@
                                 $reimbursement->note_2 ?? '-' }}</span>
                         </div>
                     </div>
-                </div>
-                <!-- Invoice Path (was Attachment) -->
-                <div class="py-6 space-y-2">
-                    <label class="text-sm font-semibold text-neutral-700">Invoice</label>
-                    <div class="p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                        @if($reimbursement->invoice_path)
-                        <a href="{{ Storage::url($reimbursement->invoice_path) }}" target="_blank"
-                            class="flex items-center font-medium text-primary-600 hover:text-primary-800">
-                            <i class="mr-2 fas fa-file-alt"></i>
-                            View Invoice ({{ pathinfo($reimbursement->invoice_path, PATHINFO_EXTENSION) }})
-                        </a>
-                        @else
-                        <p class="text-neutral-500">No invoice provided.</p>
-                        @endif
+                    <!-- Invoice Path (was Attachment) -->
+                    <div class="py-6 space-y-2">
+                        <label class="text-sm font-semibold text-neutral-700">Invoice</label>
+                        <div class="p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                            @if($reimbursement->invoice_path)
+                            <a href="{{ Storage::url($reimbursement->invoice_path) }}" target="_blank"
+                                class="flex items-center font-medium text-primary-600 hover:text-primary-800">
+                                <i class="mr-2 fas fa-file-alt"></i>
+                                View Invoice ({{ pathinfo($reimbursement->invoice_path, PATHINFO_EXTENSION) }})
+                            </a>
+                            @else
+                            <p class="text-neutral-500">No invoice provided.</p>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>

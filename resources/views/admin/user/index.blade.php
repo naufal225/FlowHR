@@ -143,15 +143,19 @@
                             </td>
                             <td class="px-6 py-4 font-medium text-md whitespace-nowrap">
                                 <div class="flex items-center space-x-2">
+                                    @can('view', $user)
                                     <a href="{{ route('admin.users.show', $user->id) }}"
                                         class="text-sky-600 hover:text-sky-900" title="Detail">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    @endcan
+                                    @can('update', $user)
                                     <a href="{{ route('admin.users.edit', $user->id) }}"
                                         class="text-secondary-600 hover:text-secondary-900" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    @if(Auth::id() != $user->id)
+                                    @endcan
+                                    @can('delete', $user)
                                     <button type="button" class="delete-user-btn text-error-600 hover:text-error-900"
                                         data-user-id="{{ $user->id }}" data-user-name="{{ $user->name }}">
                                         <i class="fas fa-trash"></i>
@@ -162,7 +166,7 @@
                                         @csrf
                                         @method('DELETE')
                                     </form>
-                                    @endif
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

@@ -12,9 +12,13 @@
     ])
 
     @include('components.attendance.flash-messages')
+    @php
+        $isApproverScope = ($routePrefix ?? '') === 'approver';
+    @endphp
 
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <form method="GET" action="{{ route($routePrefix . '.attendance.corrections.index') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <form method="GET" action="{{ route($routePrefix . '.attendance.corrections.index') }}"
+            class="grid grid-cols-1 gap-4 {{ $isApproverScope ? 'lg:grid-cols-3' : 'lg:grid-cols-4' }}">
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="status">Status</label>
                 <select id="status" name="status"
@@ -34,16 +38,18 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
-                <select id="office_location_id" name="office_location_id"
-                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500">
-                    <option value="">All offices</option>
-                    @foreach($officeLocations as $office)
-                        <option value="{{ $office->id }}" @selected((string) request('office_location_id') === (string) $office->id)>{{ $office->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            @unless($isApproverScope)
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
+                    <select id="office_location_id" name="office_location_id"
+                        class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500">
+                        <option value="">All offices</option>
+                        @foreach($officeLocations as $office)
+                            <option value="{{ $office->id }}" @selected((string) request('office_location_id') === (string) $office->id)>{{ $office->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endunless
             <div class="flex items-end gap-2">
                 <button type="submit"
                     class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-700">

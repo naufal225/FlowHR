@@ -164,7 +164,7 @@ class ReimbursementController extends Controller
             );
 
             return redirect()
-                ->route('admin.reimbursements.index')
+                ->route('manager.reimbursements.index')
                 ->with('success', "Reimbursement request {$request->status} successfully.");
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);

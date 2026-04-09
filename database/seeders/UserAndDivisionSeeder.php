@@ -34,6 +34,9 @@ class UserAndDivisionSeeder extends Seeder
                     'Hendrik',
                     'M Dimas Satria',
                     'Arif Syafii',
+                    'Akbar',
+                    'Lulu Andriani',
+                    'Ardita Widya Amanda',
                 ],
             ],
             'Teknikal' => [
@@ -58,14 +61,6 @@ class UserAndDivisionSeeder extends Seeder
                     'Najia Salsabila',
                     'Anisa Salmayenti',
                     'Syiva Julaikha',
-                ],
-            ],
-            'HR' => [
-                'leader' => 'Akbar',
-                'members' => [
-                    'Akbar',
-                    'Lulu Andriani',
-                    'Ardita Widya Amanda',
                 ],
             ],
         ];
@@ -135,14 +130,14 @@ class UserAndDivisionSeeder extends Seeder
             }
         }
 
-        $hrDivisionId = Division::query()->where('name', 'HR')->value('id');
-        if ($hrDivisionId !== null) {
+        $managementDivisionId = Division::query()->where('name', 'Management')->value('id');
+        if ($managementDivisionId !== null) {
             User::query()
                 ->whereHas('roles', fn ($query) => $query->where('name', Roles::Admin->value))
-                ->update(['division_id' => $hrDivisionId]);
+                ->update(['division_id' => $managementDivisionId]);
         }
 
-        $this->command->info('Showcase users/divisions seeded dengan domain gmail.com + divisi HR.');
+        $this->command->info('Showcase users/divisions seeded dengan domain gmail.com dan admin dari divisi Management.');
     }
 
     private function gmailFromName(string $name): string

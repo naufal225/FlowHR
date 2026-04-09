@@ -140,24 +140,25 @@
 <!-- Divider -->
 <div class="mt-6 mb-10 transform scale-y-50 border-t border-gray-300/80"></div>
 
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
     <!-- Calendar Section -->
     @if($flags['cuti'])
     <x-dashboard.leave-calendar-widget
         :approvedByDate="$cutiPerTanggal"
         :holidayDates="$holidayDates ?? []"
         :holidaysByDate="$holidaysByDate ?? []"
+        calendarSize="x-tall"
         title="Employee Leave Calendar"
         helperText="Klik tanggal untuk melihat daftar karyawan yang cuti." />
     @endif
 
     <!-- Recent Requests Section -->
-    <div class="mb-8 bg-white border border-gray-200 rounded-lg">
+    <div class="mb-8 bg-white border border-gray-200 rounded-lg lg:mb-0 lg:h-full flex flex-col">
         <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800">Recent Requests</h3>
             <p class="text-sm text-gray-500">Your latest submissions</p>
         </div>
-        <div class="p-6">
+        <div class="p-6 lg:flex-1 lg:overflow-y-auto">
                 @php
                     $recentFiltered = collect($recentRequests)->filter(function ($r) use ($flags) {
                         return ($r['type'] === App\Enums\TypeRequest::Leaves->value && $flags['cuti'])

@@ -91,16 +91,20 @@
                         <!-- Email -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Email</label>
-                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200" x-data="{ tooltip: false }">
+                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200"
+                                x-data="{ tooltip: false }">
                                 <i class="flex-shrink-0 mr-3 fas fa-envelope text-primary-600"></i>
-                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true" @mouseleave="tooltip = false" x-tooltip="'{{ $reimbursement->employee->email }}'">
+                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true"
+                                    @mouseleave="tooltip = false" x-tooltip="'{{ $reimbursement->employee->email }}'">
                                     {{ $reimbursement->employee->email }}
                                 </span>
-                                <div x-show="tooltip" x-cloak class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
+                                <div x-show="tooltip" x-cloak
+                                    class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
                                     {{ $reimbursement->employee->email }}
                                 </div>
                             </div>
                         </div>
+
                         <!-- Approver -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Approver 1</label>
@@ -110,7 +114,8 @@
                                     'N/A' }}</span>
                             </div>
                         </div>
-                        <!-- Total (was Amount) -->
+
+                        <!-- Total -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Total Amount</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -119,6 +124,7 @@
                                     number_format($reimbursement->total, 0, ',', '.') }}</span>
                             </div>
                         </div>
+
                         <!-- Date -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Date of Expense</label>
@@ -128,6 +134,7 @@
                                     \Carbon\Carbon::parse($reimbursement->date)->format('l, M d, Y') }}</span>
                             </div>
                         </div>
+
                         <!-- Customer -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Perusahaan Customer</label>
@@ -137,6 +144,7 @@
                                     }}</span>
                             </div>
                         </div>
+
                         <!-- Type Reimbursement -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Type Reimbursement</label>
@@ -146,6 +154,7 @@
                                     }}</span>
                             </div>
                         </div>
+
                         <!-- Status -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Status - Approver 1</label>
@@ -162,6 +171,7 @@
                                 @endif
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Status - Approver 2</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -177,34 +187,29 @@
                                 @endif
                             </div>
                         </div>
-                            <!-- Note -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Note - Approver 1</label>
-                                <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-sticky-note text-info-600"></i>
-                                    <span class="text-neutral-900 break-all whitespace-pre-line max-w-full max-h-40 overflow-y-auto">{{ $reimbursement->note_1 ?? '-' }}</span>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Note - Approver 2</label>
-                                <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-sticky-note text-info-600"></i>
-                                    <span class="text-neutral-900 break-all whitespace-pre-line max-w-full max-h-40 overflow-y-auto">{{ $reimbursement->note_2 ?? '-' }}</span>
-                                </div>
+
+                        <!-- Notes -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-neutral-700">Note - Approver 1</label>
+                            <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <i class="mr-3 fas fa-sticky-note text-info-600"></i>
+                                <span
+                                    class="max-w-full max-h-40 overflow-y-auto break-all whitespace-pre-line text-neutral-900">{{ $reimbursement->note_1 ?? '-' }}</span>
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Note - Approver 2</label>
                             <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
                                 <i class="mr-3 fas fa-sticky-note text-info-600"></i>
                                 <span
-                                    class="max-w-full overflow-y-auto break-all whitespace-pre-line text-neutral-900 max-h-40">{{
-                                    $reimbursement->note_2 ?? '-' }}</span>
+                                    class="max-w-full max-h-40 overflow-y-auto break-all whitespace-pre-line text-neutral-900">{{ $reimbursement->note_2 ?? '-' }}</span>
                             </div>
                         </div>
                     </div>
-                    <!-- Invoice Path (was Attachment) -->
-                    <div class="py-6 space-y-2">
+
+                    <!-- Invoice -->
+                    <div class="pt-6 space-y-2">
                         <label class="text-sm font-semibold text-neutral-700">Invoice</label>
                         <div class="p-3 border rounded-lg bg-neutral-50 border-neutral-200">
                             @if($reimbursement->invoice_path)

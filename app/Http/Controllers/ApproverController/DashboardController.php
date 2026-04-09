@@ -8,6 +8,7 @@ use App\Models\Leave;
 use App\Models\OfficialTravel;
 use App\Models\Overtime;
 use App\Models\Reimbursement;
+use App\Models\Division;
 use App\Models\User;
 use App\Enums\Roles;
 use App\Models\Role;
@@ -24,6 +25,9 @@ class DashboardController extends Controller
 
     public function index(DashboardLeaveCalendarService $dashboardLeaveCalendarService)
     {
+        $approverId = (int) Auth::id();
+        $divisionIds = $this->resolveApproverDivisionIds($approverId);
+
         $featureActive = [
             'cuti' => FeatureSetting::isActive('cuti'),
             'reimbursement' => FeatureSetting::isActive('reimbursement'),
@@ -53,12 +57,13 @@ class DashboardController extends Controller
                 $approveds[$key] = 0;
                 continue;
             }
-            $base = $model::query()->where('created_at', '>=', $startOfMonth);
+            $base = $model::query()
+                ->forLeader($approverId)
+                ->where('created_at', '>=', $startOfMonth);
 
-            // Tambahkan scope forLeader untuk filter berdasarkan divisi leader
-            $pendings[$key] = (clone $base)->filterFinalStatus('pending')->forLeader(Auth::id())->count();
-            $rejecteds[$key] = (clone $base)->filterFinalStatus('rejected')->forLeader(Auth::id())->count();
-            $approveds[$key] = (clone $base)->filterFinalStatus('approved')->forLeader(Auth::id())->count();
+            $pendings[$key] = (clone $base)->filterFinalStatus('pending')->count();
+            $rejecteds[$key] = (clone $base)->filterFinalStatus('rejected')->count();
+            $approveds[$key] = (clone $base)->filterFinalStatus('approved')->count();
         }
 
         $total_pending = array_sum($pendings);
@@ -67,11 +72,12 @@ class DashboardController extends Controller
 
         $employeeRole = Role::where('name', Roles::Employee->value)->first();
 
-        $total_employees = User::whereHas('division', function ($q) {
-            $q->where('leader_id', Auth::id());
-        })->whereHas('roles', function ($q) use ($employeeRole) {
-            $q->where('roles.id', $employeeRole->id);
-        })->count();
+        $total_employees = User::query()
+            ->whereIn('division_id', $divisionIds)
+            ->where('id', '!=', $approverId)
+            ->whereHas('roles', function ($q) use ($employeeRole) {
+                $q->where('roles.id', $employeeRole->id);
+            })->count();
 
         // Generate chart data per bulan dengan filter forLeader
         $reimbursementsChartData = $overtimesChartData = $leavesChartData = $officialTravelsChartData = $reimbursementsRupiahChartData = [];
@@ -87,19 +93,18 @@ class DashboardController extends Controller
 
             $months[] = $monthName;
 
-            // Tambahkan scope forLeader untuk semua query chart
-            $reimbursementsChartData[] = $featureActive['reimbursement'] ? Reimbursement::forLeader(Auth::id())->whereBetween('created_at', [$start, $end])->count() : 0;
-            $reimbursementsRupiahChartData[] = $featureActive['reimbursement'] ? Reimbursement::forLeader(Auth::id())->whereBetween('created_at', [$start, $end])->sum('total') : 0;
-            $overtimesChartData[] = $featureActive['overtime'] ? Overtime::forLeader(Auth::id())->whereBetween('created_at', [$start, $end])->count() : 0;
-            $leavesChartData[] = $featureActive['cuti'] ? Leave::forLeader(Auth::id())->whereBetween('created_at', [$start, $end])->count() : 0;
-            $officialTravelsChartData[] = $featureActive['perjalanan_dinas'] ? OfficialTravel::forLeader(Auth::id())->whereBetween('created_at', [$start, $end])->count() : 0;
+            $reimbursementsChartData[] = $featureActive['reimbursement'] ? Reimbursement::forLeader($approverId)->whereBetween('created_at', [$start, $end])->count() : 0;
+            $reimbursementsRupiahChartData[] = $featureActive['reimbursement'] ? Reimbursement::forLeader($approverId)->whereBetween('created_at', [$start, $end])->sum('total') : 0;
+            $overtimesChartData[] = $featureActive['overtime'] ? Overtime::forLeader($approverId)->whereBetween('created_at', [$start, $end])->count() : 0;
+            $leavesChartData[] = $featureActive['cuti'] ? Leave::forLeader($approverId)->whereBetween('created_at', [$start, $end])->count() : 0;
+            $officialTravelsChartData[] = $featureActive['perjalanan_dinas'] ? OfficialTravel::forLeader($approverId)->whereBetween('created_at', [$start, $end])->count() : 0;
         }
 
         // Sisa cuti untuk approver (jika needed)
         $sisaCuti = 0; // Approver mungkin tidak perlu sisa cuti, tapi bisa diisi jika diperlukan
 
         // Recent requests dengan filter forLeader
-        $recentRequests = $this->getRecentRequestsForLeader(Auth::id());
+        $recentRequests = $this->getRecentRequestsForLeader($approverId);
         // Filter recent requests by active features
         $recentRequests = $recentRequests->filter(function ($item) use ($featureActive) {
             return ($item['type'] === \App\Enums\TypeRequest::Leaves->value && $featureActive['cuti'])
@@ -114,7 +119,7 @@ class DashboardController extends Controller
         $holidaysByDate = [];
         if ($featureActive['cuti']) {
             $calendarData = $dashboardLeaveCalendarService->build(
-                Leave::query()->forLeader(Auth::id()),
+                Leave::query()->forLeader($approverId),
                 now()->year,
             );
             $cutiPerTanggal = $calendarData['approved_by_date'];
@@ -149,7 +154,7 @@ class DashboardController extends Controller
         $recentLeaves = Leave::forLeader($leaderId)
             ->with(['employee:id,name,division_id,url_profile', 'employee.division:id,name'])
             ->latest()
-            ->limit(5)
+            ->limit(8)
             ->get()
             ->map(function ($item) {
                 return [
@@ -159,6 +164,7 @@ class DashboardController extends Controller
                     'division_name' => $item->employee->division->name,
                     'url_profile' => $item->employee->url_profile,
                     'date' => $item->created_at->format('M d, Y'),
+                    'created_at' => $item->created_at,
                     'status_1' => $item->status_1,
                     'status_2' => $item->status_2,
                     'url' => route('approver.leaves.show', $item->id)
@@ -168,7 +174,7 @@ class DashboardController extends Controller
         $recentReimbursements = Reimbursement::forLeader($leaderId)
             ->with(['employee:id,name,division_id,url_profile', 'employee.division:id,name'])
             ->latest()
-            ->limit(5)
+            ->limit(8)
             ->get()
             ->map(function ($item) {
                 return [
@@ -178,6 +184,7 @@ class DashboardController extends Controller
                     'division_name' => $item->employee->division->name,
                     'url_profile' => $item->employee->url_profile,
                     'date' => $item->created_at->format('M d, Y'),
+                    'created_at' => $item->created_at,
                     'status_1' => $item->status_1,
                     'status_2' => $item->status_2,
                     'url' => route('approver.reimbursements.show', $item->id)
@@ -187,7 +194,7 @@ class DashboardController extends Controller
         $recentOvertimes = Overtime::forLeader($leaderId)
             ->with(['employee:id,name,division_id,url_profile', 'employee.division:id,name'])
             ->latest()
-            ->limit(5)
+            ->limit(8)
             ->get()
             ->map(function ($item) {
                 return [
@@ -197,6 +204,7 @@ class DashboardController extends Controller
                     'division_name' => $item->employee->division->name,
                     'url_profile' => $item->employee->url_profile,
                     'date' => $item->created_at->format('M d, Y'),
+                    'created_at' => $item->created_at,
                     'status_1' => $item->status_1,
                     'status_2' => $item->status_2,
                     'url' => route('approver.overtimes.show', $item->id)
@@ -206,7 +214,7 @@ class DashboardController extends Controller
         $recentTravels = OfficialTravel::forLeader($leaderId)
             ->with(['employee:id,name,division_id,url_profile', 'employee.division:id,name'])
             ->latest()
-            ->limit(5)
+            ->limit(8)
             ->get()
             ->map(function ($item) {
                 return [
@@ -216,6 +224,7 @@ class DashboardController extends Controller
                     'division_name' => $item->employee->division->name,
                     'url_profile' => $item->employee->url_profile,
                     'date' => $item->created_at->format('M d, Y'),
+                    'created_at' => $item->created_at,
                     'status_1' => $item->status_1,
                     'status_2' => $item->status_2,
                     'url' => route('approver.official-travels.show', $item->id)
@@ -225,8 +234,30 @@ class DashboardController extends Controller
         return $recentLeaves->concat($recentReimbursements)
             ->concat($recentOvertimes)
             ->concat($recentTravels)
-            ->sortByDesc('date')
-            ->take(5)
+            ->sortByDesc('created_at')
+            ->take(8)
             ->values();
+    }
+
+    private function resolveApproverDivisionIds(int $approverId): array
+    {
+        $divisionIds = Division::query()
+            ->where('leader_id', $approverId)
+            ->pluck('id');
+
+        $memberDivisionId = User::query()
+            ->whereKey($approverId)
+            ->value('division_id');
+
+        if ($memberDivisionId !== null) {
+            $divisionIds->push((int) $memberDivisionId);
+        }
+
+        return $divisionIds
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 }

@@ -80,6 +80,7 @@
             hiddenCompletedIds: new Set(),
         };
         let downloadFrame = null;
+        let fallbackToastTimer = null;
 
         const endpoint = {
             index: panel.dataset.indexUrl,
@@ -124,6 +125,25 @@
                 window.showToast(message, type);
                 return;
             }
+
+            const existingToast = document.getElementById('report-export-fallback-toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.id = 'report-export-fallback-toast';
+            toast.className = 'fixed right-4 top-4 z-[9999] rounded-lg px-4 py-2 text-sm font-medium shadow-lg';
+            toast.classList.add(type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            if (fallbackToastTimer) {
+                window.clearTimeout(fallbackToastTimer);
+            }
+            fallbackToastTimer = window.setTimeout(() => {
+                toast.remove();
+            }, 4000);
 
             if (type === 'error') {
                 console.error(message);
@@ -408,11 +428,48 @@
             return element && 'value' in element ? String(element.value || '').trim() : '';
         };
 
+        const formatDateInput = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const ensureDateRangePayload = (payload, triggerButton = null) => {
+            if (!payload.filters) {
+                payload.filters = {};
+            }
+
+            const now = new Date();
+            const defaultFrom = formatDateInput(new Date(now.getFullYear(), now.getMonth(), 1));
+            const defaultTo = formatDateInput(now);
+
+            if (!payload.filters.from_date) {
+                payload.filters.from_date = defaultFrom;
+                const fromSelector = triggerButton?.dataset?.fromSelector;
+                const fromInput = fromSelector ? document.querySelector(fromSelector) : null;
+                if (fromInput && 'value' in fromInput) {
+                    fromInput.value = defaultFrom;
+                }
+            }
+
+            if (!payload.filters.to_date) {
+                payload.filters.to_date = defaultTo;
+                const toSelector = triggerButton?.dataset?.toSelector;
+                const toInput = toSelector ? document.querySelector(toSelector) : null;
+                if (toInput && 'value' in toInput) {
+                    toInput.value = defaultTo;
+                }
+            }
+        };
+
         const requestExport = async (payload, triggerButton = null) => {
             if (!endpoint.store) {
                 notify('Export endpoint is not configured.', 'error');
                 return null;
             }
+
+            ensureDateRangePayload(payload, triggerButton);
 
             if (!payload?.filters?.from_date || !payload?.filters?.to_date) {
                 notify('Please select both From Date and To Date before exporting.', 'error');
@@ -438,7 +495,10 @@
 
                 const result = await response.json().catch(() => ({}));
                 if (!response.ok) {
-                    const message = result.message || 'Failed to queue report export.';
+                    const validationMessage = result?.errors && typeof result.errors === 'object'
+                        ? Object.values(result.errors).flat().find((value) => typeof value === 'string')
+                        : '';
+                    const message = validationMessage || result.message || 'Failed to queue report export.';
                     notify(message, 'error');
                     return null;
                 }

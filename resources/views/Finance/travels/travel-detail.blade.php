@@ -39,7 +39,7 @@
                 </div>
                 @endif
 
-                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
+                <div class="px-6 py-4 text-white bg-gradient-to-r from-primary-600 to-primary-700">
                     <div class="flex items-center justify-between">
                         <div>
                             <h1 class="text-xl font-bold text-white">Official Travel Request #TY{{ $officialTravel->id
@@ -85,16 +85,20 @@
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Email</label>
-                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200" x-data="{ tooltip: false }">
+                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200"
+                                x-data="{ tooltip: false }">
                                 <i class="flex-shrink-0 mr-3 fas fa-envelope text-primary-600"></i>
-                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true" @mouseleave="tooltip = false" x-tooltip="'{{ $officialTravel->employee->email }}'">
+                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true"
+                                    @mouseleave="tooltip = false" x-tooltip="'{{ $officialTravel->employee->email }}'">
                                     {{ $officialTravel->employee->email }}
                                 </span>
-                                <div x-show="tooltip" x-cloak class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
+                                <div x-show="tooltip" x-cloak
+                                    class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
                                     {{ $officialTravel->employee->email }}
                                 </div>
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Customer</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -103,6 +107,7 @@
                                     'N/A' }}</span>
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Start Date</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -111,6 +116,7 @@
                                     $officialTravel->date_start->format('l, M d, Y') }}</span>
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">End Date</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -119,6 +125,7 @@
                                     $officialTravel->date_end->format('l, M d, Y') }}</span>
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Total Days</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -132,6 +139,7 @@
                                     '' }}</span>
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Total Costs</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -140,6 +148,7 @@
                                     number_format($officialTravel->total ?? 0, 0, ',', '.') }}</span>
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Status 1 - Approver 1</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -155,6 +164,7 @@
                                 @endif
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Status 2 - Approver 2</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -169,19 +179,23 @@
                                 <span class="font-medium text-error-800">Rejected</span>
                                 @endif
                             </div>
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Note - Approver 1</label>
-                                <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-sticky-note text-info-600"></i>
-                                    <span class="text-neutral-900 break-all whitespace-pre-line max-w-full max-h-40 overflow-y-auto">{{ $officialTravel->note_1 ?? '-' }}</span>
-                                </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-neutral-700">Note - Approver 1</label>
+                            <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <i class="mr-3 fas fa-sticky-note text-info-600"></i>
+                                <span
+                                    class="max-w-full overflow-y-auto break-all whitespace-pre-line max-h-40 text-neutral-900">{{ $officialTravel->note_1 ?? '-' }}</span>
                             </div>
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Note - Approver 2</label>
-                                <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-sticky-note text-info-600"></i>
-                                    <span class="text-neutral-900 break-all whitespace-pre-line max-w-full max-h-40 overflow-y-auto">{{ $officialTravel->note_2 ?? '-' }}</span>
-                                </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-neutral-700">Note - Approver 2</label>
+                            <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <i class="mr-3 fas fa-sticky-note text-info-600"></i>
+                                <span
+                                    class="max-w-full overflow-y-auto break-all whitespace-pre-line max-h-40 text-neutral-900">{{ $officialTravel->note_2 ?? '-' }}</span>
                             </div>
                         </div>
                     </div>
@@ -233,7 +247,7 @@
                     @endif
 
                     @if ($officialTravel->status_1 == 'approved' && $officialTravel->status_2 == 'approved' &&
-                    !$officialTravel->marked_down && $officialTravel->locked_by === Auth::id() &&
+                    !$officialTravel->marked_down && !$officialTravel->locked_by === Auth::id() &&
                     $officialTravel->locked_at->addMinutes(60)->isFuture())
                     <form action="{{ route('finance.official-travels.marked') }}" method="POST"
                         onsubmit="return confirm('Are you sure you want to mark selected overtimes as done?')">

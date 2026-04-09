@@ -106,58 +106,32 @@ class ReimbursementController extends Controller
             ->paginate(5, ['*'], 'all_page_done')
             ->withQueryString();
 
-        // --- Query untuk "All Reimbursements Not Marked (lockable)"
-        $allReimbursements = collect();
-        DB::transaction(function () use (&$allReimbursements, $request, $userId) {
-            $query = Reimbursement::with(['employee', 'approver', 'type'])
-                ->where('status_1', 'approved')
-                ->where('status_2', 'approved')
-                ->where('marked_down', false)
-                ->where(function ($q) use ($userId) {
-                    $q->whereNull('locked_by')
-                        ->orWhere(function ($q2) {
-                            $q2->whereRaw('DATE_ADD(locked_at, INTERVAL 60 MINUTE) < ?', [now()]);
-                        })
-                        ->orWhere(function ($q3) use ($userId) {
-                            $q3->where('locked_by', $userId)
-                                ->whereRaw('DATE_ADD(locked_at, INTERVAL 60 MINUTE) >= ?', [now()]);
-                        });
-                })
-                ->orderBy('created_at', 'asc');
+        // --- Query untuk "All Reimbursements Not Marked"
+        $allReimbursementsQuery = Reimbursement::with(['employee', 'approver1', 'approver2', 'type'])
+            ->where('status_1', 'approved')
+            ->where('status_2', 'approved')
+            ->where('marked_down', false)
+            ->orderBy('created_at', 'asc');
 
-            if (request()->filled('from_date')) {
-                $query->where(
-                    'date',
-                    '>=',
-                    Carbon::parse(request()->from_date)->startOfDay()->timezone('Asia/Jakarta')
-                );
-            }
+        if ($request->filled('from_date')) {
+            $allReimbursementsQuery->where(
+                'date',
+                '>=',
+                Carbon::parse($request->from_date)->startOfDay()->timezone('Asia/Jakarta')
+            );
+        }
 
-            if (request()->filled('to_date')) {
-                $query->where(
-                    'date',
-                    '<=',
-                    Carbon::parse(request()->to_date)->endOfDay()->timezone('Asia/Jakarta')
-                );
-            }
+        if ($request->filled('to_date')) {
+            $allReimbursementsQuery->where(
+                'date',
+                '<=',
+                Carbon::parse($request->to_date)->endOfDay()->timezone('Asia/Jakarta')
+            );
+        }
 
-            $lockedIds = $query->limit(5)->lockForUpdate()->pluck('id');
-
-            if ($lockedIds->isNotEmpty()) {
-                Reimbursement::whereIn('id', $lockedIds)
-                    ->update([
-                        'locked_by' => $userId,
-                        'locked_at' => now(),
-                    ]);
-
-                // Fetch ulang data yang udah updated!
-                $allReimbursements = Reimbursement::with(['employee', 'approver1', 'approver2'])
-                    ->whereIn('id', $lockedIds)
-                    ->get();
-            } else {
-                $allReimbursements = collect();
-            }
-        });
+        $allReimbursements = $allReimbursementsQuery
+            ->paginate(5, ['*'], 'all_page')
+            ->withQueryString();
 
         // --- Statistik (dipisah supaya tidak bentrok dengan GROUP BY)
         $dataAll = Reimbursement::where('status_1', 'approved')
@@ -558,32 +532,31 @@ class ReimbursementController extends Controller
 
     public function markedDone(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $validated = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $validated['ids'])));
 
         try {
-            DB::transaction(function () use ($ids) {
-                $records = Reimbursement::whereIn('id', $ids)
-                    ->where('marked_down', false)
-                    ->where('locked_by', Auth::id())
-                    ->lockForUpdate()
-                    ->get();
+            $updated = Reimbursement::whereIn('id', $ids)
+                ->where('status_1', 'approved')
+                ->where('status_2', 'approved')
+                ->where('marked_down', false)
+                ->update([
+                    'marked_down' => true,
+                    'locked_by' => null,
+                    'locked_at' => null,
+                ]);
 
-                if ($records->isEmpty()) {
-                    throw new Exception('No reimbursements available to mark as done.');
-                }
-
-                foreach ($records as $rec) {
-                    $rec->update([
-                        'marked_down' => true,
-                        'locked_by' => null,
-                        'locked_at' => null,
-                    ]);
-                }
-            });
+            if ($updated < 1) {
+                throw new Exception('No reimbursements available to mark as done.');
+            }
 
             return redirect()
                 ->route('finance.reimbursements.index')
-                ->with('success', 'Selected reimbursements marked as done.');
+                ->with('success', $updated . ' reimbursement(s) marked as done.');
         } catch (Exception $e) {
             return redirect()
                 ->route('finance.reimbursements.index')

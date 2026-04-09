@@ -14,37 +14,58 @@
     ])
 
     @include('components.attendance.flash-messages')
+    @php
+        $isApproverScope = ($routePrefix ?? '') === 'approver';
+    @endphp
 
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <form method="GET" action="{{ route($routePrefix . '.attendance.index') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
-                    <select id="office_location_id" name="office_location_id"
-                        class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:min-w-[18rem]">
-                        @foreach($officeLocations as $office)
-                            <option value="{{ $office->id }}" @selected($selectedOffice?->id === $office->id)>{{ $office->name }}</option>
-                        @endforeach
-                    </select>
+        @if($isApproverScope)
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Filter Scope</p>
+                    <p class="mt-1 text-sm font-medium text-slate-700">Employees under your division only</p>
                 </div>
-                <div class="flex items-end gap-2">
-                    <button type="submit"
-                        class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-700">
-                        <i class="fa-solid fa-filter"></i>
-                        <span>Apply</span>
-                    </button>
-                </div>
-            </form>
 
-            <div class="flex flex-wrap gap-2">
-                @foreach($quickFilters as $key => $label)
-                    <a href="{{ route($routePrefix . '.attendance.index', array_filter(['office_location_id' => $selectedOffice?->id, 'quick' => $key])) }}"
-                        class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition {{ $quickFilter === $key ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50' }}">
-                        <span>{{ $label }}</span>
-                    </a>
-                @endforeach
+                <div class="flex flex-wrap gap-2">
+                    @foreach($quickFilters as $key => $label)
+                        <a href="{{ route($routePrefix . '.attendance.index', array_filter(['quick' => $key])) }}"
+                            class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition {{ $quickFilter === $key ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50' }}">
+                            <span>{{ $label }}</span>
+                        </a>
+                    @endforeach
+                </div>
             </div>
-        </div>
+        @else
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <form method="GET" action="{{ route($routePrefix . '.attendance.index') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
+                        <select id="office_location_id" name="office_location_id"
+                            class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:min-w-[18rem]">
+                            @foreach($officeLocations as $office)
+                                <option value="{{ $office->id }}" @selected($selectedOffice?->id === $office->id)>{{ $office->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-700">
+                            <i class="fa-solid fa-filter"></i>
+                            <span>Apply</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="flex flex-wrap gap-2">
+                    @foreach($quickFilters as $key => $label)
+                        <a href="{{ route($routePrefix . '.attendance.index', array_filter(['office_location_id' => $selectedOffice?->id, 'quick' => $key])) }}"
+                            class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition {{ $quickFilter === $key ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50' }}">
+                            <span>{{ $label }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
@@ -110,12 +131,12 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="6" class="px-4 py-8">
-                                    @include('components.attendance.empty-state', ['title' => 'No employee found for monitoring', 'description' => 'Adjust the office filter or make sure employee accounts are active for the selected office.', 'icon' => 'fa-solid fa-users-slash'])
-                                </td>
-                            </tr>
-                        @endforelse
+                        <tr>
+                            <td colspan="6" class="px-4 py-8">
+                                    @include('components.attendance.empty-state', ['title' => 'No employee found for monitoring', 'description' => $isApproverScope ? 'No active employee in your division matches the selected quick filter.' : 'Adjust the office filter or make sure employee accounts are active for the selected office.', 'icon' => 'fa-solid fa-users-slash'])
+                            </td>
+                        </tr>
+                    @endforelse
                     </tbody>
                 </table>
             </div>

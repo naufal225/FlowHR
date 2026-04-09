@@ -13,9 +13,13 @@
     ])
 
     @include('components.attendance.flash-messages')
+    @php
+        $isApproverScope = ($routePrefix ?? '') === 'approver';
+    @endphp
 
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <form method="GET" action="{{ route($routePrefix . '.attendance.records') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+        <form method="GET" action="{{ route($routePrefix . '.attendance.records') }}"
+            class="grid grid-cols-1 gap-4 {{ $isApproverScope ? 'lg:grid-cols-2 xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-6' }}">
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="start_date">Start Date</label>
                 <input id="start_date" name="start_date" type="date" value="{{ $filters['start_date'] ?? '' }}"
@@ -36,16 +40,18 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
-                <select id="office_location_id" name="office_location_id"
-                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500">
-                    <option value="">All offices</option>
-                    @foreach($officeLocations as $office)
-                        <option value="{{ $office->id }}" @selected(($filters['office_location_id'] ?? '') == $office->id)>{{ $office->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            @unless($isApproverScope)
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700" for="office_location_id">Office</label>
+                    <select id="office_location_id" name="office_location_id"
+                        class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500">
+                        <option value="">All offices</option>
+                        @foreach($officeLocations as $office)
+                            <option value="{{ $office->id }}" @selected(($filters['office_location_id'] ?? '') == $office->id)>{{ $office->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endunless
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="record_status">Record Status</label>
                 <select id="record_status" name="record_status"
@@ -65,7 +71,7 @@
                     <option value="0" @selected(($filters['is_suspicious'] ?? '') === '0')>Non suspicious only</option>
                 </select>
             </div>
-            <div class="flex items-end gap-2 lg:col-span-3 xl:col-span-6">
+            <div class="flex items-end gap-2 {{ $isApproverScope ? 'lg:col-span-2 xl:col-span-5' : 'lg:col-span-3 xl:col-span-6' }}">
                 <button type="submit"
                     class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-700">
                     <i class="fa-solid fa-filter"></i>

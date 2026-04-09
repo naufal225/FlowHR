@@ -71,7 +71,8 @@
                 :holidayDates="$holidayDates ?? []"
                 :holidaysByDate="$holidaysByDate ?? []"
                 title="Employee Leave Calendar"
-                helperText="Klik tanggal untuk melihat daftar karyawan yang cuti." />
+                helperText="Klik tanggal untuk melihat daftar karyawan yang cuti."
+                :fillHeight="false" />
 
             {{-- Monthly Requests Chart --}}
             <article class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl">

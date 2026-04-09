@@ -137,42 +137,47 @@
     </div>
 
     @push('scripts')
-        const holidays = @json($holidays);
+    <script>
+        const holidays = @json($holidays ?? []);
 
         function calculateDuration() {
             const startDate = document.getElementById('date_start').value;
             const endDate = document.getElementById('date_end').value;
 
-            if (startDate && endDate) {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-
-                if (end >= start) {
-                    let workingDays = 0;
-                    let currentDate = new Date(start);
-
-                    while (currentDate <= end) {
-                        const dayOfWeek = currentDate.getDay();
-                        const formattedDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
-
-                        // Hanya hitung jika bukan Sabtu, Minggu, dan bukan hari libur
-                        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.includes(formattedDate)) {
-                            workingDays++;
-                        }
-
-                        currentDate.setDate(currentDate.getDate() + 1);
-                    }
-
-                    document.getElementById('duration-display').textContent =
-                        workingDays + (workingDays === 1 ? ' day' : ' days');
-
-                    document.getElementById('working-days-display').textContent =
-                        workingDays + (workingDays === 1 ? ' working day' : ' working days');
-                } else {
-                    document.getElementById('duration-display').textContent = '0 days';
-                    document.getElementById('working-days-display').textContent = '0 working days';
-                }
+            if (!startDate || !endDate) {
+                document.getElementById('duration-display').textContent = '0 days';
+                document.getElementById('working-days-display').textContent = '0 working days';
+                return;
             }
+
+            const start = new Date(startDate + 'T00:00:00');
+            const end = new Date(endDate + 'T00:00:00');
+
+            if (end < start) {
+                document.getElementById('duration-display').textContent = '0 days';
+                document.getElementById('working-days-display').textContent = '0 working days';
+                return;
+            }
+
+            const timeDiff = end.getTime() - start.getTime();
+            const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
+
+            let workingDays = 0;
+            const currentDate = new Date(start);
+
+            while (currentDate <= end) {
+                const dayOfWeek = currentDate.getDay();
+                const formattedDate = currentDate.toISOString().split('T')[0];
+
+                if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.includes(formattedDate)) {
+                    workingDays++;
+                }
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            document.getElementById('duration-display').textContent = daysDiff + (daysDiff === 1 ? ' day' : ' days');
+            document.getElementById('working-days-display').textContent = workingDays + (workingDays === 1 ? ' working day' : ' working days');
         }
 
         document.getElementById('date_start').addEventListener('change', calculateDuration);
@@ -182,6 +187,9 @@
             document.getElementById('date_end').min = this.value;
             calculateDuration();
         });
+
+        calculateDuration();
+    </script>
     @endpush
 @endsection
 

@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -18,13 +19,15 @@ use Illuminate\Validation\ValidationException;
 
 class UserManagementService
 {
-    public function getPaginatedUsers(?string $search, int $perPage = 10): LengthAwarePaginator
+    public function getPaginatedUsers(User $actor, ?string $search, int $perPage = 10): LengthAwarePaginator
     {
         $users = User::query()
             ->with(['roles:id,name', 'division:id,name', 'officeLocation:id,name'])
             ->when($search, fn($query) => $query->where('name', 'like', '%' . $search . '%'))
-            ->whereDoesntHave('roles', function ($query) {
-                $query->where('name', Roles::SuperAdmin->value);
+            ->when($this->shouldHideSuperAdminUsers($actor), function ($query) {
+                $query->whereDoesntHave('roles', function ($roleQuery) {
+                    $roleQuery->where('name', Roles::SuperAdmin->value);
+                });
             })
             ->latest()
             ->paginate($perPage)
@@ -41,10 +44,15 @@ class UserManagementService
         return $users;
     }
 
-    public function getAssignableRoles(): Collection
+    public function getAssignableRoles(User $actor): Collection
     {
-        return collect(Roles::cases())
-            ->filter(fn(Roles $role) => $role !== Roles::SuperAdmin)
+        $roles = collect(Roles::cases());
+
+        if (! $this->isActingAsSuperAdmin($actor)) {
+            $roles = $roles->filter(fn(Roles $role) => $role !== Roles::SuperAdmin);
+        }
+
+        return $roles
             ->sortBy(fn(Roles $role) => $role !== Roles::Employee)
             ->values();
     }
@@ -79,8 +87,9 @@ class UserManagementService
             ->join(', ');
     }
 
-    public function createUser(array $validated): User
+    public function createUser(User $actor, array $validated): User
     {
+        $this->ensureRolesAreAssignable($actor, $validated['roles']);
         $this->ensureDivisionForApproverRoles($validated);
 
         $user = User::query()->create([
@@ -102,8 +111,9 @@ class UserManagementService
         return $user;
     }
 
-    public function updateUser(User $user, array $validated): User
+    public function updateUser(User $actor, User $user, array $validated): User
     {
+        $this->ensureRolesAreAssignable($actor, $validated['roles']);
         $this->ensureDivisionForApproverRoles($validated);
 
         if ($user->relationLoaded('division')) {
@@ -141,8 +151,10 @@ class UserManagementService
         return $user->refresh();
     }
 
-    public function deleteUser(User $user): void
+    public function deleteUser(User $actor, User $user): void
     {
+        Gate::forUser($actor)->authorize('delete', $user);
+
         if ($user->division && (int) $user->division->leader_id === (int) $user->id) {
             $user->division->update(['leader_id' => null]);
         }
@@ -180,9 +192,53 @@ class UserManagementService
         }
     }
 
+    private function ensureRolesAreAssignable(User $actor, array $roles): void
+    {
+        $allowedRoleValues = $this->getAssignableRoles($actor)
+            ->map(fn(Roles $role) => $role->value)
+            ->all();
+
+        $invalidRoles = array_values(array_diff($roles, $allowedRoleValues));
+
+        if ($invalidRoles === []) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'roles' => 'Selected roles are not permitted for your access level.',
+        ]);
+    }
+
     private function hasApproverRole(array $roles): bool
     {
         return ! empty(array_intersect($roles, [Roles::Approver->value, Roles::Manager->value]));
+    }
+
+    private function shouldHideSuperAdminUsers(User $actor): bool
+    {
+        return ! $this->isActingAsSuperAdmin($actor);
+    }
+
+    private function isActingAsSuperAdmin(User $actor): bool
+    {
+        return $this->resolveActorRole($actor) === Roles::SuperAdmin->value;
+    }
+
+    private function resolveActorRole(User $actor): ?string
+    {
+        $activeRole = $actor->getActiveRole();
+
+        if (is_string($activeRole) && $actor->userHasRole($activeRole)) {
+            return $activeRole;
+        }
+
+        foreach ([Roles::SuperAdmin->value, Roles::Admin->value] as $role) {
+            if ($actor->userHasRole($role)) {
+                return $role;
+            }
+        }
+
+        return null;
     }
 
     private function syncUserRoles(User $user, array $roleNames, bool $isUpdate): void

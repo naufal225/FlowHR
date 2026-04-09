@@ -36,28 +36,17 @@ class LeaveController extends Controller
     }
     public function index(Request $request)
     {
+        $approverId = (int) Auth::id();
 
         // Query for user's own requests (all statuses)
         $ownRequestsQuery = Leave::with(['employee', 'approver1'])
-            ->where('employee_id', Auth::id())
+            ->where('employee_id', $approverId)
             ->orderBy('created_at', 'desc');
 
-        // Query for all users' requests (excluding own unless approved)
-        $allUsersQuery = Leave::with(['employee', 'approver1'])->forLeader(Auth::id())
-            // Only employees (not approver role and not division leaders)
-            ->whereHas('employee', function ($q) {
-                $q->whereDoesntHave('roles', fn($r) => $r->where('name', Roles::Approver->value));
-            })
-            ->whereHas('employee.division', function ($q) {
-                $q->whereColumn('leader_id', '!=', 'leaves.employee_id');
-            })
-            ->where(function ($q) {
-                $q->where('employee_id', '!=', Auth::id())
-                    ->orWhere(function ($subQ) {
-                        $subQ->where('employee_id', Auth::id())
-                            ->where('status_1', 'approved');
-                    });
-            })
+        // Query for all requests inside approver division scope.
+        $allUsersQuery = Leave::with(['employee', 'approver1'])
+            ->forLeader($approverId)
+            ->where('employee_id', '!=', $approverId)
             ->orderBy('created_at', 'desc');
 
         // Apply filters to both queries
@@ -98,10 +87,11 @@ class LeaveController extends Controller
 
         $sisaCuti = $this->leaveService->sisaCuti(Auth::user());
 
-        $totalRequests = Leave::count();
-        $pendingRequests = Leave::where('status_1', 'pending')->count();
-        $approvedRequests = Leave::where('status_1', 'approved')->count();
-        $rejectedRequests = Leave::where('status_1', 'rejected')->count();
+        $scopedStatsQuery = Leave::query()->forLeader($approverId);
+        $totalRequests = (clone $scopedStatsQuery)->count();
+        $pendingRequests = (clone $scopedStatsQuery)->filterFinalStatus('pending')->count();
+        $approvedRequests = (clone $scopedStatsQuery)->filterFinalStatus('approved')->count();
+        $rejectedRequests = (clone $scopedStatsQuery)->filterFinalStatus('rejected')->count();
 
         $managerRole = Role::where('name', 'manager')->first();
 
@@ -123,14 +113,20 @@ class LeaveController extends Controller
 
     public function show(Leave $leave)
     {
-        if ($leave->employee->division->leader->id !== Auth::id()) {
+        $leave->load(['employee.division', 'approver']);
+        $approverId = (int) Auth::id();
+
+        $canAccess = (int) $leave->employee_id === $approverId
+            || Leave::query()->whereKey($leave->id)->forLeader($approverId)->exists();
+
+        if (! $canAccess) {
             return abort(403, 'Unauthorized');
         }
 
-        $leave->load(['employee', 'approver']);
+        $isOwnRequest = (int) $leave->employee_id === $approverId;
         $isLeaderApplicant = \App\Models\Division::where('leader_id', $leave->employee_id)->exists();
         $isApproverApplicant = $leave->employee->roles()->where('name', Roles::Approver->value)->exists();
-        $canApprove = !$isLeaderApplicant && !$isApproverApplicant && $leave->status_1 === 'pending';
+        $canApprove = ! $isOwnRequest && ! $isLeaderApplicant && ! $isApproverApplicant && $leave->status_1 === 'pending';
         return view('approver.leave-request.show', compact('leave', 'canApprove'));
     }
 

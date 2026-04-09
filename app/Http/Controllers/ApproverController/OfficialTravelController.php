@@ -33,20 +33,16 @@ class OfficialTravelController extends Controller
     }
     public function index(Request $request)
     {
+        $approverId = (int) Auth::id();
         // Query for user's own requests (all statuses)
         $ownRequestsQuery = OfficialTravel::with(['employee', 'approver1','approver2'])
-            ->where('employee_id', Auth::id())
+            ->where('employee_id', $approverId)
             ->orderBy('created_at', 'desc');
 
-        // Query for all users' requests (excluding own unless approved)
-        $allUsersQuery = OfficialTravel::with(['employee', 'approver1','approver2'])->forLeader(Auth::id())
-            ->where(function ($q) {
-                $q->where('employee_id', '!=', Auth::id())
-                    ->orWhere(function ($subQ) {
-                        $subQ->where('employee_id', Auth::id())
-                            ->where('status_2', 'approved');
-                    });
-            })
+        // Query for all requests inside approver division scope.
+        $allUsersQuery = OfficialTravel::with(['employee', 'approver1', 'approver2'])
+            ->forLeader($approverId)
+            ->where('employee_id', '!=', $approverId)
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
@@ -106,13 +102,11 @@ class OfficialTravelController extends Controller
         $ownRequests = $ownRequestsQuery->paginate(10, ['*'], 'own_page');
         $allUsersRequests = $allUsersQuery->paginate(10, ['*'], 'all_page');
 
-        $totalRequests = OfficialTravel::count();
-        $pendingRequests = OfficialTravel::where('status_1', 'pending')
-            ->orWhere('status_2', 'pending')->count();
-        $approvedRequests = OfficialTravel::where('status_1', 'approved')
-            ->where('status_2', 'approved')->count();
-        $rejectedRequests = OfficialTravel::where('status_1', 'rejected')
-            ->orWhere('status_2', 'rejected')->count();
+        $scopedStatsQuery = OfficialTravel::query()->forLeader($approverId);
+        $totalRequests = (clone $scopedStatsQuery)->count();
+        $pendingRequests = (clone $scopedStatsQuery)->filterFinalStatus('pending')->count();
+        $approvedRequests = (clone $scopedStatsQuery)->filterFinalStatus('approved')->count();
+        $rejectedRequests = (clone $scopedStatsQuery)->filterFinalStatus('rejected')->count();
 
         $managerRole = Role::where('name', 'manager')->first();
 
@@ -125,11 +119,16 @@ class OfficialTravelController extends Controller
 
     public function show(OfficialTravel $officialTravel)
     {
-        if ($officialTravel->employee->division->leader->id !== Auth::id()) {
+        $officialTravel->load(['employee.division', 'approver']);
+        $approverId = (int) Auth::id();
+
+        $canAccess = (int) $officialTravel->employee_id === $approverId
+            || OfficialTravel::query()->whereKey($officialTravel->id)->forLeader($approverId)->exists();
+
+        if (! $canAccess) {
             return abort(403, 'Unauthorized');
         }
 
-        $officialTravel->load(['employee', 'approver']);
         return view('approver.official-travel.show', compact('officialTravel'));
     }
 

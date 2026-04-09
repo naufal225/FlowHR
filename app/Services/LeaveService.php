@@ -22,8 +22,6 @@ class LeaveService
 
     public function sisaCutiForYear(User $user, int $tahun, $excludeLeaveId = null): int
     {
-        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahun);
-
         $cutiList = Leave::where('employee_id', $user->id)
             ->where('status_1', 'approved')
             ->when($excludeLeaveId, fn($q) => $q->where('id', '!=', $excludeLeaveId))
@@ -34,7 +32,7 @@ class LeaveService
             ->get();
 
         $total = $cutiList->sum(
-            fn($cuti) => $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahun, $hariLibur)
+            fn($cuti) => $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahun, [])
         );
 
         $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
@@ -42,8 +40,8 @@ class LeaveService
     }
     public function hitungHariCuti($dateStart, $dateEnd, int $tahun, array $hariLibur): int
     {
-        $start = Carbon::parse($dateStart)->copy();
-        $end = Carbon::parse($dateEnd)->copy();
+        $start = Carbon::parse($dateStart)->startOfDay();
+        $end = Carbon::parse($dateEnd)->startOfDay();
 
         // Batas tahun
         if ($start->year < $tahun) {
@@ -57,36 +55,14 @@ class LeaveService
             return 0;
         }
 
-        // pastikan format holiday sesuai Y-m-d
-        $holidayDates = array_map(fn($d) => Carbon::parse($d)->format('Y-m-d'), $hariLibur);
-
-        $hariCuti = 0;
-        while ($start->lte($end)) {
-            // skip weekend
-            if ($start->isWeekend()) {
-                $start->addDay();
-                continue;
-            }
-
-            // skip holiday
-            if (in_array($start->format('Y-m-d'), $holidayDates, true)) {
-                $start->addDay();
-                continue;
-            }
-
-            $hariCuti++;
-            $start->addDay();
-        }
-
-        return $hariCuti;
+        // Hitung inklusif: tanggal awal dan akhir sama-sama dihitung.
+        return $start->diffInDays($end) + 1;
     }
 
 
     public function sisaCuti(User $user, $excludeLeaveId = null): int
     {
         $tahunSekarang = now()->year;
-
-        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahunSekarang);
 
         $cutiList = Leave::where('employee_id', $user->id)
             ->where('status_1', 'approved')
@@ -99,7 +75,7 @@ class LeaveService
 
         $total = $cutiList->sum(
             fn($cuti) =>
-            $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahunSekarang, $hariLibur)
+            $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahunSekarang, [])
         );
 
         // dd($total);
@@ -113,9 +89,7 @@ class LeaveService
         $user = Auth::user();
         $tahunSekarang = now()->year;
 
-        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahunSekarang);
-
-        $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, $hariLibur);
+        $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, []);
         $sisaCuti = $this->sisaCuti($user);
 
         if ($hariBaru > $sisaCuti) {
@@ -162,13 +136,11 @@ class LeaveService
         $user = Auth::user();
         $tahunSekarang = now()->year;
 
-        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahunSekarang);
-
         // Hitung cuti baru
-        $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, $hariLibur);
+        $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, []);
 
         // Hitung cuti lama
-        $hariLama = $this->hitungHariCuti($leave->date_start, $leave->date_end, $tahunSekarang, $hariLibur);
+        $hariLama = $this->hitungHariCuti($leave->date_start, $leave->date_end, $tahunSekarang, []);
 
         $sisaCuti = $this->sisaCuti($user, $leave->id);
 

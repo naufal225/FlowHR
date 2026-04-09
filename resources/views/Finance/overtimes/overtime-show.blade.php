@@ -368,7 +368,7 @@
             <div class="flex flex-row w-full gap-2 sm:w-auto">
                 <button type="button" id="mark-all-btn"
                     class="w-full px-4 py-2 text-white rounded-lg sm:w-auto bg-primary-600 hover:bg-primary-700">
-                    <i class="mr-1 fas fa-list-check"></i> Mark All (Locked)
+                    <i class="mr-1 fas fa-list-check"></i> Mark All
                 </button>
                 <button type="submit"
                     class="w-full px-4 py-2 text-white rounded-lg sm:w-auto bg-success-600 hover:bg-success-700 disabled:opacity-50"
@@ -425,7 +425,7 @@
                     <tr class="transition-colors duration-200 hover:bg-neutral-50">
                         <!-- Checkbox per row -->
                         <td class="px-4 py-4">
-                            @if(!$overtime->marked_down && $overtime->locked_by === Auth::id())
+                            @if(!$overtime->marked_down)
                             <input type="checkbox" name="ids[]" value="{{ $overtime->id }}"
                                 class="row-checkbox form-checkbox">
                             @endif
@@ -514,7 +514,7 @@
                                     class="text-primary-600 hover:text-primary-900" title="View">
                                     <i class="text-lg fas fa-eye"></i>
                                 </a>
-                                @if(!$overtime->marked_down && $overtime->locked_by === Auth::id())
+                                @if(!$overtime->marked_down)
                                     <form action="{{ route('finance.overtimes.marked') }}" method="POST"
                                         onsubmit="return confirm('Mark this overtime as done?')">
                                         @csrf
@@ -541,11 +541,17 @@
                 </tbody>
             </table>
         </div>
+
+        @if($allOvertimes->hasPages())
+        <div class="px-6 py-4 border-t border-neutral-200">
+            {{ $allOvertimes->appends(['tab' => 'all'])->links() }}
+        </div>
+        @endif
     </form>
 
     <!-- Reimbursement All Employee (Marked done) Table -->
-    <p class="mb-2 text-sm text-neutral-500 ms-4 hidden" data-request-tab-panel="all">All employee overtime (Marked done) requests are listed below.</p>
-    <div class="mb-6 overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200 hidden" data-request-tab-panel="all">
+    <p class="mb-2 text-sm text-neutral-500 ms-4" data-request-tab-panel="all">All employee overtime (Marked done) requests are listed below.</p>
+    <div class="mb-6 overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200" data-request-tab-panel="all">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200">
                 <thead class="bg-neutral-50">
@@ -697,6 +703,7 @@
 </div>
 @endsection
 @push('scripts')
+<script>
 const selectAll = document.getElementById('select-all');
 const checkboxes = document.querySelectorAll('.row-checkbox');
 const bulkBtn = document.getElementById('bulk-mark-btn');
@@ -704,17 +711,21 @@ const markAllBtn = document.getElementById('mark-all-btn');
 const bulkForm = document.getElementById('bulk-mark-form');
 
 function toggleButtons() {
-const anyChecked = document.querySelectorAll('.row-checkbox:checked').length > 0;
-bulkBtn.disabled = !anyChecked;
+    if (!bulkBtn) {
+        return;
+    }
+
+    const anyChecked = document.querySelectorAll('.row-checkbox:checked').length > 0;
+    bulkBtn.disabled = !anyChecked;
 }
 
 selectAll?.addEventListener('change', function() {
-checkboxes.forEach(cb => cb.checked = this.checked);
-toggleButtons();
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    toggleButtons();
 });
 
 checkboxes.forEach(cb => {
-cb.addEventListener('change', toggleButtons);
+    cb.addEventListener('change', toggleButtons);
 });
 
 markAllBtn?.addEventListener('click', function () {
@@ -722,8 +733,9 @@ markAllBtn?.addEventListener('click', function () {
     let any = false;
     rows.forEach(cb => { if (!cb.disabled) { cb.checked = true; any = true; } });
     toggleButtons();
-    if (any) {
+    if (any && bulkForm) {
         bulkForm.submit();
     }
 });
+</script>
 @endpush

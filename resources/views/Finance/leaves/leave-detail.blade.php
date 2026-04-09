@@ -85,12 +85,15 @@
                         <!-- Email -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Email</label>
-                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200" x-data="{ tooltip: false }">
+                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200"
+                                x-data="{ tooltip: false }">
                                 <i class="flex-shrink-0 mr-3 fas fa-envelope text-primary-600"></i>
-                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true" @mouseleave="tooltip = false" x-tooltip="'{{ $leave->employee->email }}'">
+                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true"
+                                    @mouseleave="tooltip = false" x-tooltip="'{{ $leave->employee->email }}'">
                                     {{ $leave->employee->email }}
                                 </span>
-                                <div x-show="tooltip" x-cloak class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
+                                <div x-show="tooltip" x-cloak
+                                    class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
                                     {{ $leave->employee->email }}
                                 </div>
                             </div>
@@ -126,12 +129,12 @@
                             </div>
                         </div>
 
-                            <!-- Duration -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Duration</label>
-                                <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-clock text-secondary-600"></i>
-                                    <span class="font-medium text-neutral-900">
+                        <!-- Duration -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-neutral-700">Duration</label>
+                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <i class="mr-3 fas fa-clock text-secondary-600"></i>
+                                <span class="font-medium text-neutral-900">
                                     @php
                                         $tahunSekarang = now()->year;
                                         $hariLibur = app(\App\Services\HolidayDateService::class)->getDateStringsForYear($tahunSekarang);
@@ -144,16 +147,7 @@
                                     @endphp
 
                                     {{ $durasi }} {{ $durasi === 1 ? 'day' : 'days' }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Reason -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-neutral-700">Reason for Leave</label>
-                            <div class="p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                <p class="leading-relaxed font text-neutral-900">{{ $leave->reason }}</p>
+                                </span>
                             </div>
                         </div>
 
@@ -174,13 +168,21 @@
                             </div>
                         </div>
 
-                            <!-- Note -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Note</label>
-                                <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-sticky-note text-info-600"></i>
-                                    <span class="text-neutral-900 break-all whitespace-pre-line max-w-full max-h-40 overflow-y-auto">{{ $leave->note_1 ?? '-' }}</span>
-                                </div>
+                        <!-- Reason -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-semibold text-neutral-700">Reason for Leave</label>
+                            <div class="p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <p class="leading-relaxed font text-neutral-900">{{ $leave->reason }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Note -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-semibold text-neutral-700">Note</label>
+                            <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <i class="mr-3 fas fa-sticky-note text-info-600"></i>
+                                <span
+                                    class="max-w-full max-h-40 overflow-y-auto break-all whitespace-pre-line text-neutral-900">{{ $leave->note_1 ?? '-' }}</span>
                             </div>
                         </div>
                     </div>

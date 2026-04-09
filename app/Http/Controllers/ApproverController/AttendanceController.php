@@ -34,15 +34,12 @@ class AttendanceController extends Controller
         $leader = $request->user();
         abort_if($leader === null, 401);
 
-        $officeLocations = $this->teamAttendanceQueryService->officeLocationsForLeader((int) $leader->id);
-        $selectedOfficeId = $request->filled('office_location_id') ? (int) $request->input('office_location_id') : null;
-        $selectedOffice = $selectedOfficeId !== null ? $officeLocations->firstWhere('id', $selectedOfficeId) : $officeLocations->first();
         $quickFilter = (string) $request->input('quick', 'all');
         $today = now('Asia/Jakarta')->startOfDay();
 
         $overview = $this->teamAttendanceOverviewService->build(
             leaderId: (int) $leader->id,
-            officeLocationId: $selectedOffice?->id,
+            officeLocationId: null,
             date: $today,
             quickFilter: $quickFilter,
         );
@@ -50,8 +47,6 @@ class AttendanceController extends Controller
         return $this->sharedView('attendance.admin.overview', [
             'headerTitle' => 'Team Attendance Overview',
             'headerSubtitle' => 'Monitor attendance operasional untuk anggota tim yang berada di bawah tanggung jawab Anda.',
-            'officeLocations' => $officeLocations,
-            'selectedOffice' => $selectedOffice,
             'todayLabel' => $today->translatedFormat('D, d M Y'),
             'quickFilter' => $quickFilter,
             'quickFilters' => [
@@ -72,7 +67,6 @@ class AttendanceController extends Controller
         $leader = $request->user();
         abort_if($leader === null, 401);
 
-        $officeLocations = $this->teamAttendanceQueryService->officeLocationsForLeader((int) $leader->id);
         $employees = $this->teamAttendanceQueryService->subordinateEmployees((int) $leader->id);
         $filters = $this->historyFilterInput($request);
         $records = $this->teamAttendanceQueryService->getLeaderHistory(
@@ -88,7 +82,6 @@ class AttendanceController extends Controller
             'headerTitle' => 'Team Attendance Records',
             'headerSubtitle' => 'Lihat histori absensi bawahan yang relevan tanpa membuka akses lintas tim.',
             'records' => $records,
-            'officeLocations' => $officeLocations,
             'employees' => $employees,
             'filters' => $filters,
         ]);
@@ -115,11 +108,9 @@ class AttendanceController extends Controller
 
         $filters = [
             'status' => (string) $request->input('status', 'pending'),
-            'office_location_id' => $request->filled('office_location_id') ? (int) $request->input('office_location_id') : null,
             'user_id' => $request->filled('user_id') ? (int) $request->input('user_id') : null,
         ];
 
-        $officeLocations = $this->teamAttendanceQueryService->officeLocationsForLeader((int) $leader->id);
         $employees = $this->teamAttendanceQueryService->subordinateEmployees((int) $leader->id);
         $corrections = $this->attendanceCorrectionQueryService->getLeaderCorrections(
             leaderId: (int) $leader->id,
@@ -129,7 +120,6 @@ class AttendanceController extends Controller
         return $this->sharedView('attendance.admin.corrections', [
             'headerTitle' => 'Team Attendance Corrections',
             'headerSubtitle' => 'Review correction request dari anggota tim yang berada di bawah leader aktif.',
-            'officeLocations' => $officeLocations,
             'employees' => $employees,
             'selectedStatus' => $filters['status'],
             'statusOptions' => [
@@ -210,6 +200,7 @@ class AttendanceController extends Controller
     private function historyFilterInput(Request $request): array
     {
         $data = $request->all();
+        $data['office_location_id'] = null;
 
         if (empty($data['sort_by'])) {
             $data['sort_by'] = 'created_at';

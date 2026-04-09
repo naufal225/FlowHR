@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Models\Division;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
 trait HasDualStatus
@@ -127,7 +129,36 @@ trait HasDualStatus
     /** (Opsional) Scope umum yang sering dipakai */
     public function scopeForLeader(Builder $query, int $leaderId): Builder
     {
-        return $query->whereHas('employee.division', fn($q) => $q->where('leader_id', $leaderId));
+        static $divisionScopeCache = [];
+
+        if (!array_key_exists($leaderId, $divisionScopeCache)) {
+            $divisionIds = Division::query()
+                ->where('leader_id', $leaderId)
+                ->pluck('id');
+
+            $memberDivisionId = User::query()
+                ->whereKey($leaderId)
+                ->value('division_id');
+
+            if ($memberDivisionId !== null) {
+                $divisionIds->push((int) $memberDivisionId);
+            }
+
+            $divisionScopeCache[$leaderId] = $divisionIds
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        $divisionIds = $divisionScopeCache[$leaderId];
+
+        if (empty($divisionIds)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('employee', fn ($employeeQuery) => $employeeQuery->whereIn('division_id', $divisionIds));
     }
 
     public function scopeDateRange(Builder $query, ?string $fromDate, ?string $toDate, string $column = 'date_start'): Builder

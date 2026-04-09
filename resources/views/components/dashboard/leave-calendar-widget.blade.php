@@ -5,9 +5,25 @@
     'title' => 'Employee Leave Calendar',
     'helperText' => 'Klik tanggal untuk melihat daftar karyawan yang cuti.',
     'emptyMessage' => 'Tidak ada leave dan tidak ada holiday pada tanggal ini.',
+    'calendarSize' => 'default',
+    'fillHeight' => true,
 ])
 
-<article data-leave-calendar-widget data-empty-message="{{ $emptyMessage }}" class="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
+@php
+    $isTallCalendar = in_array($calendarSize, ['tall', 'x-tall'], true);
+    $isExtraTallCalendar = $calendarSize === 'x-tall';
+    $datesGridClasses = $isExtraTallCalendar
+        ? 'grid grid-cols-7 gap-2 auto-rows-[4.35rem] sm:auto-rows-[4.75rem]'
+        : ($isTallCalendar
+            ? 'grid grid-cols-7 gap-1.5 auto-rows-[3.65rem] sm:auto-rows-[3.95rem]'
+            : 'grid grid-cols-7 gap-1');
+@endphp
+
+<article
+    data-leave-calendar-widget
+    data-empty-message="{{ $emptyMessage }}"
+    data-calendar-size="{{ $calendarSize }}"
+    class="flex flex-col {{ $fillHeight ? 'h-full' : '' }} overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
     <script type="application/json" data-approved-by-date>@json($approvedByDate)</script>
     <script type="application/json" data-holiday-dates>@json(array_values($holidayDates))</script>
     <script type="application/json" data-holidays-by-date>@json($holidaysByDate)</script>
@@ -16,7 +32,7 @@
         <h3 class="text-sm font-semibold text-gray-800">{{ $title }}</h3>
     </header>
 
-    <div class="p-5">
+    <div class="flex-1 p-5">
         <div class="flex items-center justify-between mb-4">
             <button data-prev-month type="button" aria-label="Previous month"
                 class="flex items-center justify-center w-8 h-8 text-gray-500 transition rounded-lg hover:bg-gray-100">
@@ -35,7 +51,7 @@
             @endforeach
         </div>
 
-        <div data-dates-grid class="grid grid-cols-7 gap-1"></div>
+        <div data-dates-grid class="{{ $datesGridClasses }}"></div>
 
         <p class="mt-3 text-xs text-center text-gray-500">{{ $helperText }}</p>
 
@@ -147,6 +163,9 @@
                     }
 
                     root.dataset.initialized = 'true';
+                    const calendarSize = root.dataset.calendarSize || 'default';
+                    const isTallCalendar = calendarSize !== 'default';
+                    const isExtraTallCalendar = calendarSize === 'x-tall';
 
                     const approvedByDate = parseJson(
                         root.querySelector('script[data-approved-by-date]')?.textContent,
@@ -361,21 +380,34 @@
 
                             const dayButton = document.createElement('button');
                             dayButton.type = 'button';
-                            dayButton.className = `relative flex items-center justify-center mx-auto my-0.5 w-8 h-8 rounded-lg text-xs cursor-pointer transition-all ${
-                                isToday
-                                    ? 'bg-blue-600 text-white font-bold shadow-sm'
-                                    : 'text-gray-700 hover:bg-gray-100'
-                            }`;
+                            dayButton.className = isTallCalendar
+                                ? `relative flex w-full h-full ${isExtraTallCalendar ? 'min-h-[4.35rem] text-base' : 'min-h-[3.65rem] text-sm'} items-center justify-center rounded-xl cursor-pointer transition-colors ${
+                                    isToday
+                                        ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`
+                                : `relative flex items-center justify-center mx-auto my-0.5 w-8 h-8 rounded-lg text-xs cursor-pointer transition-all ${
+                                    isToday
+                                        ? 'bg-blue-600 text-white font-bold shadow-sm'
+                                        : 'text-gray-700 hover:bg-gray-100'
+                                }`;
                             dayButton.setAttribute('aria-label', `Open calendar detail for ${dateStr}`);
                             dayButton.addEventListener('click', () => openModal(dateStr));
 
                             const dayText = document.createElement('span');
                             dayText.textContent = String(day);
+                            if (isTallCalendar) {
+                                dayText.className = 'leading-none text-center';
+                            }
                             dayButton.appendChild(dayText);
 
                             if (hasApproved || isHoliday) {
                                 const dotContainer = document.createElement('span');
-                                dotContainer.className = 'absolute top-0.5 right-0.5 flex items-center gap-0.5';
+                                dotContainer.className = isTallCalendar
+                                    ? (isExtraTallCalendar
+                                        ? 'absolute top-2 left-1/2 translate-x-2 flex items-center gap-1'
+                                        : 'absolute top-1.5 left-1/2 translate-x-1.5 flex items-center gap-0.5')
+                                    : 'absolute top-0.5 right-0.5 flex items-center gap-0.5';
 
                                 if (hasApproved) {
                                     dotContainer.appendChild(createDot('bg-blue-600'));

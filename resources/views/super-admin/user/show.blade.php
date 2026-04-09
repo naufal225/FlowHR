@@ -20,11 +20,13 @@
                     </svg>
                     Back
                 </a>
+                @can('update', $user)
                 <a href="{{ route('super-admin.users.edit', $user) }}"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-all rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
                     <i class="mr-2 fas fa-edit"></i>
                     Edit User
                 </a>
+                @endcan
             </div>
         </div>
     </div>

@@ -34,20 +34,16 @@ class OvertimeController extends Controller
 
     public function index(Request $request)
     {
+        $approverId = (int) Auth::id();
         // Query for user's own requests (all statuses)
         $ownRequestsQuery = Overtime::with(['employee', 'approver1','approver2'])
-            ->where('employee_id', Auth::id())
+            ->where('employee_id', $approverId)
             ->orderBy('created_at', 'desc');
 
-        // Query for all users' requests (excluding own unless approved)
-        $allUsersQuery = Overtime::with(['employee', 'approver1','approver2'])->forLeader(Auth::id())
-            ->where(function ($q) {
-                $q->where('employee_id', '!=', Auth::id())
-                    ->orWhere(function ($subQ) {
-                        $subQ->where('employee_id', Auth::id())
-                            ->where('status_2', 'approved');
-                    });
-            })
+        // Query for all requests inside approver division scope.
+        $allUsersQuery = Overtime::with(['employee', 'approver1', 'approver2'])
+            ->forLeader($approverId)
+            ->where('employee_id', '!=', $approverId)
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
@@ -107,13 +103,11 @@ class OvertimeController extends Controller
         $ownRequests = $ownRequestsQuery->paginate(10, ['*'], 'own_page');
         $allUsersRequests = $allUsersQuery->paginate(10, ['*'], 'all_page');
 
-        $totalRequests = Overtime::count();
-        $pendingRequests = Overtime::where('status_1', 'pending')
-            ->orWhere('status_2', 'pending')->count();
-        $approvedRequests = Overtime::where('status_1', 'approved')
-            ->where('status_2', 'approved')->count();
-        $rejectedRequests = Overtime::where('status_1', 'rejected')
-            ->orWhere('status_2', 'rejected')->count();
+        $scopedStatsQuery = Overtime::query()->forLeader($approverId);
+        $totalRequests = (clone $scopedStatsQuery)->count();
+        $pendingRequests = (clone $scopedStatsQuery)->filterFinalStatus('pending')->count();
+        $approvedRequests = (clone $scopedStatsQuery)->filterFinalStatus('approved')->count();
+        $rejectedRequests = (clone $scopedStatsQuery)->filterFinalStatus('rejected')->count();
 
         $managerRole = Role::where('name', 'manager')->first();
 
@@ -128,7 +122,16 @@ class OvertimeController extends Controller
     public function show($id)
     {
         $overtime = Overtime::findOrFail($id);
-        $overtime->load(['employee', 'approver']);
+        $overtime->load(['employee.division', 'approver']);
+        $approverId = (int) Auth::id();
+
+        $canAccess = (int) $overtime->employee_id === $approverId
+            || Overtime::query()->whereKey($overtime->id)->forLeader($approverId)->exists();
+
+        if (! $canAccess) {
+            abort(403, 'Unauthorized action.');
+        }
+
         return view('approver.overtime.show', compact('overtime'));
     }
 

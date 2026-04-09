@@ -109,58 +109,32 @@ class OfficialTravelController extends Controller
 
         $allTravelsDone = $allTravelsDoneQuery->paginate(5, ['*'], 'all_page_done')->withQueryString();
 
-        // --- Query untuk "All Official Travels Not Marked (lockable)"
-        $allTravels = collect();
-        DB::transaction(function () use (&$allTravels, $request, $userId) {
-            $query = OfficialTravel::with(['employee', 'approver1', 'approver2'])
-                ->where('status_1', 'approved')
-                ->where('status_2', 'approved')
-                ->where('marked_down', false)
-                ->where(function ($q) use ($userId) {
-                    $q->whereNull('locked_by')
-                        ->orWhere(function ($q2) use ($userId) {
-                            $q2->whereRaw('DATE_ADD(locked_at, INTERVAL 60 MINUTE) < ?', [now()]);
-                        })
-                        ->orWhere(function ($q3) use ($userId) {
-                            $q3->where('locked_by', $userId)
-                                ->whereRaw('DATE_ADD(locked_at, INTERVAL 60 MINUTE) >= ?', [now()]);
-                        });
-                })
-                ->orderBy('created_at', 'asc');
+        // --- Query untuk "All Official Travels Not Marked"
+        $allTravelsQuery = OfficialTravel::with(['employee', 'approver1', 'approver2'])
+            ->where('status_1', 'approved')
+            ->where('status_2', 'approved')
+            ->where('marked_down', false)
+            ->orderBy('created_at', 'asc');
 
-            if (request()->filled('from_date')) {
-                $query->where(
-                    'date_start',
-                    '>=',
-                    Carbon::parse(request()->from_date)->startOfDay()->timezone('Asia/Jakarta')
-                );
-            }
+        if ($request->filled('from_date')) {
+            $allTravelsQuery->where(
+                'date_start',
+                '>=',
+                Carbon::parse($request->from_date)->startOfDay()->timezone('Asia/Jakarta')
+            );
+        }
 
-            if (request()->filled('to_date')) {
-                $query->where(
-                    'date_end',
-                    '<=',
-                    Carbon::parse(request()->to_date)->endOfDay()->timezone('Asia/Jakarta')
-                );
-            }
+        if ($request->filled('to_date')) {
+            $allTravelsQuery->where(
+                'date_end',
+                '<=',
+                Carbon::parse($request->to_date)->endOfDay()->timezone('Asia/Jakarta')
+            );
+        }
 
-            $lockedIds = $query->limit(5)->lockForUpdate()->pluck('id');
-
-            if ($lockedIds->isNotEmpty()) {
-                OfficialTravel::whereIn('id', $lockedIds)
-                    ->update([
-                        'locked_by' => $userId,
-                        'locked_at' => now(),
-                    ]);
-
-                // Fetch ulang data yang udah updated!
-                $allTravels = OfficialTravel::with(['employee', 'approver1', 'approver2'])
-                    ->whereIn('id', $lockedIds)
-                    ->get();
-            } else {
-                $allTravels = collect();
-            }
-        });
+        $allTravels = $allTravelsQuery
+            ->paginate(5, ['*'], 'all_page')
+            ->withQueryString();
 
         // --- Statistik
         $dataAll = OfficialTravel::where('status_1', 'approved')
@@ -182,8 +156,6 @@ class OfficialTravelController extends Controller
         $manager = User::whereHas('roles', function ($query) use ($managerRole) {
             $query->where('roles.id', $managerRole->id);
         })->first();
-
-        $allTravels->fresh();
 
         return view('Finance.travels.travel-show', compact(
             'yourTravels',
@@ -397,32 +369,31 @@ class OfficialTravelController extends Controller
 
     public function markedDone(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $validated = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $ids = array_values(array_unique(array_map('intval', $validated['ids'])));
 
         try {
-            DB::transaction(function () use ($ids) {
-                $records = OfficialTravel::whereIn('id', $ids)
-                    ->where('marked_down', false)
-                    ->where('locked_by', Auth::id())
-                    ->lockForUpdate()
-                    ->get();
+            $updated = OfficialTravel::whereIn('id', $ids)
+                ->where('status_1', 'approved')
+                ->where('status_2', 'approved')
+                ->where('marked_down', false)
+                ->update([
+                    'marked_down' => true,
+                    'locked_by' => null,
+                    'locked_at' => null,
+                ]);
 
-                if ($records->isEmpty()) {
-                    throw new Exception('No official travels available to mark as done.');
-                }
-
-                foreach ($records as $rec) {
-                    $rec->update([
-                        'marked_down' => true,
-                        'locked_by' => null,
-                        'locked_at' => null,
-                    ]);
-                }
-            });
+            if ($updated < 1) {
+                throw new Exception('No official travels available to mark as done.');
+            }
 
             return redirect()
                 ->route('finance.official-travels.index')
-                ->with('success', 'Selected official travels marked as done.');
+                ->with('success', $updated . ' official travel request(s) marked as done.');
         } catch (Exception $e) {
             return redirect()
                 ->route('finance.official-travels.index')

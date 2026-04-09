@@ -35,20 +35,16 @@ class ReimbursementController extends Controller
 
     public function index(Request $request)
     {
+        $approverId = (int) Auth::id();
         // Query for user's own requests (all statuses)
         $ownRequestsQuery = Reimbursement::with(['employee', 'approver1','approver2'])
-            ->where('employee_id', Auth::id())
+            ->where('employee_id', $approverId)
             ->orderBy('created_at', 'desc');
 
-        // Query for all users' requests (excluding own unless approved)
-        $allUsersQuery = Reimbursement::with(['employee', 'approver1','approver2'])->forLeader(Auth::id())
-            ->where(function ($q) {
-                $q->where('employee_id', '!=', Auth::id())
-                    ->orWhere(function ($subQ) {
-                        $subQ->where('employee_id', Auth::id())
-                            ->where('status_2', 'approved');
-                    });
-            })
+        // Query for all requests inside approver division scope.
+        $allUsersQuery = Reimbursement::with(['employee', 'approver1', 'approver2'])
+            ->forLeader($approverId)
+            ->where('employee_id', '!=', $approverId)
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
@@ -109,13 +105,11 @@ class ReimbursementController extends Controller
         $allUsersRequests = $allUsersQuery->paginate(10, ['*'], 'all_page');
 
 
-        $totalRequests = Reimbursement::count();
-        $pendingRequests = Reimbursement::where('status_1', 'pending')
-            ->orWhere('status_2', 'pending')->count();
-        $approvedRequests = Reimbursement::where('status_1', 'approved')
-            ->where('status_2', 'approved')->count();
-        $rejectedRequests = Reimbursement::where('status_1', 'rejected')
-            ->orWhere('status_2', 'rejected')->count();
+        $scopedStatsQuery = Reimbursement::query()->forLeader($approverId);
+        $totalRequests = (clone $scopedStatsQuery)->count();
+        $pendingRequests = (clone $scopedStatsQuery)->filterFinalStatus('pending')->count();
+        $approvedRequests = (clone $scopedStatsQuery)->filterFinalStatus('approved')->count();
+        $rejectedRequests = (clone $scopedStatsQuery)->filterFinalStatus('rejected')->count();
 
         $managerRole = Role::where('name', 'manager')->first();
 
@@ -129,11 +123,16 @@ class ReimbursementController extends Controller
 
     public function show(Reimbursement $reimbursement)
     {
-        if ($reimbursement->approver->id !== Auth::id()) {
+        $reimbursement->load(['employee.division', 'approver', 'approver1', 'approver2']);
+        $approverId = (int) Auth::id();
+
+        $canAccess = (int) $reimbursement->employee_id === $approverId
+            || Reimbursement::query()->whereKey($reimbursement->id)->forLeader($approverId)->exists();
+
+        if (! $canAccess) {
             return abort(403, 'Unauthorized');
         }
 
-        $reimbursement->load(['employee', 'approver']);
         return view('approver.reimbursement.show', compact('reimbursement'));
     }
 

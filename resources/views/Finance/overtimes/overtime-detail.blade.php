@@ -104,12 +104,15 @@ $minutes = $overtimeMinutes % 60;
                         <!-- Email -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Email</label>
-                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200" x-data="{ tooltip: false }">
+                            <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200"
+                                x-data="{ tooltip: false }">
                                 <i class="flex-shrink-0 mr-3 fas fa-envelope text-primary-600"></i>
-                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true" @mouseleave="tooltip = false" x-tooltip="'{{ $overtime->employee->email }}'">
+                                <span class="font-medium truncate text-neutral-900" @mouseenter="tooltip = true"
+                                    @mouseleave="tooltip = false" x-tooltip="'{{ $overtime->employee->email }}'">
                                     {{ $overtime->employee->email }}
                                 </span>
-                                <div x-show="tooltip" x-cloak class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
+                                <div x-show="tooltip" x-cloak
+                                    class="absolute px-3 py-2 -mt-12 text-sm text-white bg-gray-900 rounded-lg shadow-lg">
                                     {{ $overtime->employee->email }}
                                 </div>
                             </div>
@@ -134,7 +137,7 @@ $minutes = $overtimeMinutes % 60;
                             </div>
                         </div>
 
-                        <!-- Work Hours Breakdown -->
+                        <!-- Total Costs -->
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Total Costs</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -180,6 +183,7 @@ $minutes = $overtimeMinutes % 60;
                                 @endif
                             </div>
                         </div>
+
                         <div class="space-y-2">
                             <label class="text-sm font-semibold text-neutral-700">Status 2 - Approver 2</label>
                             <div class="flex items-center p-3 border rounded-lg bg-neutral-50 border-neutral-200">
@@ -196,20 +200,22 @@ $minutes = $overtimeMinutes % 60;
                             </div>
                         </div>
 
-                            <!-- Note -->
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Note - Approver 1</label>
-                                <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-sticky-note text-info-600"></i>
-                                    <span class="max-w-full overflow-y-auto break-all whitespace-pre-line text-neutral-900 max-h-40">{{ $overtime->note_1 ?? '-' }}</span>
-                                </div>
+                        <!-- Notes -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-neutral-700">Note - Approver 1</label>
+                            <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <i class="mr-3 fas fa-sticky-note text-info-600"></i>
+                                <span
+                                    class="max-w-full max-h-40 overflow-y-auto break-all whitespace-pre-line text-neutral-900">{{ $overtime->note_1 ?? '-' }}</span>
                             </div>
-                            <div class="space-y-2">
-                                <label class="text-sm font-semibold text-neutral-700">Note - Approver 2</label>
-                                <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
-                                    <i class="mr-3 fas fa-sticky-note text-info-600"></i>
-                                    <span class="max-w-full overflow-y-auto break-all whitespace-pre-line text-neutral-900 max-h-40">{{ $overtime->note_2 ?? '-' }}</span>
-                                </div>\
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-neutral-700">Note - Approver 2</label>
+                            <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
+                                <i class="mr-3 fas fa-sticky-note text-info-600"></i>
+                                <span
+                                    class="max-w-full max-h-40 overflow-y-auto break-all whitespace-pre-line text-neutral-900">{{ $overtime->note_2 ?? '-' }}</span>
                             </div>
                         </div>
                     </div>

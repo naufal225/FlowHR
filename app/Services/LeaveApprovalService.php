@@ -65,8 +65,8 @@ class LeaveApprovalService
     {
         $employee = $leave->employee;
 
-        $isLeaderApplicant = Division::where('leader_id', $employee->id)->exists();
-        $isApproverApplicant = $employee->roles()->where('name', Roles::Approver->value)->exists();
+        $isLeaderApplicant = Division::where('leader_id', auth()->id())->exists();
+        $isApproverApplicant = auth()->user()->roles()->where('name', Roles::Approver->value)->exists();
 
         // If applicant is only Employee -> Division Leader approves
         if (!$isLeaderApplicant && !$isApproverApplicant) {
@@ -78,7 +78,7 @@ class LeaveApprovalService
         }
 
         // If applicant is Approver or Leader -> Manager approves
-        if (!Auth::user()->hasActiveRole(Roles::Manager->value)) {
+        if (!Auth::user()->hasActiveRole(Roles::Approver->value)) {
             abort(403, 'Unauthorized — only Manager can approve this leave.');
         }
     }

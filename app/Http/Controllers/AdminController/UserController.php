@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\AdminController;
 
-use App\Enums\Roles;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ManageUserStoreRequest;
 use App\Http\Requests\ManageUserUpdateRequest;
@@ -17,20 +16,25 @@ class UserController extends Controller
 {
     public function __construct(private readonly UserManagementService $userManagementService)
     {
+        $this->authorizeResource(User::class, 'user');
     }
 
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('search', ''));
-        $users = $this->userManagementService->getPaginatedUsers($search);
+        /** @var User $actor */
+        $actor = $request->user();
+        $users = $this->userManagementService->getPaginatedUsers($actor, $search);
 
         return view('admin.user.index', compact('users', 'search'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $divisions = $this->userManagementService->getDivisions();
-        $roles = $this->userManagementService->getAssignableRoles();
+        /** @var User $actor */
+        $actor = $request->user();
+        $roles = $this->userManagementService->getAssignableRoles($actor);
         $roleLabels = $this->userManagementService->getRoleLabels();
         $officeLocations = $this->userManagementService->getOfficeLocations();
 
@@ -39,7 +43,9 @@ class UserController extends Controller
 
     public function store(ManageUserStoreRequest $request): RedirectResponse
     {
-        $this->userManagementService->createUser($request->validated());
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->userManagementService->createUser($actor, $request->validated());
 
         return redirect()
             ->route('admin.users.index')
@@ -48,20 +54,18 @@ class UserController extends Controller
 
     public function show(User $user): View
     {
-        abort_if($user->hasRole(Roles::SuperAdmin->value), 403);
-
         $user->load(['roles:id,name', 'division:id,name', 'officeLocation:id,name']);
         $user->role_display = $this->userManagementService->formatRoleDisplay($user);
 
         return view('admin.user.show', compact('user'));
     }
 
-    public function edit(User $user): View
+    public function edit(Request $request, User $user): View
     {
-        abort_if($user->hasRole(Roles::SuperAdmin->value), 403);
-
         $divisions = $this->userManagementService->getDivisions();
-        $roles = $this->userManagementService->getAssignableRoles();
+        /** @var User $actor */
+        $actor = $request->user();
+        $roles = $this->userManagementService->getAssignableRoles($actor);
         $roleLabels = $this->userManagementService->getRoleLabels();
         $officeLocations = $this->userManagementService->getOfficeLocations();
         $userRoles = $user->roles->pluck('name')->toArray();
@@ -74,10 +78,10 @@ class UserController extends Controller
 
     public function update(ManageUserUpdateRequest $request, User $user): RedirectResponse
     {
-        abort_if($user->hasRole(Roles::SuperAdmin->value), 403);
-
         $validated = $request->validated();
-        $updatedUser = $this->userManagementService->updateUser($user, $validated);
+        /** @var User $actor */
+        $actor = $request->user();
+        $updatedUser = $this->userManagementService->updateUser($actor, $user, $validated);
 
         if (
             $this->userManagementService->shouldLogoutAfterRoleUpdate(
@@ -98,11 +102,11 @@ class UserController extends Controller
             ->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse
     {
-        abort_if($user->hasRole(Roles::SuperAdmin->value), 403, 'Cannot delete Super Admin.');
-
-        $this->userManagementService->deleteUser($user);
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->userManagementService->deleteUser($actor, $user);
 
         return redirect()
             ->route('admin.users.index')

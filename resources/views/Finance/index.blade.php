@@ -257,6 +257,7 @@
             :approvedByDate="$cutiPerTanggal"
             :holidayDates="$holidayDates ?? []"
             :holidaysByDate="$holidaysByDate ?? []"
+            calendarSize="tall"
             title="Employee Leave Calendar"
             helperText="Klik tanggal untuk melihat daftar karyawan yang cuti." />
         @endif

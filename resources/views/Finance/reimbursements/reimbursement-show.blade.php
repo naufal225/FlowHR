@@ -171,7 +171,7 @@
                         data-status-selector="#status"
                         data-from-selector="input[name='from_date']"
                         data-to-selector="input[name='to_date']"
-                        class="flex items-center w-full px-4 py-2 text-sm font-medium text-white transition-all duration-300 bg-amber-600 shadow-sm justify-center-safe rounded-xl hover:bg-amber-700 hover:shadow-md sm:w-auto">
+                        class="flex items-center w-full px-4 py-2 text-sm font-medium text-white transition-all duration-300 shadow-sm bg-amber-600 justify-center-safe rounded-xl hover:bg-amber-700 hover:shadow-md sm:w-auto">
                         <i class="mr-2 fas fa-box-archive"></i> Export Evidence ZIP
                     </button>
                 </div>
@@ -341,7 +341,7 @@
                 <div class="flex flex-row w-full gap-2 sm:w-auto">
                     <button type="button" id="mark-all-btn"
                             class="w-full px-4 py-2 text-white rounded-lg sm:w-auto bg-primary-600 hover:bg-primary-700">
-                        <i class="mr-1 fas fa-list-check"></i> Mark All (Locked)
+                        <i class="mr-1 fas fa-list-check"></i> Mark All
                     </button>
                     <button type="submit"
                             class="w-full px-4 py-2 text-white rounded-lg sm:w-auto bg-success-600 hover:bg-success-700 disabled:opacity-50"
@@ -378,7 +378,7 @@
                             <tr class="transition-colors duration-200 hover:bg-neutral-50">
                                 <!-- Checkbox per row -->
                                 <td class="px-4 py-4">
-                                    @if(!$reimbursement->marked_down && $reimbursement->locked_by === Auth::id())
+                                    @if(!$reimbursement->marked_down)
                                         <input type="checkbox"
                                             name="ids[]"
                                             value="{{ $reimbursement->id }}"
@@ -469,7 +469,7 @@
                                            class="text-primary-600 hover:text-primary-900" title="View Details">
                                             <i class="text-lg fas fa-eye"></i>
                                         </a>
-                                        @if(!$reimbursement->marked_down && $reimbursement->locked_by === Auth::id())
+                                        @if(!$reimbursement->marked_down)
                                             <form action="{{ route('finance.reimbursements.marked') }}" method="POST" class="inline"
                                                   onsubmit="return confirm('Mark this reimbursement as done?')">
                                                 @csrf
@@ -496,11 +496,17 @@
                     </tbody>
                 </table>
             </div>
+
+            @if($allReimbursements->hasPages())
+                <div class="px-6 py-4 border-t border-neutral-200">
+                    {{ $allReimbursements->appends(['tab' => 'all'])->links() }}
+                </div>
+            @endif
         </form>
 
         <!-- Reimbursement All Employee (Marked done) Table -->
-        <p class="mb-2 text-sm text-neutral-500 ms-4 hidden" data-request-tab-panel="all">All employee reimbursement (Marked done) requests are listed below.</p>
-        <div class="mb-6 overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200 hidden" data-request-tab-panel="all">
+        <p class="mb-2 text-sm text-neutral-500 ms-4" data-request-tab-panel="all">All employee reimbursement (Marked done) requests are listed below.</p>
+        <div class="mb-6 overflow-hidden bg-white border rounded-xl shadow-soft border-neutral-200" data-request-tab-panel="all">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-neutral-200">
                     <thead class="bg-neutral-50">
@@ -628,33 +634,39 @@
     </div>
 @endsection
 @push('scripts')
-    const selectAll = document.getElementById('select-all');
-    const checkboxes = document.querySelectorAll('.row-checkbox');
-    const bulkBtn = document.getElementById('bulk-mark-btn');
-    const markAllBtn = document.getElementById('mark-all-btn');
-    const bulkForm = document.getElementById('bulk-mark-form');
+    <script>
+        const selectAll = document.getElementById('select-all');
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        const bulkBtn = document.getElementById('bulk-mark-btn');
+        const markAllBtn = document.getElementById('mark-all-btn');
+        const bulkForm = document.getElementById('bulk-mark-form');
 
-    function toggleButtons() {
-        const anyChecked = document.querySelectorAll('.row-checkbox:checked').length > 0;
-        bulkBtn.disabled = !anyChecked;
-    }
+        function toggleButtons() {
+            if (!bulkBtn) {
+                return;
+            }
 
-    selectAll?.addEventListener('change', function() {
-        checkboxes.forEach(cb => cb.checked = this.checked);
-        toggleButtons();
-    });
-
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', toggleButtons);
-    });
-
-    markAllBtn?.addEventListener('click', function () {
-        const rows = document.querySelectorAll('.row-checkbox');
-        let any = false;
-        rows.forEach(cb => { if (!cb.disabled) { cb.checked = true; any = true; } });
-        toggleButtons();
-        if (any) {
-            bulkForm.submit();
+            const anyChecked = document.querySelectorAll('.row-checkbox:checked').length > 0;
+            bulkBtn.disabled = !anyChecked;
         }
-    });
+
+        selectAll?.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            toggleButtons();
+        });
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', toggleButtons);
+        });
+
+        markAllBtn?.addEventListener('click', function () {
+            const rows = document.querySelectorAll('.row-checkbox');
+            let any = false;
+            rows.forEach(cb => { if (!cb.disabled) { cb.checked = true; any = true; } });
+            toggleButtons();
+            if (any && bulkForm) {
+                bulkForm.submit();
+            }
+        });
+    </script>
 @endpush
