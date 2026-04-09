@@ -2,37 +2,31 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Role;
+use App\Enums\Roles;
 use App\Models\Division;
-use Illuminate\Support\Facades\Hash;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserAndDivisionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Matikan FK check
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
         DB::table('role_user')->truncate();
-        User::truncate();
-        Division::truncate();
-
-        // Nyalakan lagi
+        DB::table('users')->truncate();
+        DB::table('divisions')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Ambil role IDs
-        $roleIds = Role::pluck('id', 'name');
-
-        // Data divisi & anggota
+        $roleIds = Role::query()->pluck('id', 'name');
         $divisions = [
             'Management' => [
                 'leader' => 'Cholid',
                 'members' => [
                     'Cholid',
-                    'Lulu Andriani',
                     'Triyana Mulayawan',
                     'Sapta Hidayat Guntur',
                     'Rori April',
@@ -40,15 +34,11 @@ class UserAndDivisionSeeder extends Seeder
                     'Hendrik',
                     'M Dimas Satria',
                     'Arif Syafii',
-                    'Akbar',
-                    'Stevano',
-                    'Ardita Widya Amanda',
                 ],
             ],
             'Teknikal' => [
-                'leader' => 'Akbar',
+                'leader' => 'Iqbal Hekal Vaura',
                 'members' => [
-                    'Akbar',
                     'Iqbal Hekal Vaura',
                     'Ali',
                     'Dewa Raditya',
@@ -70,65 +60,103 @@ class UserAndDivisionSeeder extends Seeder
                     'Syiva Julaikha',
                 ],
             ],
+            'HR' => [
+                'leader' => 'Akbar',
+                'members' => [
+                    'Akbar',
+                    'Lulu Andriani',
+                    'Ardita Widya Amanda',
+                ],
+            ],
         ];
 
-        // Buat semua user dulu
-        $users = [];
-        foreach ($divisions as $divisionName => $data) {
-            foreach ($data['members'] as $name) {
-                if (!isset($users[$name])) {
-                    $email = strtolower(str_replace(' ', '', $name)) . '@yaztech.co.id';
+        $specialRoles = [
+            'cholid' => [Roles::Approver->value, Roles::Manager->value],
+            'akbar' => [
+                Roles::Approver->value,
+                Roles::Admin->value,
+                Roles::SuperAdmin->value,
+                Roles::Manager->value,
+                Roles::Finance->value,
+            ],
+            'stevano' => [Roles::Approver->value],
+            'iqbal hekal vaura' => [Roles::Approver->value],
+        ];
 
-                    $user = User::create([
-                        'name' => $name,
-                        'email' => $email,
-                        'password' => Hash::make('password'),
-                        'url_profile' => null,
-                    ]);
-
-                    // Default: semua Employee
-                    $roles = [$roleIds['employee']];
-
-                    // Role spesial
-                    if (strtolower($name) === 'cholid') {
-                        $roles[] = $roleIds['approver'];
-                        $roles[] = $roleIds['manager'];
-                    }
-
-                    if (strtolower($name) === 'akbar') {
-                        $roles[] = $roleIds['approver'];
-                        $roles[] = $roleIds['admin'];
-                        $roles[] = $roleIds['superAdmin'];
-                        $roles[] = $roleIds['manager'];
-                        $roles[] = $roleIds['finance'];
-                    }
-
-                    if (strtolower($name) === 'stevano') {
-                        $roles[] = $roleIds['approver'];
-                    }
-
-                    $user->roles()->attach(array_unique($roles));
-                    $users[$name] = $user;
-                }
+        $allNames = [];
+        foreach ($divisions as $division) {
+            $allNames[] = $division['leader'];
+            foreach ($division['members'] as $memberName) {
+                $allNames[] = $memberName;
             }
         }
+        $allNames = array_values(array_unique($allNames));
 
-        // Buat divisi
+        $users = [];
+        foreach ($allNames as $name) {
+            $email = $this->gmailFromName($name);
+            $user = User::query()->create([
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make('password'),
+                'division_id' => null,
+                'office_location_id' => null,
+                'url_profile' => null,
+                'is_active' => true,
+            ]);
+
+            $roles = [Roles::Employee->value];
+            foreach ($specialRoles[Str::lower($name)] ?? [] as $roleName) {
+                $roles[] = $roleName;
+            }
+            $roles = array_values(array_unique($roles));
+
+            $user->roles()->sync(
+                collect($roles)
+                    ->map(fn (string $roleName) => $roleIds[$roleName] ?? null)
+                    ->filter()
+                    ->all()
+            );
+
+            $users[$name] = $user;
+        }
+
         foreach ($divisions as $divisionName => $data) {
             $leader = $users[$data['leader']];
 
-            $division = Division::create([
+            $division = Division::query()->create([
                 'name' => $divisionName,
                 'leader_id' => $leader->id,
             ]);
 
-            // Tambahkan user ke divisi
             foreach ($data['members'] as $name) {
                 $users[$name]->division_id = $division->id;
                 $users[$name]->save();
             }
         }
 
-        $this->command->info('Users, roles, dan divisions berhasil dibuat sesuai tabel.');
+        $hrDivisionId = Division::query()->where('name', 'HR')->value('id');
+        if ($hrDivisionId !== null) {
+            User::query()
+                ->whereHas('roles', fn ($query) => $query->where('name', Roles::Admin->value))
+                ->update(['division_id' => $hrDivisionId]);
+        }
+
+        $this->command->info('Showcase users/divisions seeded dengan domain gmail.com + divisi HR.');
+    }
+
+    private function gmailFromName(string $name): string
+    {
+        $local = Str::of($name)
+            ->ascii()
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', '')
+            ->toString();
+
+        if ($local === '') {
+            $local = 'user' . sprintf('%u', crc32($name));
+        }
+
+        return $local . '@gmail.com';
     }
 }

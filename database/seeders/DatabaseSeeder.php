@@ -2,9 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Enums\Roles;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -18,13 +15,15 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(UserAndDivisionSeeder::class);
         $this->call(OfficeLocationAndAkbarSeeder::class);
+        $this->call(HolidaySeeder::class);
+        $this->call(ReimbursementTypeSeeder::class);
         $this->call([
-            ReimbursementSeeder::class,
             OvertimeSeeder::class,
+            ReimbursementSeeder::class,
             OfficialTravelSeeder::class,
             LeaveSeeder::class,
         ]);
+        $this->call(AttendanceOfficeEmployeeSeeder::class);
         $this->call(FeatureSettingsSeeder::class);
-        // $this->call(AttendanceOfficeEmployeeSeeder::class);
     }
 }

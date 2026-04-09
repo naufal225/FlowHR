@@ -5,43 +5,36 @@ namespace Database\Seeders;
 use App\Models\OfficeLocation;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class OfficeLocationAndAkbarSeeder extends Seeder
 {
     public function run(): void
     {
-        $office = OfficeLocation::query()->updateOrCreate(
-            ['code' => 'JAKSEL-01'],
-            [
-                'name' => 'Kantor Jaksel',
-                'address' => 'Jakarta Selatan',
-                'latitude' => -6.2614920,
-                'longitude' => 106.8106000,
-                'timezone' => 'Asia/Jakarta',
-                'radius_meter' => 100,
-                'is_active' => true,
-            ]
-        );
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('office_locations')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $user = User::query()
-            ->where('email', 'akbar@flowhr.co.id')
-            ->first();
+        $office = OfficeLocation::query()->create([
+            'code' => 'BSP1-01',
+            'name' => 'Kantor Bumi Sani Permai 1',
+            'address' => 'Bumi Sani Permai 1',
+            'latitude' => -6.2614920,
+            'longitude' => 106.8106000,
+            'timezone' => 'Asia/Jakarta',
+            'radius_meter' => 100,
+            'is_active' => true,
+        ]);
 
-        if ($user === null) {
-            $this->command->warn('User akbar@flowhr.co.id tidak ditemukan. Office berhasil dibuat, assignment user dilewati.');
-
-            return;
-        }
-
-        $user->forceFill([
-            'office_location_id' => $office->id,
-        ])->save();
+        $assignedCount = User::query()
+            ->where('is_active', true)
+            ->update(['office_location_id' => $office->id]);
 
         $this->command->info(sprintf(
-            'Office "%s" (%s) tersimpan dan user %s di-assign ke office tersebut.',
+            'Office "%s" (%s) tersimpan dan %d user aktif di-assign ke office tersebut.',
             $office->name,
             $office->code,
-            $user->email,
+            $assignedCount,
         ));
     }
 }
