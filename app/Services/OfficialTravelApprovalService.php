@@ -85,7 +85,6 @@ class OfficialTravelApprovalService
         // === MANAGER (Level 2) ===
         if ($level === 'status_2') {
             if ($travel->status_1 !== 'approved') {
-                dd($travel);
                 throw new \Exception('Manager hanya dapat memproses jika Approver sudah menyetujui.');
             }
 

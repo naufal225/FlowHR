@@ -231,6 +231,7 @@ window.addEventListener("resize", function () {
 });
 // Delete confirmation functionality
 let userIdToDelete = null;
+const inlineHiddenAttribute = 'data-inline-hidden';
 
 // Initialize delete functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -267,16 +268,34 @@ function initializeDeleteFunctionality() {
     });
 }
 
+function showElement(element) {
+    if (!element) return;
+    element.classList.remove('hidden');
+    if (element.hasAttribute(inlineHiddenAttribute)) {
+        element.style.display = '';
+    }
+}
+
+function hideElement(element) {
+    if (!element) return;
+    element.classList.add('hidden');
+    if (element.hasAttribute(inlineHiddenAttribute)) {
+        element.style.display = 'none';
+    }
+}
+
 function confirmDelete(userId, userName) {
     userIdToDelete = userId;
     document.getElementById('userName').textContent = userName;
-    document.getElementById('deleteConfirmModal').classList.remove('hidden');
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    showElement(deleteModal);
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
 }
 
 function closeDeleteModal() {
     userIdToDelete = null;
-    document.getElementById('deleteConfirmModal').classList.add('hidden');
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    hideElement(deleteModal);
     document.body.style.overflow = 'auto'; // Restore scrolling
 }
 
@@ -295,10 +314,21 @@ function executeDelete() {
 
     deleteBtn.disabled = true;
     deleteText.textContent = 'Deleting...';
-    deleteSpinner.classList.remove('hidden');
+    showElement(deleteSpinner);
 
     // Submit the form
-    document.getElementById(`delete-form-${userIdToDelete}`).submit();
+    const deleteForm = document.getElementById(`delete-form-${userIdToDelete}`);
+    if (!deleteForm) {
+        deleteBtn.disabled = false;
+        deleteText.textContent = 'Delete';
+        hideElement(deleteSpinner);
+        cancelButtons.forEach(btn => {
+            btn.disabled = false;
+        });
+        return;
+    }
+
+    deleteForm.submit();
 }
 
 // Close modal when pressing Escape key

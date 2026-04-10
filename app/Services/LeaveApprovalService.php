@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Leave;
-use App\Models\User;
-use App\Models\Division;
 use App\Enums\Roles;
+use App\Models\Leave;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -21,7 +19,7 @@ class LeaveApprovalService
 
         if ($leave->status_1 !== 'pending') {
             throw ValidationException::withMessages([
-                'status_1' => 'Leave sudah diproses, tidak dapat diubah lagi.'
+                'status_1' => 'Leave sudah diproses, tidak dapat diubah lagi.',
             ]);
         }
 
@@ -44,7 +42,7 @@ class LeaveApprovalService
 
         if ($leave->status_1 !== 'pending') {
             throw ValidationException::withMessages([
-                'status_1' => 'Leave sudah diproses, tidak dapat diubah lagi.'
+                'status_1' => 'Leave sudah diproses, tidak dapat diubah lagi.',
             ]);
         }
 
@@ -59,27 +57,18 @@ class LeaveApprovalService
     }
 
     /**
-     * Authorize approver based on applicant role.
+     * Leave approval flow is single-step and manager-only.
      */
     private function authorizeFor(Leave $leave): void
     {
-        $employee = $leave->employee;
+        $actor = Auth::user();
 
-        $isLeaderApplicant = Division::where('leader_id', auth()->id())->exists();
-        $isApproverApplicant = auth()->user()->roles()->where('name', Roles::Approver->value)->exists();
-
-        // If applicant is only Employee -> Division Leader approves
-        if (!$isLeaderApplicant && !$isApproverApplicant) {
-            $leaderId = optional($employee->division)->leader_id;
-            if ($leaderId && Auth::id() === (int) $leaderId) {
-                return; // Authorized as division leader
-            }
-            abort(403, 'Unauthorized — only Division Leader can approve this leave.');
+        if (! $actor || ! $actor->hasActiveRole(Roles::Manager->value)) {
+            abort(403, 'Unauthorized - only Manager can approve this leave.');
         }
 
-        // If applicant is Approver or Leader -> Manager approves
-        if (!Auth::user()->hasActiveRole(Roles::Approver->value)) {
-            abort(403, 'Unauthorized — only Manager can approve this leave.');
+        if ((int) $leave->employee_id === (int) Auth::id()) {
+            abort(403, 'Unauthorized - you cannot approve your own leave request.');
         }
     }
 }

@@ -97,7 +97,7 @@
                                 <li>• Submit leave requests at least 3 days in advance</li>
                                 <li>• Annual leave entitlement is 20 days per year</li>
                                 <li>• Emergency leave may be submitted with shorter notice</li>
-                                <li>• All leave requests require Approver approval</li>
+                                <li>• All leave requests require Manager approval</li>
                             </ul>
                         </div>
                     </div>
@@ -140,15 +140,12 @@
                 return;
             }
 
-            const timeDiff = end.getTime() - start.getTime();
-            const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
-
             let workingDays = 0;
             const currentDate = new Date(start);
 
             while (currentDate <= end) {
                 const dayOfWeek = currentDate.getDay();
-                const formattedDate = currentDate.toISOString().split('T')[0];
+                const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
 
                 if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.includes(formattedDate)) {
                     workingDays++;
@@ -157,7 +154,7 @@
                 currentDate.setDate(currentDate.getDate() + 1);
             }
 
-            document.getElementById('duration-display').textContent = daysDiff + (daysDiff === 1 ? ' day' : ' days');
+            document.getElementById('duration-display').textContent = workingDays + (workingDays === 1 ? ' day' : ' days');
             document.getElementById('working-days-display').textContent = workingDays + (workingDays === 1 ? ' working day' : ' working days');
         }
 

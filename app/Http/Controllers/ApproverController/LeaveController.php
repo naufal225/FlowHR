@@ -10,10 +10,8 @@ use App\Http\Requests\UpdateLeaveRequest;
 use App\Models\ApprovalLink;
 use App\Models\Leave;
 use App\Models\User;
-use App\Enums\Roles;
 use App\Models\Role;
 use App\Services\HolidayDateService;
-use App\Services\LeaveApprovalService;
 use App\Services\LeaveService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -29,7 +27,6 @@ class LeaveController extends Controller
 {
     public function __construct(
         private LeaveService $leaveService,
-        private LeaveApprovalService $leaveApprovalService,
         private HolidayDateService $holidayDateService,
     )
     {
@@ -123,10 +120,7 @@ class LeaveController extends Controller
             return abort(403, 'Unauthorized');
         }
 
-        $isOwnRequest = (int) $leave->employee_id === $approverId;
-        $isLeaderApplicant = \App\Models\Division::where('leader_id', $leave->employee_id)->exists();
-        $isApproverApplicant = $leave->employee->roles()->where('name', Roles::Approver->value)->exists();
-        $canApprove = ! $isOwnRequest && ! $isLeaderApplicant && ! $isApproverApplicant && $leave->status_1 === 'pending';
+        $canApprove = false;
         return view('approver.leave-request.show', compact('leave', 'canApprove'));
     }
 
@@ -188,21 +182,6 @@ class LeaveController extends Controller
         }
 
     }
-
-    public function approval(\App\Http\Requests\ApproveLeaveRequest $request, Leave $leave)
-    {
-        try {
-            if ($request->status_1 === 'approved') {
-                $this->leaveApprovalService->approve($leave, $request->note_1 ?? null);
-            } else {
-                $this->leaveApprovalService->reject($leave, $request->note_1 ?? null);
-            }
-            return redirect()->route('approver.leaves.index')->with('success', 'Leave request '.$request->status_1.' successfully.');
-        } catch (\Exception $e) {
-            return back()->withErrors($e->getMessage());
-        }
-    }
-
 
     public function destroy(Leave $leave)
     {

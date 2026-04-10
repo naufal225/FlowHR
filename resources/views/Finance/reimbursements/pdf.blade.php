@@ -1,177 +1,87 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Reimbursement Request #RY{{ $reimbursement->id }}</title>
     <style>
-        @page { margin: 130px 30px 30px 30px; }
+        @page { margin: 130px 26px 24px 26px; }
+
         body {
             font-family: Arial, sans-serif;
             font-size: 12px;
             color: #000;
-            line-height: 1.6;
+            line-height: 1.45;
             margin: 0;
         }
 
-        .header,
-        .section {
-            margin-bottom: 20px;
-        }
-
-        .header {
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-        }
-
-        .title {
-            font-size: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .sub-title {
-            font-size: 11px;
-            margin-bottom: 12px;
-            text-align: center
-        }
-
-        .label {
-            font-weight: bold;
-        }
-
-        .text-data {
-            display: inline;
-        }
+        .pdf-header { position: fixed; top: -110px; left: 0; right: 0; }
+        .section { margin-bottom: 12px; page-break-inside: avoid; }
+        .sub-title { font-size: 11px; margin-bottom: 8px; text-align: center; }
+        .label { font-weight: bold; }
 
         .box {
             border: 1px solid #000;
             padding: 6px;
-            margin-top: 4px;
+            margin-top: 3px;
             background-color: #f8f8f8;
             page-break-inside: avoid;
             word-wrap: break-word;
-            /* Tambahkan untuk mencegah overflow teks */
         }
 
-        .status-approved {
-            color: green;
-        }
+        .status-approved { color: #118a23; font-weight: bold; }
+        .status-rejected { color: #c51212; font-weight: bold; }
+        .status-pending { color: #d98200; font-weight: bold; }
 
-        .status-rejected {
-            color: red;
-        }
-
-        .status-pending { color: orange; }
-
-        .pdf-header { position: fixed; top: -110px; left: 0; right: 0; }
-        /* Footer drawn via Dompdf script */
-
-        .page-break {
-            page-break-before: always;
-            break-before: page;
-        }
-
-        table.layout {
+        table.layout, table.split {
             width: 100%;
             border-collapse: collapse;
-        }
-
-        table.layout td {
-            vertical-align: top;
-            padding: 4px 8px;
-        }
-
-        /* --- Gaya untuk tabel detail --- */
-        table.details-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
             table-layout: fixed;
         }
 
-        table.details-table td {
+        table.layout td, table.split td {
+            vertical-align: top;
             padding: 4px 6px;
+        }
+
+        table.split td.left-col { width: 22%; }
+        table.split td.right-col { width: 78%; }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2px;
+        }
+
+        .info-table td {
+            padding: 1px 4px;
             vertical-align: top;
         }
 
-        /* Kolom label kecil */
-        table.details-table td.label-col {
-            width: 30%;
-            font-weight: bold;
-        }
+        .detail-item { margin-bottom: 3px; }
+        .detail-label { display: block; font-weight: bold; }
 
-        /* Kolom data mengambil sisa ruang */
-        table.details-table td.data-col {
-            width: 70%;
+        .invoice-box {
+            border: 1px solid #000;
+            background-color: #f8f8f8;
+            padding: 0;
+            height: 570px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            page-break-inside: avoid;
         }
 
         img.invoice {
             width: auto;
             max-width: 100%;
             height: auto;
-            max-height: 640px;
+            max-height: 560px;
             display: block;
-            margin: 0;
             object-fit: contain;
-            page-break-inside: avoid;
-        }
-
-        /* --- Gaya untuk catatan di bawah invoice --- */
-        .notes-section {
-            margin-top: 20px;
-        }
-
-        .notes-section h3 {
-            margin-bottom: 10px;
-        }
-
-        /* Gaya untuk tabel dua kolom catatan */
-        table.grid-2 {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table.grid-2 td {
-            width: 50%;
-            vertical-align: top;
-            padding: 0 8px;
-            /* Memberi sedikit jarak antar kolom */
-        }
-
-        /* Gaya khusus untuk box catatan */
-        .note-box {
-            border: 1px solid #000;
-            padding: 6px;
-            margin-top: 4px;
-            background-color: #f8f8f8;
-            /* Sama dengan .box */
-            page-break-inside: avoid;
-            word-wrap: break-word;
-            min-height: 40px;
-            /* Tinggi minimum untuk konsistensi jika kosong */
-        }
-
-        .note-label {
-            font-weight: bold;
-            font-style: italic;
-            display: block;
-        }
-
-        .note-content {
-            display: block;
-            white-space: pre-wrap;
-            /* Agar line break (\n) terlihat */
-        }
-
-        /* Untuk memastikan tidak ada teks di luar box */
-        .no-note {
-            font-style: italic;
-            color: #777;
         }
     </style>
 </head>
-
 <body>
     <div class="pdf-header">
         @include('components.pdf.letterhead')
@@ -182,62 +92,55 @@
     @endif
 
     <div class="section">
-        <div class="sub-title">Reimbursement Request #RY{{ $reimbursement->id }} | {{
-            \Carbon\Carbon::parse($reimbursement->created_at)->format('F d, Y \a\t H:i') }}</div>
+        <div class="sub-title">
+            Reimbursement Request #RY{{ $reimbursement->id }} |
+            {{ \Carbon\Carbon::parse($reimbursement->created_at)->format('F d, Y \a\t H:i') }}
+        </div>
 
         <table class="layout">
             <tr>
-                <!-- Employee Information -->
                 <td>
-                    <h3>Employee Information</h3>
-                    <table class="info-table" style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+                    <h3 style="margin:0 0 4px 0;">Employee Information</h3>
+                    <table class="info-table">
                         <tr>
-                            <td style="padding: 2px 4px; vertical-align: top; width: 30%;"><span
-                                    class="label">Email:</span></td>
-                            <td style="padding: 2px 4px; vertical-align: top;"><span class="text-data">{{
-                                    $reimbursement->employee->email ?? 'N/A' }}</span></td>
+                            <td style="width:30%;"><span class="label">Email:</span></td>
+                            <td>{{ $reimbursement->employee->email ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 2px 4px; vertical-align: top;"><span class="label">Name:</span></td>
-                            <td style="padding: 2px 4px; vertical-align: top;"><span class="text-data">{{
-                                    $reimbursement->employee->name ?? 'N/A' }}</span></td>
+                            <td><span class="label">Name:</span></td>
+                            <td>{{ $reimbursement->employee->name ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 2px 4px; vertical-align: top;"><span class="label">Approver 1:</span>
-                            </td>
-                            <td style="padding: 2px 4px; vertical-align: top;"><span class="text-data">{{
-                                    $reimbursement->approver->name ?? 'N/A' }}</span></td>
+                            <td><span class="label">Approver 1:</span></td>
+                            <td>{{ $reimbursement->approver1->name ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 2px 4px; vertical-align: top;"><span class="label">Divisi:</span></td>
-                            <td style="padding: 2px 4px; vertical-align: top;"><span class="text-data">{{
-                                    $reimbursement->employee->division->name ?? 'N/A' }}</span></td>
+                            <td><span class="label">Divisi:</span></td>
+                            <td>{{ $reimbursement->employee->division->name ?? 'N/A' }}</td>
                         </tr>
                     </table>
                 </td>
-
-                <!-- Approval Status -->
                 <td>
-                    <h3>Approval Status</h3>
+                    <h3 style="margin:0 0 4px 0;">Approval Status</h3>
                     <div><span class="label">Approver 1 Status:</span></div>
                     <div class="box status-{{ $reimbursement->status_1 }}">
                         @if($reimbursement->status_1 === 'pending')
-                        Pending Review
+                            Pending Review
                         @elseif($reimbursement->status_1 === 'approved')
-                        Approved
+                            Approved
                         @elseif($reimbursement->status_1 === 'rejected')
-                        Rejected
+                            Rejected
                         @endif
                     </div>
 
-                    <div style="margin-top: 10px;"><span class="label">Approver 2 Status:</span></div>
+                    <div style="margin-top:6px;"><span class="label">Approver 2 Status:</span></div>
                     <div class="box status-{{ $reimbursement->status_2 }}">
                         @if($reimbursement->status_2 === 'pending')
-                        Pending Review
+                            Pending Review
                         @elseif($reimbursement->status_2 === 'approved')
-                        Approved
+                            Approved
                         @elseif($reimbursement->status_2 === 'rejected')
-                        Rejected
+                            Rejected
                         @endif
                     </div>
                 </td>
@@ -245,63 +148,68 @@
         </table>
     </div>
 
-    
-
     <div class="section">
-        <h3>Reimbursement Details</h3>
-        <!-- Gunakan tabel untuk detail -->
-        <table class="details-table">
+        <table class="split">
             <tr>
-                <td class="label-col">Date of Expanse:</td>
-                <td class="data-col">
-                    <div class="box">{{ \Carbon\Carbon::parse($reimbursement->date)->format('l, M d, Y') }}</div>
+                <td class="left-col">
+                    <h3 style="margin:0 0 4px 0;">Reimbursement Details</h3>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Date of Expense</span>
+                        <div class="box">{{ \Carbon\Carbon::parse($reimbursement->date)->format('l, M d, Y') }}</div>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Customer</span>
+                        <div class="box">{{ $reimbursement->customer ?? 'N/A' }}</div>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Total Amount</span>
+                        <div class="box">Rp {{ number_format($reimbursement->total, 0, ',', '.') }}</div>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-label">Type Reimbursement</span>
+                        <div class="box">{{ $reimbursement->type->name ?? 'N/A' }}</div>
+                    </div>
                 </td>
-            </tr>
-            <tr>
-                <td class="label-col">Customer:</td>
-                <td class="data-col">
-                    <div class="box">{{ $reimbursement->customer ?? 'N/A' }}</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="label-col">Type Reimbursement:</td>
-                <td class="data-col">
-                    <div class="box">{{ $reimbursement->type->name ?? 'N/A' }}</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="label-col">Total Amount:</td>
-                <td class="data-col">
-                    <div class="box">Rp {{ number_format($reimbursement->total, 0, ',', '.') }}</div>
+                <td class="right-col">
+                    <h3 style="margin:0 0 4px 0;">Invoice</h3>
+                    @php
+                        $invoicePath = $reimbursement->invoice_path ? storage_path('app/public/' . $reimbursement->invoice_path) : null;
+                        $base64 = '';
+                        $isImage = false;
+
+                        if ($invoicePath && file_exists($invoicePath)) {
+                            $ext = strtolower(pathinfo($invoicePath, PATHINFO_EXTENSION));
+                            $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+
+                            if ($isImage) {
+                                $data = @file_get_contents($invoicePath);
+                                if ($data !== false) {
+                                    $mime = $ext === 'jpg' ? 'jpeg' : $ext;
+                                    $base64 = 'data:image/' . $mime . ';base64,' . base64_encode($data);
+                                }
+                            }
+                        }
+                    @endphp
+                    <div class="invoice-box">
+                        @if($base64 !== '')
+                            <img src="{{ $base64 }}" alt="Invoice" class="invoice">
+                        @elseif($reimbursement->invoice_path)
+                            <div style="padding:10px; font-style:italic; color:#666;">
+                                Invoice file is not an image ({{ strtoupper(pathinfo($reimbursement->invoice_path, PATHINFO_EXTENSION)) }}).
+                            </div>
+                        @else
+                            <div style="padding:10px; font-style:italic; color:#666;">
+                                No invoice provided.
+                            </div>
+                        @endif
+                    </div>
                 </td>
             </tr>
         </table>
     </div>
-
-    <!-- Invoice moved to a dedicated page -->
-    <div class="section page-break">
-        <h3>Invoice</h3>
-        @php
-            $path = storage_path('app/public/' . $reimbursement->invoice_path);
-            $base64 = '';
-            if (file_exists($path)) {
-                $type = pathinfo($path, PATHINFO_EXTENSION);
-                $data = file_get_contents($path);
-                $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
-            }
-        @endphp
-
-        <div class="box" style="padding:0; line-height:0; overflow:hidden;">
-            @if($base64)
-                <img src="{{ $base64 }}" alt="Invoice" class="invoice">
-            @else
-                <span style="color:#777; font-style: italic;">No image available</span>
-            @endif
-        </div>
-    </div>
-
 </body>
-
 </html>
-
-

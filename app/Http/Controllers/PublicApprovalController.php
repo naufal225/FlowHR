@@ -6,16 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\ApprovalLink;
 use App\Models\User;
 use App\Enums\Roles;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-
-use App\Events\LeaveLevelAdvanced;
-use App\Events\ReimbursementLevelAdvanced;
-use App\Events\OvertimeLevelAdvanced;
-use App\Events\OfficialTravelLevelAdvanced;
 
 class PublicApprovalController extends Controller
 {
@@ -52,21 +46,27 @@ class PublicApprovalController extends Controller
 
         // Ambil subject polymorphic
         $subject = $link->subject;
+        $hasSecondLevel = array_key_exists('status_2', $subject->getAttributes());
 
-        DB::transaction(function () use ($validated, $link, $subject, $request) {
+        DB::transaction(function () use ($validated, $link, $subject, $hasSecondLevel, $request) {
             // Terapkan aturan level (status_1 atau status_2) sesuai desainmu
             if ($link->level === 1) {
                 if ($subject->status_1 !== 'pending')
                     abort(422, 'Status 1 sudah final.');
                 if ($validated['action'] === 'rejected') {
-                    $subject->update([
+                    $payload = [
                         'status_1' => 'rejected',
                         'note_1' => $validated['note'] ?? null,
-                        'status_2' => 'rejected',
-                        'note_2' => $validated['note'] ?? null,
                         'approver_1_id' => $link->approver_user_id,
                         'rejected_date' => now(),
-                    ]);
+                    ];
+
+                    if ($hasSecondLevel) {
+                        $payload['status_2'] = 'rejected';
+                        $payload['note_2'] = $validated['note'] ?? null;
+                    }
+
+                    $subject->update($payload);
                 } else {
                     $subject->update([
                         'status_1' => 'approved',
@@ -74,70 +74,50 @@ class PublicApprovalController extends Controller
                         'approver_1_id' => $link->approver_user_id,
                     ]);
 
-                    // Flag untuk mengirim email setelah commit
-                    $notifyManager = true;
-
-                    if ($notifyManager) {
+                    // Dual-level modules: after approver approval, continue to manager approval.
+                    if ($hasSecondLevel) {
                         DB::afterCommit(function () use ($subject) {
-                            // 1) Tentukan manager penerima
+                            $freshSubject = $subject->fresh();
+                            if (! $freshSubject) {
+                                return;
+                            }
+
                             $manager = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
                             if (!$manager) {
-                                // Tidak ada manager, ya sudah: fail-silent atau log
                                 Log::warning('No manager found for subject id ' . $subject->id . ' type ' . get_class($subject));
                                 return;
                             }
 
-                            $base = class_basename($subject); // "Leave", "OfficialTravel", "Overtime", "Reimbursement"
-                            $eventClass = "App\\Events\\{$base}LevelAdvanced"; // e.g. App\Events\LeaveLevelAdvanced
+                            $base = class_basename($freshSubject);
+                            $eventClass = "App\\Events\\{$base}LevelAdvanced";
 
                             if (!class_exists($eventClass)) {
                                 Log::error("Event class not found: {$eventClass}");
                                 return;
                             }
 
-                            $divisionId = Auth::user()->division_id; // fallback
-                            // pakai fresh biar field (timestamps, relasi) up-to-date
-                            $freshSubject = $subject->fresh();
+                            $divisionId = (int) ($freshSubject->employee?->division_id ?? 0);
+                            event(new $eventClass($freshSubject, $divisionId, 'manager'));
 
-                            $emp = $freshSubject->employee;
-                            $isLeader = $emp && \App\Models\Division::where('leader_id', $emp->id)->exists();
-                            $isApprover = $emp && $emp->roles()->where('name', \App\Enums\Roles::Approver->value)->exists();
-                            if ($isLeader || $isApprover) {
-                                event(new $eventClass($freshSubject, ($emp->division_id ?? $divisionId), 'manager'));
-                            }
-
-                            // 2) Buat token & simpan hash di DB untuk approval Level 2 (Manager)
                             $rawToken = Str::random(48);
                             ApprovalLink::create([
                                 'model_type' => get_class($subject),
                                 'model_id' => $subject->id,
                                 'approver_user_id' => $manager->id,
-                                'level' => 2,            // Manager
-                                'scope' => 'both',       // boleh approve/reject
-                                'token' => hash('sha256', $rawToken), // simpan HASH
+                                'level' => 2,
+                                'scope' => 'both',
+                                'token' => hash('sha256', $rawToken),
                                 'expires_at' => now()->addDays(3),
                             ]);
 
-                            // 3) Buat URL publik untuk manager (pakai RAW token!)
                             $publicUrl = route('public.approval.show', $rawToken);
-
-                            // 4) Susun pesan email
-                            $employeeName = $subject->employee->name ?? 'Unknown';
-                            $start = $subject->date_start;
-                            $end = $subject->date_end;
-                            $reason = $subject->reason ?? '-';
-                            $pesan = "Terdapat pengajuan perjalanan dinas baru atas nama {$employeeName}.
-                                <br> Tanggal Mulai: {$start}
-                                <br> Tanggal Selesai: {$end}
-                                <br> Alasan: {$reason}";
-
-                            // 5) Kirim email via queue
+                            $employeeName = $freshSubject->employee->name ?? 'Unknown';
                             Mail::to($manager->email)->queue(
                                 new \App\Mail\SendMessage(
                                     namaPengaju: $employeeName,
                                     namaApprover: $manager->name,
                                     linkTanggapan: $publicUrl,
-                                    emailPengaju: $subject->employee->email ?? null
+                                    emailPengaju: $freshSubject->employee->email ?? null
                                 )
                             );
                         });
@@ -145,6 +125,10 @@ class PublicApprovalController extends Controller
 
                 }
             } elseif ($link->level === 2) {
+                if (! $hasSecondLevel) {
+                    abort(422, 'Request ini hanya memiliki 1 level approval.');
+                }
+
                 if ($subject->status_1 !== 'approved')
                     abort(422, 'Status 2 hanya setelah status 1 approved.');
                 if ($subject->status_2 !== 'pending')

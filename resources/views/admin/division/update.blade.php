@@ -100,7 +100,7 @@
                             documents</p>
                     </div>
 
-                    <!-- approver Selection Field -->
+                    <!-- Leader Selection Field -->
                     <div>
                         <label for="leader_id" class="block mb-2 text-sm font-medium text-gray-700">
                             Select Leader <span class="text-red-500">*</span>
@@ -110,10 +110,10 @@
                                 class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('leader_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
                                 required>
                                 <option value="">Select a leader...</option>
-                                @if(isset($approvers))
-                                    @foreach($approvers as $approver)
-                                        <option value="{{ $approver->id }}" {{ old('leader_id', $division->leader_id) == $approver->id ? 'selected' : '' }}>
-                                            {{ $approver->name }} - {{ $approver->email ?? $approver->position ?? '' }}
+                                @if(isset($employees))
+                                    @foreach($employees as $employee)
+                                        <option value="{{ $employee->id }}" {{ old('leader_id', $division->leader_id) == $employee->id ? 'selected' : '' }}>
+                                            {{ $employee->name }} - {{ $employee->email ?? $employee->position ?? '' }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -128,7 +128,7 @@
                         @error('leader_id')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-2 text-xs text-gray-500">Choose the leader who will be assigned to this division</p>
+                        <p class="mt-2 text-xs text-gray-500">Choose an employee from this division to be assigned as leader</p>
                     </div>
 
                     <!-- Form Actions -->
@@ -173,7 +173,7 @@ $(document).ready(function() {
     // Initialize Select2 with search functionality
     $('#leader_id').select2({
         theme: 'bootstrap-5',
-        placeholder: 'Search and select an approver...',
+        placeholder: 'Search and select an employee...',
         allowClear: true,
         width: '100%',
         dropdownParent: $('#leader_id').parent(),

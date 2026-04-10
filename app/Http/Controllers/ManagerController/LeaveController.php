@@ -9,7 +9,6 @@ use App\Http\Requests\UpdateLeaveRequest;
 use App\Models\ApprovalLink;
 use App\Models\Leave;
 use App\Models\User;
-use App\Enums\Roles;
 use App\Models\Role;
 use App\Services\HolidayDateService;
 use App\Services\LeaveApprovalService;
@@ -41,12 +40,8 @@ class LeaveController extends Controller
             ->where('employee_id', Auth::id())
             ->orderBy('created_at', 'desc');
 
-        // Query for all users' requests (excluding own unless approved)
+        // Query for all users' requests across all divisions (excluding own unless approved)
         $allUsersQuery = Leave::with(['employee', 'approver1'])
-            ->where(function ($qq) {
-                $qq->whereHas('employee.roles', fn($r) => $r->where('name', Roles::Approver->value))
-                   ->orWhereHas('employee.division', fn($d) => $d->whereColumn('leader_id', 'leaves.employee_id'));
-            })
             ->where(function ($q) {
                 $q->where('employee_id', '!=', Auth::id())
                     ->orWhere(function ($subQ) {
@@ -120,9 +115,8 @@ class LeaveController extends Controller
     public function show(Leave $leave)
     {
         $leave->load(['employee', 'approver']);
-        $isLeaderApplicant = \App\Models\Division::where('leader_id', $leave->employee_id)->exists();
-        $isApproverApplicant = $leave->employee->roles()->where('name', Roles::Approver->value)->exists();
-        $canApprove = ($isLeaderApplicant || $isApproverApplicant) && $leave->status_1 === 'pending';
+        $canApprove = (int) $leave->employee_id !== (int) Auth::id()
+            && $leave->status_1 === 'pending';
         return view('manager.leave-request.show', compact('leave', 'canApprove'));
     }
     public function create(LeaveService $leaveService)
@@ -230,5 +224,3 @@ class LeaveController extends Controller
         return $pdf->download('leave-details.pdf');
     }
 }
-
-

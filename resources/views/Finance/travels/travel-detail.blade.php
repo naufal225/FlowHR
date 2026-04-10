@@ -247,8 +247,7 @@
                     @endif
 
                     @if ($officialTravel->status_1 == 'approved' && $officialTravel->status_2 == 'approved' &&
-                    !$officialTravel->marked_down && !$officialTravel->locked_by === Auth::id() &&
-                    $officialTravel->locked_at->addMinutes(60)->isFuture())
+                    !$officialTravel->marked_down)
                     <form action="{{ route('finance.official-travels.marked') }}" method="POST"
                         onsubmit="return confirm('Are you sure you want to mark selected overtimes as done?')">
                         @csrf

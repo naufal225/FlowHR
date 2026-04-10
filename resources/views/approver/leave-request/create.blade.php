@@ -122,7 +122,7 @@
 
 @push('scripts')
 <script>
-    const holidays = @json($holidays);
+    const holidays = @json($holidays ?? []);
 
     function calculateDuration() {
             const startDate = document.getElementById('date_start').value;
@@ -133,8 +133,6 @@
                 const end = new Date(endDate);
 
                 if (end >= start) {
-                    const timeDiff = end.getTime() - start.getTime();
-                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 
                     // Calculate working days (excluding weekends)
                     let workingDays = 0;
@@ -142,7 +140,7 @@
 
                    while (currentDate <= end) {
                         const dayOfWeek = currentDate.getDay();
-                        const formattedDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                        const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`; // YYYY-MM-DD
 
                         // Hanya hitung jika bukan Sabtu, Minggu, dan bukan hari libur
                         if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.includes(formattedDate)) {
@@ -152,8 +150,8 @@
                         currentDate.setDate(currentDate.getDate() + 1);
                     }
 
-                    document.getElementById('duration-display').textContent = daysDiff + ' days';
-                    document.getElementById('working-days-display').textContent = workingDays + ' working days';
+                    document.getElementById('duration-display').textContent = workingDays + (workingDays === 1 ? ' day' : ' days');
+                    document.getElementById('working-days-display').textContent = workingDays + (workingDays === 1 ? ' working day' : ' working days');
                 } else {
                     document.getElementById('duration-display').textContent = '0 days';
                     document.getElementById('working-days-display').textContent = '0 working days';

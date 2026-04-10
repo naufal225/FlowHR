@@ -83,7 +83,7 @@
                         </label>
                         <div class="relative">
                             <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('name') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
+                                class="w-full py-3 pr-4 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('name') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
                                 placeholder="Enter user full name" required>
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
@@ -105,7 +105,7 @@
                         </label>
                         <div class="relative">
                             <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('email') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
+                                class="w-full py-3 pr-4 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('email') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
                                 placeholder="Enter user email address" required>
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
@@ -170,7 +170,7 @@
                         </label>
                         <div class="relative">
                             <select id="division_id" name="division_id"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('division_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
+                                class="w-full py-3 pr-4 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('division_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
                                 <option value="">Select a division (optional)</option>
                                 @foreach($divisions as $division)
                                 <option value="{{ $division->id }}" {{ old('division_id', $user->division_id) ==
@@ -200,7 +200,7 @@
                         </label>
                         <div class="relative">
                             <select id="office_location_id" name="office_location_id"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('office_location_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
+                                class="w-full py-3 pr-4 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('office_location_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
                                 <option value="">Select an office (optional)</option>
                                 @foreach($officeLocations as $officeLocation)
                                 <option value="{{ $officeLocation->id }}" {{ old('office_location_id', $user->office_location_id) == $officeLocation->id ? 'selected' : '' }}>
@@ -223,7 +223,7 @@
 
                     <!-- Form Actions -->
                     <div class="flex items-center justify-end pt-6 space-x-4 border-t border-gray-200">
-                        <a href="{{ url()->previous() }}"
+                        <a href="{{ route('super-admin.users.index') }}"
                             class="px-6 py-3 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                             Cancel
                         </a>

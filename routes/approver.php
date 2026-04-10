@@ -31,7 +31,6 @@ Route::middleware(['auth', 'role:approver', 'division'])->prefix('approver')->na
     Route::middleware('feature:cuti')->group(function () {
         Route::get('/leaves/export', [LeaveController::class, 'export'])->name('leaves.export');
         Route::get('/leaves/{leave}/export-pdf', [LeaveController::class, 'exportPdf'])->name('leaves.exportPdf');
-        Route::patch('/leaves/{leave}/approval', [LeaveController::class, 'approval'])->name('leaves.approval');
         Route::resource('leaves', LeaveController::class)
             ->parameters([
                 "leaves" => "leave"

@@ -13,13 +13,17 @@ use App\Models\Role;
 use App\Traits\HelperController;
 use App\Models\FeatureSetting;
 use App\Services\Dashboard\DashboardLeaveCalendarService;
+use App\Services\LeaveService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     use HelperController;
-    public function index(DashboardLeaveCalendarService $dashboardLeaveCalendarService)
+    public function index(
+        DashboardLeaveCalendarService $dashboardLeaveCalendarService,
+        LeaveService $leaveService
+    )
     {
         $featureActive = [
             'cuti' => FeatureSetting::isActive('cuti'),
@@ -90,29 +94,7 @@ class DashboardController extends Controller
 
         $sisaCuti = 0;
         if ($featureActive['cuti']) {
-            $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-            $usedLeaveDays = Leave::query()
-                ->where('employee_id', Auth::id())
-                ->where('status_1', 'approved')
-                ->whereYear('date_start', now()->year)
-                ->get(['date_start', 'date_end'])
-                ->sum(static function (Leave $leave): int {
-                    if ($leave->date_start === null) {
-                        return 0;
-                    }
-
-                    $start = $leave->date_start->copy()->startOfDay();
-                    $end = $leave->date_end?->copy()->startOfDay() ?? $start->copy();
-
-                    if ($end->lt($start)) {
-                        $end = $start->copy();
-                    }
-
-                    return $start->diffInDays($end) + 1;
-                });
-
-            $sisaCuti = $annual
-                - (int) $usedLeaveDays;
+            $sisaCuti = $leaveService->sisaCuti(Auth::user());
         }
 
         $recentRequests = $this->getRecentRequests(Auth::id());

@@ -81,10 +81,11 @@
                         </label>
                         <div class="relative">
                             <input type="text" id="name" name="name" value="{{ old('name') }}"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('name') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
+                                class="w-full py-3 pr-4 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('name') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
                                 placeholder="Enter user full name" required>
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
@@ -93,7 +94,8 @@
                         @error('name')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-2 text-xs text-gray-500">Enter the user's full name as it appears on official documents</p>
+                        <p class="mt-2 text-xs text-gray-500">Enter the user's full name as it appears on official
+                            documents</p>
                     </div>
 
                     <!-- Email Field -->
@@ -103,10 +105,11 @@
                         </label>
                         <div class="relative">
                             <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('email') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
+                                class="w-full py-3 pr-4 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('email') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror"
                                 placeholder="Enter user email address" required>
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                                 </svg>
@@ -115,7 +118,8 @@
                         @error('email')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-2 text-xs text-gray-500">This email will be used for system login and notifications</p>
+                        <p class="mt-2 text-xs text-gray-500">This email will be used for system login and notifications
+                        </p>
                     </div>
 
                     <!-- ROLES: Ganti jadi checkbox multiple -->
@@ -125,32 +129,29 @@
                         </label>
                         <div class="grid grid-cols-1 gap-3 p-4 border border-gray-300 rounded-lg bg-gray-50">
                             @foreach($roles as $role)
-                                @php
-                                    $roleValue = $role->value;
-                                    $label = $roleLabels[$roleValue] ?? ucfirst(str_replace('_', ' ', $roleValue));
-                                @endphp
-                                <div class="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        name="roles[]"
-                                        value="{{ $roleValue }}"
-                                        id="role_{{ $loop->index }}"
-                                        {{ in_array($roleValue, old('roles', [])) ? 'checked' : '' }}
-                                        class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                    >
-                                    <label for="role_{{ $loop->index }}" class="ml-3 text-sm font-medium text-gray-700">
-                                        {{ $label }}
-                                    </label>
-                                </div>
+                            @php
+                            $roleValue = $role->value;
+                            $label = $roleLabels[$roleValue] ?? ucfirst(str_replace('_', ' ', $roleValue));
+                            @endphp
+                            <div class="flex items-center">
+                                <input type="checkbox" name="roles[]" value="{{ $roleValue }}"
+                                    id="role_{{ $loop->index }}" {{ in_array($roleValue, old('roles', [])) ? 'checked'
+                                    : '' }}
+                                    class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                                <label for="role_{{ $loop->index }}" class="ml-3 text-sm font-medium text-gray-700">
+                                    {{ $label }}
+                                </label>
+                            </div>
                             @endforeach
                         </div>
                         @error('roles')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                         @error('roles.*')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-2 text-xs text-gray-500">User can have multiple roles. At least one role is required.</p>
+                        <p class="mt-2 text-xs text-gray-500">User can have multiple roles. At least one role is
+                            required.</p>
                     </div>
 
                     <!-- Division -->
@@ -160,45 +161,68 @@
                         </label>
                         <div class="relative">
                             <select id="division_id" name="division_id"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('division_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
-                                <option value="">Select a division (optional)</option>
+                                class="w-full py-3 pr-10 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white @error('division_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
+                                <option value="">Select a division</option>
                                 @foreach($divisions as $division)
-                                    <option value="{{ $division->id }}" {{ old('division_id') == $division->id ? 'selected' : '' }}>
-                                        {{ $division->name }}
-                                    </option>
+                                <option value="{{ $division->id }}" {{ old('division_id')==$division->id ? 'selected' :
+                                    '' }}>
+                                    {{ $division->name }}
+                                </option>
                                 @endforeach
                             </select>
+                            <!-- Ikon Kiri -->
                             <div class="absolute inset-y-0 left-0 z-10 flex items-center pl-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                            </div>
+                            <!-- Ikon Dropdown Kanan (Pengganti panah bawaan browser) -->
+                            <div class="absolute inset-y-0 right-0 z-10 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
                                 </svg>
                             </div>
                         </div>
                         @error('division_id')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
-                        <p class="mt-2 text-xs text-gray-500">Required only if assigning <strong>Approver</strong> role.</p>
                     </div>
 
+                    <!-- Office Location -->
                     <div>
                         <label for="office_location_id" class="block mb-2 text-sm font-medium text-gray-700">
                             Office Location
                         </label>
                         <div class="relative">
+                            <!-- Ikon Kiri -->
+                            <div class="absolute inset-y-0 left-0 z-10 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h6m-6 4h6m-6 4h6" />
+                                </svg>
+                            </div>
                             <select id="office_location_id" name="office_location_id"
-                                class="w-full px-4 py-3 pl-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('office_location_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
+                                class="w-full py-3 pr-10 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white @error('office_location_id') border-red-300 focus:ring-red-500 focus:border-red-500 @enderror">
                                 <option value="">Select an office (optional)</option>
                                 @foreach($officeLocations as $officeLocation)
-                                <option value="{{ $officeLocation->id }}" {{ old('office_location_id') == $officeLocation->id ? 'selected' : '' }}>
-                                    {{ $officeLocation->name }} ({{ $officeLocation->code }}){{ $officeLocation->is_active ? '' : ' - Inactive' }}
+                                <option value="{{ $officeLocation->id }}" {{
+                                    old('office_location_id')==$officeLocation->id ? 'selected' : '' }}>
+                                    {{ $officeLocation->name }} ({{ $officeLocation->code }}){{
+                                    $officeLocation->is_active ? '' : ' - Inactive' }}
                                 </option>
                                 @endforeach
                             </select>
-                            <div class="absolute inset-y-0 left-0 z-10 flex items-center pl-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Ikon Dropdown Kanan -->
+                            <div class="absolute inset-y-0 right-0 z-10 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h6m-6 4h6m-6 4h6" />
+                                        d="M19 9l-7 7-7-7" />
                                 </svg>
                             </div>
                         </div>
@@ -219,7 +243,8 @@
                             <span id="submitBtnText">Add User</span>
                             <svg id="submitBtnSpinner" class="hidden w-4 h-4 ml-2 -mr-1 text-white animate-spin"
                                 fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor"
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                 </path>

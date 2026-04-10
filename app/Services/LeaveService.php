@@ -6,7 +6,6 @@ use App\Models\Leave;
 use App\Models\User;
 use App\Models\ApprovalLink;
 use App\Enums\Roles;
-use App\Models\Role;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +21,8 @@ class LeaveService
 
     public function sisaCutiForYear(User $user, int $tahun, $excludeLeaveId = null): int
     {
+        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahun);
+
         $cutiList = Leave::where('employee_id', $user->id)
             ->where('status_1', 'approved')
             ->when($excludeLeaveId, fn($q) => $q->where('id', '!=', $excludeLeaveId))
@@ -32,7 +33,7 @@ class LeaveService
             ->get();
 
         $total = $cutiList->sum(
-            fn($cuti) => $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahun, [])
+            fn($cuti) => $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahun, $hariLibur)
         );
 
         $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
@@ -55,14 +56,31 @@ class LeaveService
             return 0;
         }
 
-        // Hitung inklusif: tanggal awal dan akhir sama-sama dihitung.
-        return $start->diffInDays($end) + 1;
+        if (empty($hariLibur)) {
+            $hariLibur = $this->holidayDateService->getDateStrings($start, $end);
+        }
+
+        $hariLiburSet = array_flip($hariLibur);
+        $totalHariKerja = 0;
+        $cursor = $start->copy();
+
+        while ($cursor->lte($end)) {
+            $tanggal = $cursor->toDateString();
+            if (!$cursor->isWeekend() && !isset($hariLiburSet[$tanggal])) {
+                $totalHariKerja++;
+            }
+
+            $cursor->addDay();
+        }
+
+        return $totalHariKerja;
     }
 
 
     public function sisaCuti(User $user, $excludeLeaveId = null): int
     {
         $tahunSekarang = now()->year;
+        $hariLibur = $this->holidayDateService->getDateStringsForYear($tahunSekarang);
 
         $cutiList = Leave::where('employee_id', $user->id)
             ->where('status_1', 'approved')
@@ -75,7 +93,7 @@ class LeaveService
 
         $total = $cutiList->sum(
             fn($cuti) =>
-            $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahunSekarang, [])
+            $this->hitungHariCuti($cuti->date_start, $cuti->date_end, $tahunSekarang, $hariLibur)
         );
 
         // dd($total);
@@ -92,14 +110,17 @@ class LeaveService
         $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, []);
         $sisaCuti = $this->sisaCuti($user);
 
+        if ($hariBaru < 1) {
+            throw new Exception('Rentang tanggal tidak memiliki hari kerja. Pilih tanggal cuti yang mencakup minimal 1 hari kerja.');
+        }
+
         if ($hariBaru > $sisaCuti) {
             throw new Exception("Sisa cuti hanya {$sisaCuti} hari, tidak bisa ajukan {$hariBaru} hari.");
         }
 
         return DB::transaction(function () use ($data, $user) {
-            $isTeamLeader = $user->userHasRole('team-leader');
             $isManager = $user->userHasRole('manager');
-            $isAutoApproved = $isTeamLeader || $isManager;
+            $isAutoApproved = $isManager;
 
             $leave = new Leave();
             $leave->employee_id = $user->id;
@@ -139,19 +160,19 @@ class LeaveService
         // Hitung cuti baru
         $hariBaru = $this->hitungHariCuti($data['date_start'], $data['date_end'], $tahunSekarang, []);
 
-        // Hitung cuti lama
-        $hariLama = $this->hitungHariCuti($leave->date_start, $leave->date_end, $tahunSekarang, []);
-
         $sisaCuti = $this->sisaCuti($user, $leave->id);
+
+        if ($hariBaru < 1) {
+            throw new Exception('Rentang tanggal tidak memiliki hari kerja. Pilih tanggal cuti yang mencakup minimal 1 hari kerja.');
+        }
 
         // Jika cuti baru lebih panjang, cek tambahan
         if ($hariBaru > $sisaCuti) {
             throw new Exception("Sisa cuti tidak cukup untuk memperpanjang cuti. Tersisa {$sisaCuti} hari.");
         }
 
-        $isTeamLeader = $user->userHasRole('team-leader');
         $isManager = $user->userHasRole('manager');
-        $isAutoApproved = $isTeamLeader || $isManager;
+        $isAutoApproved = $isManager;
 
         $leave->update([
             'date_start' => $data['date_start'],
@@ -214,16 +235,6 @@ class LeaveService
      */
     private function resolveApprover(User $applicant): array
     {
-        $isLeader = \App\Models\Division::where('leader_id', $applicant->id)->exists();
-        $isApprover = $applicant->roles()->where('name', Roles::Approver->value)->exists();
-
-        if (!$isLeader && !$isApprover) {
-            $leader = $applicant->division?->leader;
-            if ($leader) {
-                return [$leader, 'approver'];
-            }
-        }
-
         $managerUser = User::whereHas('roles', fn($q) => $q->where('name', Roles::Manager->value))->first();
         return [$managerUser, 'manager'];
     }

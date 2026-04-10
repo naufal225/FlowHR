@@ -9,7 +9,7 @@ class ApproveLeaveRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasActiveRole(Roles::Manager->value) || auth()->user()->hasActiveRole(Roles::Approver->value);
+        return auth()->check() && auth()->user()->hasActiveRole(Roles::Manager->value);
     }
 
     public function rules(): array

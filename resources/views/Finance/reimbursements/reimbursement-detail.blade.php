@@ -44,7 +44,7 @@
                 </div>
                 @endif
 
-                <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
+                <div class="px-6 py-4 text-white bg-gradient-to-r from-primary-600 to-primary-700">
                     <div class="flex items-center justify-between">
                         <div>
                             <h1 class="text-xl font-bold text-white">Reimbursement Claim #RY{{ $reimbursement->id }}
@@ -194,7 +194,7 @@
                             <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
                                 <i class="mr-3 fas fa-sticky-note text-info-600"></i>
                                 <span
-                                    class="max-w-full max-h-40 overflow-y-auto break-all whitespace-pre-line text-neutral-900">{{ $reimbursement->note_1 ?? '-' }}</span>
+                                    class="max-w-full overflow-y-auto break-all whitespace-pre-line max-h-40 text-neutral-900">{{ $reimbursement->note_1 ?? '-' }}</span>
                             </div>
                         </div>
 
@@ -203,7 +203,7 @@
                             <div class="flex items-start p-3 border rounded-lg bg-neutral-50 border-neutral-200">
                                 <i class="mr-3 fas fa-sticky-note text-info-600"></i>
                                 <span
-                                    class="max-w-full max-h-40 overflow-y-auto break-all whitespace-pre-line text-neutral-900">{{ $reimbursement->note_2 ?? '-' }}</span>
+                                    class="max-w-full overflow-y-auto break-all whitespace-pre-line max-h-40 text-neutral-900">{{ $reimbursement->note_2 ?? '-' }}</span>
                             </div>
                         </div>
                     </div>
@@ -272,8 +272,7 @@
                     @endif
 
                     @if ($reimbursement->status_1 == 'approved' && $reimbursement->status_2 == 'approved' &&
-                    !$reimbursement->marked_down && $reimbursement->locked_by === Auth::id() &&
-                    $reimbursement->locked_at->addMinutes(60)->isFuture())
+                    !$reimbursement->marked_down)
                     <form action="{{ route('finance.reimbursements.marked') }}" method="POST"
                         onsubmit="return confirm('Are you sure you want to mark selected reimbursements as done?')">
                         @csrf

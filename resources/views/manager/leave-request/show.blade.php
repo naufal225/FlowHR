@@ -218,7 +218,7 @@
             </div>
 
             <!-- Added approval/rejection form for pending requests -->
-            @if($leave->status_1 === 'pending')
+            @if($leave->status_1 === 'pending' && ($canApprove ?? false))
             <div class="bg-white border rounded-xl shadow-soft border-neutral-200">
                 <div class="px-6 py-4 border-b border-neutral-200">
                     <h3 class="text-lg font-bold text-neutral-900">Review Request</h3>
@@ -256,22 +256,29 @@
                     </form>
                 </div>
             </div>
+            @elseif($leave->status_1 === 'pending')
+            <div class="bg-white border rounded-xl shadow-soft border-neutral-200">
+                <div class="px-6 py-4 border-b border-neutral-200">
+                    <h3 class="text-lg font-bold text-neutral-900">Review Request</h3>
+                </div>
+                <div class="p-6">
+                    <div class="p-4 text-center text-yellow-800 rounded-lg bg-yellow-50">
+                        <i class="mb-2 text-xl fas fa-clock"></i>
+                        <p class="font-medium">Pending Review</p>
+                        <p class="text-sm">Only another manager can review this request.</p>
+                    </div>
+                </div>
+            </div>
             @else
             <div class="bg-white border rounded-xl shadow-soft border-neutral-200">
                 <div class="px-6 py-4 border-b border-neutral-200">
                     <h3 class="text-lg font-bold text-neutral-900">Review Request</h3>
                 </div>
                 <div class="p-6">
-                    @if($leave->status_1 === 'pending')
-                    <div class="p-4 text-center text-yellow-800 rounded-lg bg-yellow-50">
-                        <i class="mb-2 text-xl fas fa-clock"></i>
-                        <p class="font-medium">Pending Approver Review</p>
-                        <p class="text-sm">Waiting for approval from approver.</p>
-                    </div>
-                    @elseif($leave->status_1 === 'approved')
+                    @if($leave->status_1 === 'approved')
                     <div class="p-4 text-center text-green-800 rounded-lg bg-green-50">
                         <i class="mb-2 text-xl fas fa-check-circle"></i>
-                        <p class="font-medium">Approved by Approver</p>
+                        <p class="font-medium">Approved by Manager</p>
                         @if($leave->note_1)
                         <p class="mt-2 text-sm"><strong>Notes:</strong> {{ $leave->note_1 }}</p>
                         @endif
@@ -279,7 +286,7 @@
                     @elseif($leave->status_1 === 'rejected')
                     <div class="p-4 text-center text-red-800 rounded-lg bg-red-50">
                         <i class="mb-2 text-xl fas fa-times-circle"></i>
-                        <p class="font-medium">Rejected by Approver</p>
+                        <p class="font-medium">Rejected by Manager</p>
                         @if($leave->note_1)
                         <p class="mt-2 text-sm"><strong>Reason:</strong> {{ $leave->note_1 }}</p>
                         @else

@@ -87,9 +87,18 @@
             </div>
             <div>
                 <div><span class="label">Duration:</span></div>
+                @php
+                    $tahunSekarang = now()->year;
+                    $hariLibur = app(\App\Services\HolidayDateService::class)->getDateStringsForYear($tahunSekarang);
+                    $durasi = app()->call(\App\Services\LeaveService::class.'@hitungHariCuti', [
+                        'dateStart' => \Carbon\Carbon::parse($leave->date_start),
+                        'dateEnd' => \Carbon\Carbon::parse($leave->date_end),
+                        'tahun' => $tahunSekarang,
+                        'hariLibur' => $hariLibur,
+                    ]);
+                @endphp
                 <div class="box">
-                    {{ (int) \Carbon\Carbon::parse($leave->date_start)->diffInDays(\Carbon\Carbon::parse($leave->date_end, ), false) + 1 }}
-                    {{ (int) \Carbon\Carbon::parse($leave->date_start)->diffInDays(\Carbon\Carbon::parse($leave->date_end, ), false) + 1 === 1 ? 'day' : 'days' }}
+                    {{ $durasi }} {{ $durasi === 1 ? 'day' : 'days' }}
                 </div>
             </div>
             <div>

@@ -81,17 +81,23 @@
                         <i class="mr-2 fas fa-clock text-secondary-600"></i>
                         <span class="text-sm font-medium text-neutral-700">Duration:</span>
                     </div>
+                    @php
+                        $tahunSekarang = now()->year;
+                        $hariLibur = app(\App\Services\HolidayDateService::class)->getDateStringsForYear($tahunSekarang);
+                        $durasi = app()->call(\App\Services\LeaveService::class.'@hitungHariCuti', [
+                            'dateStart' => \Carbon\Carbon::parse($leave->date_start),
+                            'dateEnd' => \Carbon\Carbon::parse($leave->date_end),
+                            'tahun' => $tahunSekarang,
+                            'hariLibur' => $hariLibur,
+                        ]);
+                    @endphp
                     <span id="duration-display" class="text-sm font-bold text-primary-600">
-                        {{
-                        \Carbon\Carbon::parse($leave->date_start)->diffInDays(\Carbon\Carbon::parse($leave->date_end)) +
-                        1 }} days
+                        {{ $durasi }} {{ $durasi === 1 ? 'day' : 'days' }}
                     </span>
                 </div>
                 <div class="mt-2 text-xs text-neutral-500">
                     <span id="working-days-display">
-                        {{
-                        \Carbon\Carbon::parse($leave->date_start)->diffInWeekdays(\Carbon\Carbon::parse($leave->date_end))
-                        + 1 }} working days
+                        {{ $durasi }} {{ $durasi === 1 ? 'working day' : 'working days' }}
                     </span>
                 </div>
             </div>
@@ -153,7 +159,7 @@
 
                 while (currentDate <= end) {
                     const dayOfWeek = currentDate.getDay();
-                    const formattedDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                    const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`; // YYYY-MM-DD
 
                     // Hanya hitung jika bukan Sabtu, Minggu, dan bukan hari libur
                     if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.includes(formattedDate)) {
@@ -163,11 +169,8 @@
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
 
-                const timeDiff = end.getTime() - start.getTime();
-                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-
-                document.getElementById('duration-display').textContent = daysDiff + ' days';
-                document.getElementById('working-days-display').textContent = workingDays + ' working days';
+                document.getElementById('duration-display').textContent = workingDays + (workingDays === 1 ? ' day' : ' days');
+                document.getElementById('working-days-display').textContent = workingDays + (workingDays === 1 ? ' working day' : ' working days');
             } else {
                 document.getElementById('duration-display').textContent = '0 days';
                 document.getElementById('working-days-display').textContent = '0 working days';

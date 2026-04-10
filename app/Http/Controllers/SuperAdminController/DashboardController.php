@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Enums\Roles;
 use App\Models\Role;
 use App\Services\Dashboard\DashboardLeaveCalendarService;
+use App\Services\LeaveService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,10 @@ class DashboardController extends Controller
 {
     use HelperController;
 
-    public function index(DashboardLeaveCalendarService $dashboardLeaveCalendarService)
+    public function index(
+        DashboardLeaveCalendarService $dashboardLeaveCalendarService,
+        LeaveService $leaveService
+    )
     {
         $models = [
             "reimbursements" => Reimbursement::class,
@@ -71,19 +75,7 @@ class DashboardController extends Controller
             $officialTravelsChartData[] = OfficialTravel::whereBetween('created_at', [$start, $end])->count();
         }
 
-        $annual = (int) \App\Helpers\CostSettingsHelper::get('ANNUAL_LEAVE', env('CUTI_TAHUNAN', 20));
-        $usedDays = Leave::where('employee_id', Auth::id())
-            ->where('status_1', 'approved')
-            ->whereYear('date_start', now()->year)
-            ->get(['date_start', 'date_end'])
-            ->sum(function (Leave $leave): int {
-                $start = Carbon::parse($leave->date_start);
-                $end = Carbon::parse($leave->date_end);
-
-                return $start->diffInDays($end) + 1;
-            });
-
-        $sisaCuti = $annual - $usedDays;
+        $sisaCuti = $leaveService->sisaCuti(Auth::user());
 
         $recentRequests = $this->getRecentRequests(Auth::id());
 
