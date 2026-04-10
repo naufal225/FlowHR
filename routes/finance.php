@@ -61,8 +61,8 @@ Route::middleware(['auth', 'role:finance', 'division'])->prefix('approver3')->na
             Route::get('{reportExport}/download', 'download')->defaults('role_scope', 'finance')->name('download');
         });
 
-    
-    // Profile 
+
+    // Profile
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::resource('profile', ProfileController::class);
 });

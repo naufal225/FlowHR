@@ -3,7 +3,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto">
     <!-- Profile Header -->
-    @if(session('success'))
+    {{-- @if(session('success'))
     <div class="flex items-center p-4 my-6 border border-green-200 bg-green-50 rounded-xl">
         <div class="flex-shrink-0">
             <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,7 +14,7 @@
             <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
         </div>
     </div>
-    @endif
+    @endif --}}
 
     @if($errors->any())
     <div class="flex items-start p-4 mb-6 border border-red-200 bg-red-50 rounded-xl">
@@ -309,81 +309,59 @@
     </div>
 </div>
 
-
 @push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach event listeners instead of using onclick
+    const editBtn = document.querySelector('[onclick="openEditModal()"]');
+    const passwordBtn = document.querySelector('[onclick="openPasswordModal()"]');
 
-// Modal functions
-function openEditModal() {
-document.getElementById('editProfileModal').classList.remove('hidden');
-}
+    if (editBtn) {
+        editBtn.removeAttribute('onclick');
+        editBtn.addEventListener('click', openEditModal);
+    }
 
-function closeEditModal() {
-document.getElementById('editProfileModal').classList.add('hidden');
-}
+    if (passwordBtn) {
+        passwordBtn.removeAttribute('onclick');
+        passwordBtn.addEventListener('click', openPasswordModal);
+    }
 
-function openPasswordModal() {
-document.getElementById('passwordModal').classList.remove('hidden');
-}
+    function openEditModal() {
+        const modal = document.getElementById('editProfileModal');
+        if (modal) modal.classList.remove('hidden');
+    }
 
-function closePasswordModal() {
-document.getElementById('passwordModal').classList.add('hidden');
-// Clear password fields
-document.getElementById('current_password').value = '';
-document.getElementById('new_password').value = '';
-document.getElementById('new_password_confirmation').value = '';
-}
+    function closeEditModal() {
+        const modal = document.getElementById('editProfileModal');
+        if (modal) modal.classList.add('hidden');
+    }
 
-// Image preview
-document.getElementById('profile_photo').addEventListener('change', function(e) {
-const file = e.target.files[0];
-if (file) {
-const reader = new FileReader();
-reader.onload = function(e) {
-const preview = document.getElementById('preview-image');
-const placeholder = document.getElementById('preview-placeholder');
+    function openPasswordModal() {
+        const modal = document.getElementById('passwordModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            // Clear fields
+            const inputs = ['current_password', 'new_password', 'new_password_confirmation'];
+            inputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) input.value = '';
+            });
+        } else {
+            console.error('Password modal not found');
+        }
+    }
 
-if (preview) {
-preview.src = e.target.result;
-} else if (placeholder) {
-placeholder.outerHTML = `<img id="preview-image" src="${e.target.result}" alt="Preview"
-    class="object-cover w-16 h-16 rounded-full">`;
-}
-};
-reader.readAsDataURL(file);
-}
+    function closePasswordModal() {
+        const modal = document.getElementById('passwordModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    // Make functions global
+    window.openEditModal = openEditModal;
+    window.closeEditModal = closeEditModal;
+    window.openPasswordModal = openPasswordModal;
+    window.closePasswordModal = closePasswordModal;
 });
-
-// Close modals when clicking outside
-document.getElementById('editProfileModal').addEventListener('click', function(e) {
-if (e.target === this) closeEditModal();
-});
-
-document.getElementById('passwordModal').addEventListener('click', function(e) {
-if (e.target === this) closePasswordModal();
-});
-
-function togglePassword(inputId, button) {
-const input = document.getElementById(inputId);
-const icon = button.querySelector('i');
-
-if (input.type === 'password') {
-input.type = 'text';
-icon.classList.remove('fa-eye');
-icon.classList.add('fa-eye-slash');
-} else {
-input.type = 'password';
-icon.classList.remove('fa-eye-slash');
-icon.classList.add('fa-eye');
-}
-}
-
-function openPasswordModal() {
-document.getElementById('passwordModal').classList.remove('hidden');
-}
-
-function closePasswordModal() {
-document.getElementById('passwordModal').classList.add('hidden');
-}
-
+</script>
 @endpush
 @endsection

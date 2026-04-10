@@ -3,7 +3,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto">
     <!-- Profile Header -->
-    @if(session('success'))
+    {{-- @if(session('success'))
     <div class="flex items-center p-4 my-6 border border-green-200 bg-green-50 rounded-xl">
         <div class="flex-shrink-0">
             <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,7 +14,7 @@
             <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
         </div>
     </div>
-    @endif
+    @endif --}}
 
     @if($errors->any())
     <div class="flex items-start p-4 mb-6 border border-red-200 bg-red-50 rounded-xl">
@@ -217,7 +217,7 @@
 <div id="passwordModal" class="fixed inset-0 z-50 hidden bg-black/20 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="w-full max-w-md bg-white shadow-2xl rounded-xl">
-            <form action="{{ route('employee.profile.password') }}" method="POST">
+            <form action="{{ route('finance.profile.password') }}" method="POST">
                 @csrf
                 @method('PUT')
 
