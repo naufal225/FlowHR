@@ -4,6 +4,58 @@
 @section('header', 'Attendance Settings')
 @section('subtitle', 'Configure attendance policy per office')
 
+@php
+    $defaultCenter = config('services.google_maps.default_center', []);
+    $summaryOfficeLatitude = is_numeric($selectedOffice?->latitude) ? (float) $selectedOffice->latitude : null;
+    $summaryOfficeLongitude = is_numeric($selectedOffice?->longitude) ? (float) $selectedOffice->longitude : null;
+    $summaryOfficeRadiusMeter = max(1, (int) ($selectedOffice?->radius_meter ?? 1));
+    $policySummaryMapConfig = [
+        'googleMapsBrowserKey' => config('services.google_maps.browser_key'),
+        'defaultCenter' => [
+            'lat' => (float) ($defaultCenter['lat'] ?? -6.2000000),
+            'lng' => (float) ($defaultCenter['lng'] ?? 106.8166667),
+            'zoom' => (int) ($defaultCenter['zoom'] ?? 13),
+        ],
+        'office' => [
+            'name' => (string) ($selectedOffice?->name ?? ''),
+            'address' => (string) ($selectedOffice?->address ?? ''),
+            'latitude' => $summaryOfficeLatitude,
+            'longitude' => $summaryOfficeLongitude,
+            'radiusMeter' => $summaryOfficeRadiusMeter,
+        ],
+    ];
+@endphp
+
+@push('styles')
+    <style>
+        .attendance-policy-summary-map {
+            height: 280px;
+            min-height: 280px;
+            background: #e2e8f0;
+        }
+
+        .attendance-policy-summary-map .gm-style {
+            font-family: inherit;
+        }
+
+        .attendance-policy-summary-map .gm-style img,
+        .attendance-policy-summary-map .gm-style canvas {
+            max-width: none !important;
+        }
+
+        .attendance-policy-summary-map .gm-style img {
+            display: inline-block !important;
+        }
+
+        @media (max-width: 640px) {
+            .attendance-policy-summary-map {
+                height: 220px;
+                min-height: 220px;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
 <div class="space-y-6">
     @include('components.attendance.page-header', [
@@ -202,7 +254,7 @@
 
             <div class="space-y-8">
                 @if($settingSummary)
-                    <div class="p-8 bg-white border shadow-sm rounded-3xl border-slate-200/60">
+                    <div class="p-6 bg-white border shadow-sm rounded-3xl border-slate-200/60">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 text-slate-600">
                                 <i class="fa-solid fa-clipboard-list"></i>
@@ -210,7 +262,16 @@
                             <h2 class="text-xl font-bold tracking-tight text-slate-900">Current Policy Summary</h2>
                         </div>
 
-                        <div class="grid grid-cols-1 gap-4 mt-2">
+                        <div class="space-y-4" data-attendance-policy-summary-map data-config='@json($policySummaryMapConfig)'>
+                            <div id="attendance-settings-policy-map"
+                                class="overflow-hidden border rounded-2xl border-slate-200 attendance-policy-summary-map"></div>
+                            <p class="px-4 py-3 text-xs font-medium border rounded-xl border-sky-200 bg-sky-50 text-sky-700"
+                                data-attendance-policy-summary-map-status>
+                                Preparing Google Maps office coverage preview...
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
                             @include('components.attendance.info-item', [
                                 'label' => 'Office',
                                 'value' => $settingSummary['office_name'],
@@ -265,3 +326,212 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const root = document.querySelector('[data-attendance-policy-summary-map]');
+            if (!root) {
+                return;
+            }
+
+            const mapElement = root.querySelector('#attendance-settings-policy-map');
+            const statusElement = root.querySelector('[data-attendance-policy-summary-map-status]');
+            if (!mapElement || !statusElement) {
+                return;
+            }
+
+            const configRaw = root.dataset.config;
+            let config = {};
+
+            try {
+                config = configRaw ? JSON.parse(configRaw) : {};
+            } catch (error) {
+                renderStatus('error', 'Policy map config is invalid. Please refresh the page.');
+                return;
+            }
+
+            const officeLatitude = numericOrNull(config.office?.latitude);
+            const officeLongitude = numericOrNull(config.office?.longitude);
+            const officeRadiusMeter = Math.max(1, Number.parseInt(config.office?.radiusMeter, 10) || 1);
+            const browserKey = typeof config.googleMapsBrowserKey === 'string'
+                ? config.googleMapsBrowserKey.trim()
+                : '';
+
+            if (!hasValidCoordinates(officeLatitude, officeLongitude)) {
+                renderStatus('warning', 'Office coordinates are unavailable, so the policy map preview cannot be rendered.');
+                return;
+            }
+
+            if (browserKey === '') {
+                renderStatus('warning', 'Google Maps is not configured. Configure GOOGLE_MAPS_BROWSER_KEY to render the policy map preview.');
+                return;
+            }
+
+            registerGoogleMapsAuthFailureHandler();
+            renderStatus('info', 'Loading Google Maps policy map preview...');
+
+            loadGoogleMapsApi(browserKey)
+                .then(async () => {
+                    const { Map, Circle } = await window.google.maps.importLibrary('maps');
+                    const officePosition = { lat: officeLatitude, lng: officeLongitude };
+
+                    const map = new Map(mapElement, {
+                        center: officePosition,
+                        zoom: 16,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: false,
+                        clickableIcons: false,
+                        gestureHandling: 'greedy',
+                    });
+
+                    const marker = new window.google.maps.Marker({
+                        map,
+                        position: officePosition,
+                        draggable: false,
+                        clickable: false,
+                        title: typeof config.office?.name === 'string' && config.office.name.trim() !== ''
+                            ? config.office.name.trim()
+                            : 'Office location',
+                    });
+
+                    const circle = new Circle({
+                        map,
+                        center: officePosition,
+                        radius: officeRadiusMeter,
+                        strokeColor: '#0284c7',
+                        strokeOpacity: 0.9,
+                        strokeWeight: 2,
+                        fillColor: '#38bdf8',
+                        fillOpacity: 0.2,
+                        clickable: false,
+                    });
+
+                    const circleBounds = circle.getBounds();
+                    if (circleBounds) {
+                        map.fitBounds(circleBounds, 56);
+                    } else {
+                        map.setCenter(officePosition);
+                        map.setZoom(16);
+                    }
+
+                    window.google.maps.event.addListenerOnce(map, 'tilesloaded', () => {
+                        renderStatus('success', 'Showing saved office location and geofence radius preview.');
+                    });
+
+                    marker.setMap(map);
+                })
+                .catch(() => {
+                    renderStatus('error', 'Google Maps failed to load. Check browser-key restrictions and Maps JavaScript API access.');
+                });
+
+            function loadGoogleMapsApi(key) {
+                if (window.google?.maps?.importLibrary) {
+                    return Promise.resolve(window.google.maps);
+                }
+
+                if (window.flowHrAttendanceSettingsGoogleMapsPromise) {
+                    return window.flowHrAttendanceSettingsGoogleMapsPromise;
+                }
+
+                window.flowHrAttendanceSettingsGoogleMapsPromise = new Promise((resolve, reject) => {
+                    const existingScript = document.querySelector('script[data-google-maps-attendance-settings-loader="true"]');
+
+                    const verifyLoaded = (attempt = 0) => {
+                        if (window.google?.maps?.importLibrary) {
+                            resolve(window.google.maps);
+                            return;
+                        }
+
+                        if (attempt >= 20) {
+                            reject(new Error('Google Maps API loaded without importLibrary support.'));
+                            return;
+                        }
+
+                        window.setTimeout(() => verifyLoaded(attempt + 1), 100);
+                    };
+
+                    if (existingScript) {
+                        if (existingScript.dataset.loaded === 'true') {
+                            verifyLoaded();
+                            return;
+                        }
+
+                        existingScript.addEventListener('load', () => {
+                            existingScript.dataset.loaded = 'true';
+                            verifyLoaded();
+                        }, { once: true });
+                        existingScript.addEventListener('error', () => reject(new Error('Google Maps API failed to load.')), { once: true });
+                        return;
+                    }
+
+                    const script = document.createElement('script');
+                    const query = new URLSearchParams({
+                        key,
+                        v: 'weekly',
+                        loading: 'async',
+                    });
+
+                    script.src = `https://maps.googleapis.com/maps/api/js?${query.toString()}`;
+                    script.async = true;
+                    script.defer = true;
+                    script.dataset.googleMapsAttendanceSettingsLoader = 'true';
+                    script.addEventListener('load', () => {
+                        script.dataset.loaded = 'true';
+                        verifyLoaded();
+                    }, { once: true });
+                    script.addEventListener('error', () => reject(new Error('Google Maps API failed to load.')), { once: true });
+                    document.head.appendChild(script);
+                }).catch((error) => {
+                    window.flowHrAttendanceSettingsGoogleMapsPromise = null;
+                    throw error;
+                });
+
+                return window.flowHrAttendanceSettingsGoogleMapsPromise;
+            }
+
+            function registerGoogleMapsAuthFailureHandler() {
+                const previousAuthFailureHandler = window.gm_authFailure;
+
+                window.gm_authFailure = () => {
+                    renderStatus('error', 'Google Maps rejected the browser key. Check referrer restrictions and Maps JavaScript API access.');
+
+                    if (typeof previousAuthFailureHandler === 'function') {
+                        previousAuthFailureHandler();
+                    }
+                };
+            }
+
+            function renderStatus(tone, message) {
+                const palette = {
+                    info: 'border-sky-200 bg-sky-50 text-sky-700',
+                    success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                    warning: 'border-amber-200 bg-amber-50 text-amber-700',
+                    error: 'border-rose-200 bg-rose-50 text-rose-700',
+                };
+
+                statusElement.className = `rounded-xl border px-4 py-3 text-xs font-medium ${palette[tone] || palette.info}`;
+                statusElement.textContent = message;
+            }
+
+            function numericOrNull(value) {
+                if (value === null || value === undefined || value === '') {
+                    return null;
+                }
+
+                const numericValue = Number(value);
+                return Number.isFinite(numericValue) ? numericValue : null;
+            }
+
+            function hasValidCoordinates(latitude, longitude) {
+                return Number.isFinite(latitude)
+                    && Number.isFinite(longitude)
+                    && latitude >= -90
+                    && latitude <= 90
+                    && longitude >= -180
+                    && longitude <= 180;
+            }
+        });
+    </script>
+@endpush

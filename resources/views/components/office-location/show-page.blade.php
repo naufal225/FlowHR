@@ -1,3 +1,55 @@
+@php
+    $defaultCenter = config('services.google_maps.default_center', []);
+    $officeLatitude = is_numeric($officeLocation->latitude) ? (float) $officeLocation->latitude : null;
+    $officeLongitude = is_numeric($officeLocation->longitude) ? (float) $officeLocation->longitude : null;
+    $officeRadiusMeter = max(1, (int) $officeLocation->radius_meter);
+    $officeCoverageMapConfig = [
+        'googleMapsBrowserKey' => config('services.google_maps.browser_key'),
+        'defaultCenter' => [
+            'lat' => (float) ($defaultCenter['lat'] ?? -6.2000000),
+            'lng' => (float) ($defaultCenter['lng'] ?? 106.8166667),
+            'zoom' => (int) ($defaultCenter['zoom'] ?? 13),
+        ],
+        'office' => [
+            'name' => (string) $officeLocation->name,
+            'address' => (string) ($officeLocation->address ?? ''),
+            'latitude' => $officeLatitude,
+            'longitude' => $officeLongitude,
+            'radiusMeter' => $officeRadiusMeter,
+        ],
+    ];
+@endphp
+
+@push('styles')
+    <style>
+        .office-location-coverage-map {
+            height: 360px;
+            min-height: 360px;
+            background: #e5e7eb;
+        }
+
+        .office-location-coverage-map .gm-style {
+            font-family: inherit;
+        }
+
+        .office-location-coverage-map .gm-style img,
+        .office-location-coverage-map .gm-style canvas {
+            max-width: none !important;
+        }
+
+        .office-location-coverage-map .gm-style img {
+            display: inline-block !important;
+        }
+
+        @media (max-width: 640px) {
+            .office-location-coverage-map {
+                height: 300px;
+                min-height: 300px;
+            }
+        }
+    </style>
+@endpush
+
 <div class="min-h-screen bg-gray-50">
     <main class="relative z-10 flex-1 p-6 overflow-x-hidden overflow-y-auto">
         <div class="max-w-7xl mx-auto space-y-6">
@@ -83,6 +135,50 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section class="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl"
+                data-office-location-detail-map data-config='@json($officeCoverageMapConfig)'>
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">Office Coverage Map</h2>
+                            <p class="mt-1 text-sm text-gray-500">Read-only geofence preview from the saved office coordinates.</p>
+                        </div>
+                        <span
+                            class="inline-flex items-center self-start px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] rounded-full bg-slate-100 text-slate-700">
+                            Read-only
+                        </span>
+                    </div>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div id="office-location-detail-map"
+                        class="overflow-hidden border border-gray-200 rounded-2xl office-location-coverage-map"></div>
+                    <p class="px-4 py-3 text-xs font-medium border rounded-xl border-sky-200 bg-sky-50 text-sky-700"
+                        data-office-location-detail-map-status>
+                        Preparing Google Maps office coverage preview...
+                    </p>
+                    <dl class="grid gap-3 sm:grid-cols-3">
+                        <div class="px-4 py-3 border border-gray-200 rounded-xl bg-gray-50">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Latitude</dt>
+                            <dd class="mt-1 text-sm font-medium text-gray-800" data-office-location-detail-latitude>
+                                {{ $officeLatitude !== null ? number_format($officeLatitude, 7, '.', '') : '-' }}
+                            </dd>
+                        </div>
+                        <div class="px-4 py-3 border border-gray-200 rounded-xl bg-gray-50">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Longitude</dt>
+                            <dd class="mt-1 text-sm font-medium text-gray-800" data-office-location-detail-longitude>
+                                {{ $officeLongitude !== null ? number_format($officeLongitude, 7, '.', '') : '-' }}
+                            </dd>
+                        </div>
+                        <div class="px-4 py-3 border border-gray-200 rounded-xl bg-gray-50">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Radius</dt>
+                            <dd class="mt-1 text-sm font-medium text-gray-800" data-office-location-detail-radius>
+                                {{ number_format($officeRadiusMeter) }} m
+                            </dd>
+                        </div>
+                    </dl>
                 </div>
             </section>
 
@@ -227,3 +323,5 @@
         </div>
     </main>
 </div>
+
+@include('components.office-location.show-map-script')

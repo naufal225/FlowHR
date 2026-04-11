@@ -82,6 +82,13 @@ class OfficeLocationManagementTest extends TestCase
             ->assertSee('Office Detail', false)
             ->assertSee('Jakarta HQ', false)
             ->assertSee('12 total employees', false)
+            ->assertSee('Office Coverage Map', false)
+            ->assertSee('Read-only geofence preview from the saved office coordinates.', false)
+            ->assertSee('data-office-location-detail-latitude', false)
+            ->assertSee('data-office-location-detail-longitude', false)
+            ->assertSee('text-sm font-medium text-gray-800', false)
+            ->assertSee(number_format((float) $officeLocation->latitude, 7, '.', ''), false)
+            ->assertSee(number_format((float) $officeLocation->longitude, 7, '.', ''), false)
             ->assertSee('Asia/Jakarta', false)
             ->assertSeeInOrder(['Employee 12', 'Employee 11', 'Employee 10'])
             ->assertDontSee('Employee 01', false)
@@ -140,7 +147,31 @@ class OfficeLocationManagementTest extends TestCase
         $response->assertOk()
             ->assertSee('Denpasar Office', false)
             ->assertSee('Back to List', false)
+            ->assertSee('Office Coverage Map', false)
             ->assertSee('Assigned Employees', false);
+    }
+
+    public function test_office_location_detail_contains_google_maps_fallback_copy_when_browser_key_missing(): void
+    {
+        $admin = $this->createEmployee();
+        $this->assignRole($admin, Roles::Admin->value);
+        config()->set('services.google_maps.browser_key', null);
+
+        $officeLocation = $this->createOfficeLocation([
+            'code' => 'MLG',
+            'name' => 'Malang Office',
+            'latitude' => -7.9839080,
+            'longitude' => 112.6213910,
+            'radius_meter' => 120,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->get(route('admin.office-locations.show', $officeLocation));
+
+        $response->assertOk()
+            ->assertSee('Office Coverage Map', false)
+            ->assertSee('Google Maps is not configured. Configure GOOGLE_MAPS_BROWSER_KEY to render the office coverage map.', false);
     }
 
     public function test_admin_can_store_an_office_location_with_timezone(): void

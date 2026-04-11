@@ -42,6 +42,11 @@ class AttendanceSettingsPageTest extends TestCase
         $response->assertOk()
             ->assertSee('Yogyakarta Office', false)
             ->assertSee('Jl. Malioboro No. 10, Yogyakarta', false)
+            ->assertSee('Current Policy Summary', false)
+            ->assertSee('data-attendance-policy-summary-map', false)
+            ->assertSee('id="attendance-settings-policy-map"', false)
+            ->assertSee('Preparing Google Maps office coverage preview...', false)
+            ->assertSee('sm:grid-cols-2', false)
             ->assertSee('name="work_start_time_hour"', false)
             ->assertSee('name="work_start_time_minute"', false)
             ->assertSee('name="work_end_time_hour"', false)
@@ -130,9 +135,45 @@ class AttendanceSettingsPageTest extends TestCase
         $response->assertOk()
             ->assertSee('Surabaya Office', false)
             ->assertSee('Jl. Tunjungan No. 88, Surabaya', false)
+            ->assertSee('Current Policy Summary', false)
+            ->assertSee('data-attendance-policy-summary-map', false)
+            ->assertSee('id="attendance-settings-policy-map"', false)
+            ->assertSee('sm:grid-cols-2', false)
             ->assertSee('name="work_start_time_hour"', false)
             ->assertSee('name="work_end_time_minute"', false)
             ->assertSee('90 m', false);
+    }
+
+    public function test_admin_attendance_settings_policy_summary_contains_google_maps_fallback_copy_when_key_missing(): void
+    {
+        $admin = $this->createEmployee();
+        $this->assignRole($admin, Roles::Admin->value);
+        config()->set('services.google_maps.browser_key', null);
+
+        $office = $this->createOfficeLocation([
+            'name' => 'Fallback Office',
+            'latitude' => -7.2575000,
+            'longitude' => 112.7521000,
+            'radius_meter' => 150,
+        ]);
+
+        $this->createAttendanceSetting($office, [
+            'work_start_time' => '08:30:00',
+            'work_end_time' => '17:30:00',
+            'late_tolerance_minutes' => 15,
+            'qr_rotation_seconds' => 30,
+            'min_location_accuracy_meter' => 25,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->get(route('admin.attendance.settings', ['office_location_id' => $office->id]));
+
+        $response->assertOk()
+            ->assertSee('Current Policy Summary', false)
+            ->assertSee('data-attendance-policy-summary-map', false)
+            ->assertSee('Google Maps is not configured. Configure GOOGLE_MAPS_BROWSER_KEY to render the policy map preview.', false);
     }
 
     public function test_admin_can_still_update_attendance_settings_with_legacy_time_payload(): void

@@ -337,7 +337,7 @@ class AdminAttendanceController extends Controller
     private function officeLocations(): Collection
     {
         return OfficeLocation::query()
-            ->select(['id', 'code', 'name', 'address', 'radius_meter', 'timezone', 'is_active'])
+            ->select(['id', 'code', 'name', 'address', 'latitude', 'longitude', 'radius_meter', 'timezone', 'is_active'])
             ->orderBy('name')
             ->get();
     }
