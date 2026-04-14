@@ -46,6 +46,11 @@ class OfficeLocation extends Model
         return $this->hasMany(AttendanceQrToken::class, 'office_location_id');
     }
 
+    public function attendanceQrDisplaySessions(): HasMany
+    {
+        return $this->hasMany(AttendanceQrDisplaySession::class, 'office_location_id');
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'office_location_id');

@@ -99,6 +99,11 @@ class User extends Authenticatable
         return $this->hasMany(AttendanceLog::class);
     }
 
+    public function attendanceQrDisplaySessions(): HasMany
+    {
+        return $this->hasMany(AttendanceQrDisplaySession::class, 'created_by');
+    }
+
     public function leavesPending()
     {
         return $this->leaves()->where('status_1', 'pending');

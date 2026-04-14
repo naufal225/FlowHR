@@ -17,13 +17,13 @@ class DatabaseSeeder extends Seeder
         $this->call(OfficeLocationAndAkbarSeeder::class);
         $this->call(HolidaySeeder::class);
         $this->call(ReimbursementTypeSeeder::class);
-        // $this->call([
-        //     OvertimeSeeder::class,
-        //     ReimbursementSeeder::class,
-        //     OfficialTravelSeeder::class,
-        //     LeaveSeeder::class,
-        // ]);
-        // $this->call(AttendanceOfficeEmployeeSeeder::class);
+        $this->call([
+            OvertimeSeeder::class,
+            ReimbursementSeeder::class,
+            OfficialTravelSeeder::class,
+            LeaveSeeder::class,
+        ]);
+        $this->call(AttendanceOfficeEmployeeSeeder::class);
         $this->call(FeatureSettingsSeeder::class);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\SendMessage;
+use App\Http\Controllers\Attendance\OfficeDisplayAttendanceQrController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\RoleSelectionController;
@@ -32,6 +33,14 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/approve/{token}', [\App\Http\Controllers\PublicApprovalController::class, 'act'])
         ->name('public.approval.act'); // eksekusi approve/reject
 });
+
+Route::prefix('office-display/attendance/qr')
+    ->name('office-display.attendance.qr.')
+    ->middleware(['throttle:120,1', 'signed', 'qr.display.session'])
+    ->group(function () {
+        Route::get('/{session}', [OfficeDisplayAttendanceQrController::class, 'show'])->name('show');
+        Route::get('/{session}/status', [OfficeDisplayAttendanceQrController::class, 'status'])->name('status');
+    });
 
 Route::middleware('guest')->group(function () {
     Route::get('/reset-password/{token}', [ResetPasswordController::class, 'create'])->name('password.reset');

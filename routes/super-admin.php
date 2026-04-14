@@ -52,6 +52,10 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
         Route::get('/qr/status', [AttendanceController::class, 'qrStatus'])->name('qr.status');
         Route::post('/qr/regenerate', [AttendanceController::class, 'regenerateQr'])->name('qr.regenerate');
         Route::post('/qr/invalidate', [AttendanceController::class, 'invalidateQr'])->name('qr.invalidate');
+        Route::post('/qr/display-sessions', [AttendanceController::class, 'storeDisplaySession'])->name('qr.display-sessions.store');
+        Route::post('/qr/display-sessions/{displaySession}/revoke', [AttendanceController::class, 'revokeDisplaySession'])
+            ->whereNumber('displaySession')
+            ->name('qr.display-sessions.revoke');
         Route::get('/settings', [AttendanceController::class, 'settings'])->name('settings');
         Route::put('/settings', [AttendanceController::class, 'updateSettings'])->name('settings.update');
         Route::get('/{attendance}', [AttendanceController::class, 'show'])->whereNumber('attendance')->name('show');

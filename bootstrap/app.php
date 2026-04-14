@@ -5,6 +5,7 @@ use App\Http\Middleware\CheckFeatureActive;
 use App\Http\Middleware\EnsureHasDivision;
 use App\Http\Middleware\EnsureMobileEmployeeAccess;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\ValidateAttendanceQrDisplaySession;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => CheckFeatureActive::class,
             'division' => EnsureHasDivision::class,
             'mobile.employee' => EnsureMobileEmployeeAccess::class,
+            'qr.display.session' => ValidateAttendanceQrDisplaySession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

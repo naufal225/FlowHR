@@ -9,14 +9,18 @@ use App\Enums\Roles;
 use App\Exceptions\Attendance\AttendanceException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\AttendanceQrActionRequest;
+use App\Http\Requests\Attendance\RevokeAttendanceQrDisplaySessionRequest;
 use App\Http\Requests\Attendance\ReviewAttendanceCorrectionRequest;
+use App\Http\Requests\Attendance\StoreAttendanceQrDisplaySessionRequest;
 use App\Http\Requests\Attendance\UpsertAttendanceSettingRequest;
 use App\Models\AttendanceCorrection;
+use App\Models\AttendanceQrDisplaySession;
 use App\Models\AttendanceSetting;
 use App\Models\OfficeLocation;
 use App\Models\User;
 use App\Services\Attendance\AttendanceCorrectionApprovalService;
 use App\Services\Attendance\AttendanceDailyStatusResolverService;
+use App\Services\Attendance\AttendanceQrDisplaySessionService;
 use App\Services\Attendance\AttendanceDetailService;
 use App\Services\Attendance\AttendanceHistoryService;
 use App\Services\Attendance\AttendanceQrManagementService;
@@ -40,6 +44,7 @@ class AdminAttendanceController extends Controller
         private readonly AttendanceUiService $attendanceUiService,
         private readonly AttendanceCorrectionApprovalService $attendanceCorrectionApprovalService,
         private readonly AttendanceQrManagementService $attendanceQrManagementService,
+        private readonly AttendanceQrDisplaySessionService $attendanceQrDisplaySessionService,
         private readonly AttendanceSettingManagementService $attendanceSettingManagementService,
     ) {}
 
@@ -240,6 +245,11 @@ class AdminAttendanceController extends Controller
             'officeLocations' => $officeLocations,
             'selectedOffice' => $selectedOffice,
             'qrCard' => $this->currentQrCardData($selectedOffice),
+            'displaySessions' => $this->displaySessionsForOffice($selectedOffice),
+            'displaySessionDefaults' => [
+                'ttl_days' => (int) config('attendance.qr_display.session_ttl_days', 30),
+            ],
+            'generatedDisplayUrl' => (string) session('attendance_qr_display_url', ''),
         ]);
     }
 
@@ -310,6 +320,42 @@ class AdminAttendanceController extends Controller
         return redirect()
             ->route($this->routeName('attendance.settings'), ['office_location_id' => $setting->office_location_id])
             ->with('success', 'Attendance setting berhasil disimpan.');
+    }
+
+    public function storeDisplaySession(StoreAttendanceQrDisplaySessionRequest $request): RedirectResponse
+    {
+        $office = OfficeLocation::query()->findOrFail((int) $request->validated('office_location_id'));
+        $actor = Auth::user();
+
+        if (! $actor instanceof User) {
+            abort(403, 'Unauthorized actor.');
+        }
+
+        $created = $this->attendanceQrDisplaySessionService->create(
+            office: $office,
+            actor: $actor,
+            name: (string) $request->validated('name'),
+            ttlDays: $request->filled('ttl_days') ? (int) $request->validated('ttl_days') : null,
+        );
+
+        return redirect()
+            ->route($this->routeName('attendance.qr'), ['office_location_id' => $office->id])
+            ->with('success', 'QR display session berhasil dibuat. Simpan link TV sekarang karena link hanya ditampilkan sekali.')
+            ->with('attendance_qr_display_url', $created['display_url']);
+    }
+
+    public function revokeDisplaySession(RevokeAttendanceQrDisplaySessionRequest $request, int $displaySession): RedirectResponse
+    {
+        $officeId = (int) $request->validated('office_location_id');
+        $session = AttendanceQrDisplaySession::query()
+            ->where('office_location_id', $officeId)
+            ->findOrFail($displaySession);
+
+        $this->attendanceQrDisplaySessionService->revoke($session);
+
+        return redirect()
+            ->route($this->routeName('attendance.qr'), ['office_location_id' => $officeId])
+            ->with('success', 'QR display session berhasil di-revoke.');
     }
 
     private function sharedView(string $view, array $data = []): View
@@ -509,6 +555,24 @@ class AdminAttendanceController extends Controller
         } catch (\Throwable) {
             return (string) $value;
         }
+    }
+
+    private function displaySessionsForOffice(?OfficeLocation $office): Collection
+    {
+        if ($office === null) {
+            return collect();
+        }
+
+        return AttendanceQrDisplaySession::query()
+            ->where('office_location_id', $office->id)
+            ->latest('id')
+            ->limit(20)
+            ->get(['id', 'office_location_id', 'name', 'token_encrypted', 'expires_at', 'revoked_at', 'last_seen_at', 'created_by', 'created_at'])
+            ->map(function (AttendanceQrDisplaySession $session): AttendanceQrDisplaySession {
+                $session->setAttribute('display_url', $this->attendanceQrDisplaySessionService->makeDisplayUrlForSession($session));
+
+                return $session;
+            });
     }
 }
 
