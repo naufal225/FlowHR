@@ -13,9 +13,9 @@
     $isTallCalendar = in_array($calendarSize, ['tall', 'x-tall'], true);
     $isExtraTallCalendar = $calendarSize === 'x-tall';
     $datesGridClasses = $isExtraTallCalendar
-        ? 'grid grid-cols-7 gap-2 auto-rows-[4.35rem] sm:auto-rows-[4.75rem]'
+        ? 'grid grid-cols-7 gap-2 auto-rows-[4.35rem] sm:auto-rows-[4.75rem] items-start'
         : ($isTallCalendar
-            ? 'grid grid-cols-7 gap-1.5 auto-rows-[3.65rem] sm:auto-rows-[3.95rem]'
+            ? 'grid grid-cols-7 gap-1.5 auto-rows-[3.65rem] sm:auto-rows-[3.95rem] items-start'
             : 'grid grid-cols-7 gap-1');
 @endphp
 
@@ -100,7 +100,7 @@
                 <span data-current-page-info class="text-xs text-gray-400">Page 1 of 1</span>
             </div>
 
-            <div class="flex-1 p-5 overflow-y-auto space-y-4 bg-gray-50/50">
+            <div class="flex-1 p-5 space-y-4 overflow-y-auto bg-gray-50/50">
                 <section data-holiday-section class="hidden p-4 bg-white border border-red-100 rounded-xl">
                     <h3 class="mb-3 text-xs font-semibold tracking-wide text-red-600 uppercase">Holiday</h3>
                     <div data-holiday-list class="space-y-2"></div>
@@ -383,12 +383,12 @@
                             dayButton.className = isTallCalendar
                                 ? `relative flex w-full h-full ${isExtraTallCalendar ? 'min-h-[4.35rem] text-base' : 'min-h-[3.65rem] text-sm'} items-center justify-center rounded-xl cursor-pointer transition-colors ${
                                     isToday
-                                        ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                                        ? 'bg-blue-100 text-gray-700 font-semibold shadow-sm'
                                         : 'text-gray-700 hover:bg-gray-100'
                                 }`
                                 : `relative flex items-center justify-center mx-auto my-0.5 w-8 h-8 rounded-lg text-xs cursor-pointer transition-all ${
                                     isToday
-                                        ? 'bg-blue-600 text-white font-bold shadow-sm'
+                                        ? 'bg-blue-100 text-gray-700 font-bold shadow-sm'
                                         : 'text-gray-700 hover:bg-gray-100'
                                 }`;
                             dayButton.setAttribute('aria-label', `Open calendar detail for ${dateStr}`);

@@ -88,6 +88,19 @@
                 </div>
             </div>
 
+            <div id="duration-calculation" class="p-4 border border-green-200 rounded-lg bg-green-50">
+                <div class="flex items-start">
+                    <i class="fas fa-calculator text-green-600 mr-3 mt-0.5"></i>
+                    <div>
+                        <h4 class="mb-1 text-sm font-semibold text-green-800">Travel Duration</h4>
+                        <p id="duration-total" class="text-sm font-bold text-green-800">
+                            Total Duration: {{ $officialTravel->date_start->diffInDays($officialTravel->date_end) + 1 }} days
+                        </p>
+                        <p class="mt-1 text-xs text-green-700">Calendar days (including weekends and holidays).</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex justify-end pt-6 space-x-4 border-t border-neutral-200">
                 <a href="{{ url()->previous() }}"
                     class="px-6 py-2 text-sm font-medium transition-colors duration-200 rounded-lg text-neutral-700 bg-neutral-100 hover:bg-neutral-200">
@@ -102,4 +115,68 @@
         </form>
     </div>
 </div>
+@push('scripts')
+<script>
+    function parseDateInput(value) {
+        if (!value) {
+            return null;
+        }
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            const [year, month, day] = value.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+            const [day, month, year] = value.split('/').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        return null;
+    }
+
+    function calculateDays() {
+        const startInput = document.getElementById('date_start');
+        const endInput = document.getElementById('date_end');
+        const totalP = document.getElementById('duration-total');
+
+        if (!startInput || !endInput || !totalP) {
+            return;
+        }
+
+        const startDate = parseDateInput(startInput.value);
+        const endDate = parseDateInput(endInput.value);
+
+        if (!startDate || !endDate || endDate < startDate) {
+            totalP.textContent = 'Total Duration: 0 days';
+            return;
+        }
+
+        const timeDiff = endDate.getTime() - startDate.getTime();
+        const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
+
+        totalP.textContent = `Total Duration: ${daysDiff} day${daysDiff > 1 ? 's' : ''}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const startInput = document.getElementById('date_start');
+        const endInput = document.getElementById('date_end');
+
+        if (startInput) {
+            startInput.addEventListener('change', calculateDays);
+            startInput.addEventListener('input', calculateDays);
+        }
+
+        if (endInput) {
+            endInput.addEventListener('change', calculateDays);
+            endInput.addEventListener('input', calculateDays);
+        }
+
+        calculateDays();
+    });
+</script>
+@endpush
 @endsection
+
+
+

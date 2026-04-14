@@ -140,57 +140,69 @@
 @endsection
 
 @push('scripts')
-document.addEventListener("DOMContentLoaded", () => {
-    const startInput = document.getElementById("date_start");
-    const endInput = document.getElementById("date_end");
-    const durationTotal = document.getElementById("duration-total");
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const startInput = document.getElementById('date_start');
+    const endInput = document.getElementById('date_end');
+    const durationTotal = document.getElementById('duration-total');
 
-    function setRestrictions() {
-        const now = new Date();
-        const todayStr = now.toISOString().split("T")[0];
+    if (!startInput || !endInput || !durationTotal) {
+        return;
+    }
 
-        if (startInput.value) {
-            const startDay = startInput.value.split("T")[0];
-            if (startDay === todayStr) {
-                startInput.min = todayStr + "T17:00";
-            } else {
-                startInput.min = startDay + "T00:00";
-            }
+    function formatDuration(totalMinutes) {
+        if (totalMinutes <= 0) {
+            return '0 hours';
         }
 
-        if (startInput.value) {
-            endInput.min = startInput.value;
+        const days = Math.floor(totalMinutes / 1440);
+        const hours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+        const parts = [];
+
+        if (days > 0) {
+            parts.push(`${days} day${days !== 1 ? 's' : ''}`);
         }
+
+        if (hours > 0) {
+            parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+        }
+
+        if (minutes > 0) {
+            parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+        }
+
+        return parts.length > 0 ? parts.join(' ') : '0 hours';
+    }
+
+    function parseDateTime(value) {
+        if (!value) {
+            return null;
+        }
+
+        const dt = new Date(value);
+        return Number.isNaN(dt.getTime()) ? null : dt;
     }
 
     function calculateDuration() {
-        if (!startInput.value || !endInput.value) return;
+        const startDate = parseDateTime(startInput.value);
+        const endDate = parseDateTime(endInput.value);
 
-        const start = new Date(startInput.value);
-        const end = new Date(endInput.value);
-
-        if (end <= start) {
-            durationTotal.textContent = `Total Duration: 0 hours`;
+        if (!startDate || !endDate || endDate <= startDate) {
+            durationTotal.textContent = 'Total Duration: 0 hours';
             return;
         }
 
-        const diffMs = end - start;
-        const totalMinutes = Math.floor(diffMs / (1000 * 60));
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-
-        durationTotal.textContent = minutes > 0
-            ? `Total Duration: ${hours} hour${hours !== 1 ? 's' : ''}`
-            : `Total Duration: ${hours} hour${hours !== 1 ? 's' : ''}`;
+        const totalMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
+        durationTotal.textContent = `Total Duration: ${formatDuration(totalMinutes)}`;
     }
 
-    startInput.addEventListener("change", () => {
-        setRestrictions();
-        calculateDuration();
-    });
-    endInput.addEventListener("change", calculateDuration);
+    startInput.addEventListener('change', calculateDuration);
+    startInput.addEventListener('input', calculateDuration);
+    endInput.addEventListener('change', calculateDuration);
+    endInput.addEventListener('input', calculateDuration);
 
-    setRestrictions();
     calculateDuration();
 });
+</script>
 @endpush

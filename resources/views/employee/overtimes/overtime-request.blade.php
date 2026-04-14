@@ -69,13 +69,10 @@
                             <i class="fas fa-calendar-alt mr-2 text-primary-600"></i>
                             Start Date & Time
                         </label>
-                        <input type="datetime-local" 
-                            name="date_start" 
-                            id="date_start"
+                        <input type="datetime-local" id="date_start" name="date_start"
                             value="{{ old('date_start', now()->format('Y-m-d\TH:i')) }}"
                             class="form-input"
-                            required
-                            onchange="calculateHours()">
+                            required>
                         <p class="text-xs text-neutral-500 mt-1">When did you start working overtime?</p>
                     </div>
 
@@ -84,13 +81,10 @@
                             <i class="fas fa-calendar-alt mr-2 text-primary-600"></i>
                             End Date & Time
                         </label>
-                        <input type="datetime-local"
-                            name="date_end"
-                            id="date_end"
+                        <input type="datetime-local" id="date_end" name="date_end"
                             value="{{ old('date_end', now()->format('Y-m-d\TH:i')) }}"
                             class="form-input"
-                            required
-                            onchange="calculateHours()">
+                            required>
                         <p class="text-xs text-neutral-500 mt-1">When did you finish working overtime?</p>
                     </div>
                 </div>
@@ -121,47 +115,70 @@
     </div>
 
     @push('scripts')
-        function calculateHours() {
-            const startInput = document.getElementById('date_start');
-            const endInput = document.getElementById('date_end');
-            const calculationDiv = document.getElementById('duration-calculation');
-            const totalP = document.getElementById('duration-total');
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const startInput = document.getElementById('date_start');
+    const endInput = document.getElementById('date_end');
+    const durationTotal = document.getElementById('duration-total');
 
-            // Jika salah satu kosong, reset tampilan
-            if (startInput.value === "" || endInput.value === "") {
-                totalP.textContent = `Total Duration: 0 hours`;
-                return;
-            }
+    if (!startInput || !endInput || !durationTotal) {
+        return;
+    }
 
-            const startDate = new Date(startInput.value);
-            const endDate = new Date(endInput.value);
-
-            // Validasi waktu
-            if (endDate <= startDate) {
-                totalP.textContent = `Total Duration: 0 hours`;
-                return;
-            }
-
-            // Hitung selisih waktu (ms)
-            const diffMs = endDate.getTime() - startDate.getTime();
-
-            // Hitung jam & menit
-            const totalMinutes = Math.floor(diffMs / (1000 * 60));
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-
-            // Tampilkan hasil
-            if (hours > 0 || minutes > 0) {
-                if (minutes > 0) {
-                    totalP.textContent = `Total Duration: ${hours} hour${hours !== 1 ? 's' : ''}`;
-                } else {
-                    totalP.textContent = `Total Duration: ${hours} hour${hours !== 1 ? 's' : ''}`;
-                }
-            } else {
-                totalP.textContent = `Total Duration: 0 hours`;
-            }
+    function formatDuration(totalMinutes) {
+        if (totalMinutes <= 0) {
+            return '0 hours';
         }
 
-        document.addEventListener("DOMContentLoaded", calculateHours);
-    @endpush
+        const days = Math.floor(totalMinutes / 1440);
+        const hours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+        const parts = [];
+
+        if (days > 0) {
+            parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+        }
+
+        if (hours > 0) {
+            parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+        }
+
+        if (minutes > 0) {
+            parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+        }
+
+        return parts.length > 0 ? parts.join(' ') : '0 hours';
+    }
+
+    function parseDateTime(value) {
+        if (!value) {
+            return null;
+        }
+
+        const dt = new Date(value);
+        return Number.isNaN(dt.getTime()) ? null : dt;
+    }
+
+    function calculateDuration() {
+        const startDate = parseDateTime(startInput.value);
+        const endDate = parseDateTime(endInput.value);
+
+        if (!startDate || !endDate || endDate <= startDate) {
+            durationTotal.textContent = 'Total Duration: 0 hours';
+            return;
+        }
+
+        const totalMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
+        durationTotal.textContent = `Total Duration: ${formatDuration(totalMinutes)}`;
+    }
+
+    startInput.addEventListener('change', calculateDuration);
+    startInput.addEventListener('input', calculateDuration);
+    endInput.addEventListener('change', calculateDuration);
+    endInput.addEventListener('input', calculateDuration);
+
+    calculateDuration();
+});
+</script>
+@endpush
 @endsection

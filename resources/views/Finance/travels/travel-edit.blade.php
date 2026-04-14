@@ -124,21 +124,67 @@
 </div>
 
 @push('scripts')
-function calculateDays() {
-const startInput = document.getElementById('date_start');
-const endInput = document.getElementById('date_end');
-const calculationDiv = document.getElementById('duration-calculation');
-const totalP = document.getElementById('duration-total');
+<script>
+    function parseDateInput(value) {
+        if (!value) {
+            return null;
+        }
 
-const startDate = new Date(startInput.value);
-const endDate = new Date(endInput.value);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            const [year, month, day] = value.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
 
-if (endDate < startDate) { totalP.textContent=`Total Duration: 0 days`; return; } if (startInput.value==="" ||
-    endInput.value==="" ) { totalP.textContent=`Total Duration: 0 days`; return; } const timeDiff=endDate.getTime() -
-    startDate.getTime(); const daysDiff=Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; if (daysDiff> 0) {
-    calculationDiv.style.display = 'block';
-    totalP.textContent = `Total Duration: ${daysDiff} day${daysDiff > 1 ? 's' : ''}`;
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+            const [day, month, year] = value.split('/').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        return null;
     }
+
+    function calculateDays() {
+        const startInput = document.getElementById('date_start');
+        const endInput = document.getElementById('date_end');
+        const totalP = document.getElementById('duration-total');
+
+        if (!startInput || !endInput || !totalP) {
+            return;
+        }
+
+        const startDate = parseDateInput(startInput.value);
+        const endDate = parseDateInput(endInput.value);
+
+        if (!startDate || !endDate || endDate < startDate) {
+            totalP.textContent = 'Total Duration: 0 days';
+            return;
+        }
+
+        const timeDiff = endDate.getTime() - startDate.getTime();
+        const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
+
+        totalP.textContent = `Total Duration: ${daysDiff} day${daysDiff > 1 ? 's' : ''}`;
     }
-    @endpush
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const startInput = document.getElementById('date_start');
+        const endInput = document.getElementById('date_end');
+
+        if (startInput) {
+            startInput.addEventListener('change', calculateDays);
+            startInput.addEventListener('input', calculateDays);
+        }
+
+        if (endInput) {
+            endInput.addEventListener('change', calculateDays);
+            endInput.addEventListener('input', calculateDays);
+        }
+
+        calculateDays();
+    });
+</script>
+@endpush
     @endsection
+
+
+

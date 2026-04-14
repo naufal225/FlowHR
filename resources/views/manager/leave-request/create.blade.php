@@ -73,10 +73,7 @@
                     </div>
                     <span id="duration-display" class="text-sm font-bold text-primary-600">0 days</span>
                 </div>
-                <div class="mt-2 text-xs text-neutral-500">
-                    <span id="working-days-display">0 working days</span>
-                </div>
-            </div>
+</div>
 
             <div>
                 <label for="reason" class="block mb-2 text-sm font-semibold text-neutral-700">
@@ -137,7 +134,6 @@
 
         if (!startDate || !endDate) {
             document.getElementById('duration-display').textContent = '0 days';
-            document.getElementById('working-days-display').textContent = '0 working days';
             return;
         }
 
@@ -146,7 +142,6 @@
 
         if (end < start) {
             document.getElementById('duration-display').textContent = '0 days';
-            document.getElementById('working-days-display').textContent = '0 working days';
             return;
         }
 
@@ -165,7 +160,6 @@
         }
 
         document.getElementById('duration-display').textContent = workingDays + (workingDays === 1 ? ' day' : ' days');
-        document.getElementById('working-days-display').textContent = workingDays + (workingDays === 1 ? ' working day' : ' working days');
     }
 
     document.getElementById('date_start').addEventListener('change', function() {

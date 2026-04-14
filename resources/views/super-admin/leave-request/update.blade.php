@@ -95,12 +95,7 @@
                         {{ $durasi }} {{ $durasi === 1 ? 'day' : 'days' }}
                     </span>
                 </div>
-                <div class="mt-2 text-xs text-neutral-500">
-                    <span id="working-days-display">
-                        {{ $durasi }} {{ $durasi === 1 ? 'working day' : 'working days' }}
-                    </span>
-                </div>
-            </div>
+</div>
 
             <div>
                 <label for="reason" class="block mb-2 text-sm font-semibold text-neutral-700">
@@ -170,10 +165,8 @@
                 }
 
                 document.getElementById('duration-display').textContent = workingDays + (workingDays === 1 ? ' day' : ' days');
-                document.getElementById('working-days-display').textContent = workingDays + (workingDays === 1 ? ' working day' : ' working days');
             } else {
                 document.getElementById('duration-display').textContent = '0 days';
-                document.getElementById('working-days-display').textContent = '0 working days';
             }
         }
     }

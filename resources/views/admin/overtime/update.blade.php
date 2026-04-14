@@ -88,7 +88,7 @@
                         <i class="mr-2 fas fa-calendar-alt text-primary-600"></i>
                         Start Date & Time
                     </label>
-                    <input type="datetime-local" name="date_start"
+                    <input type="datetime-local" id="date_start" name="date_start"
                         value="{{ old('date_start', $overtime->date_start->format('Y-m-d\TH:i')) }}" class="form-input"
                         required>
                 </div>
@@ -98,11 +98,22 @@
                         <i class="mr-2 fas fa-calendar-alt text-primary-600"></i>
                         End Date & Time
                     </label>
-                    <input type="datetime-local" name="date_end"
+                    <input type="datetime-local" id="date_end" name="date_end"
                         value="{{ old('date_end', $overtime->date_end->format('Y-m-d\TH:i')) }}" class="form-input"
                         required>
                 </div>
             </div>
+            <!-- Overtime Duration Display -->
+            <div id="duration-calculation" class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <i class="fas fa-calculator text-green-600 mr-3 mt-0.5"></i>
+                    <div>
+                        <h4 class="text-sm font-semibold text-green-800 mb-1">Overtime Duration</h4>
+                        <p id="duration-total" class="text-sm font-bold text-green-800">Total Duration: 0 hours</p>
+                    </div>
+                </div>
+            </div>
+
 
             <!-- Warning Notice -->
             <div class="p-4 border rounded-lg bg-warning-50 border-warning-200">
@@ -132,4 +143,72 @@
         </form>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const startInput = document.getElementById('date_start');
+    const endInput = document.getElementById('date_end');
+    const durationTotal = document.getElementById('duration-total');
+
+    if (!startInput || !endInput || !durationTotal) {
+        return;
+    }
+
+    function formatDuration(totalMinutes) {
+        if (totalMinutes <= 0) {
+            return '0 hours';
+        }
+
+        const days = Math.floor(totalMinutes / 1440);
+        const hours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+        const parts = [];
+
+        if (days > 0) {
+            parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+        }
+
+        if (hours > 0) {
+            parts.push(`${hours} hour${hours !== 1 ? 's' : ''}`);
+        }
+
+        if (minutes > 0) {
+            parts.push(`${minutes} minute${minutes !== 1 ? 's' : ''}`);
+        }
+
+        return parts.length > 0 ? parts.join(' ') : '0 hours';
+    }
+
+    function parseDateTime(value) {
+        if (!value) {
+            return null;
+        }
+
+        const dt = new Date(value);
+        return Number.isNaN(dt.getTime()) ? null : dt;
+    }
+
+    function calculateDuration() {
+        const startDate = parseDateTime(startInput.value);
+        const endDate = parseDateTime(endInput.value);
+
+        if (!startDate || !endDate || endDate <= startDate) {
+            durationTotal.textContent = 'Total Duration: 0 hours';
+            return;
+        }
+
+        const totalMinutes = Math.floor((endDate.getTime() - startDate.getTime()) / 60000);
+        durationTotal.textContent = `Total Duration: ${formatDuration(totalMinutes)}`;
+    }
+
+    startInput.addEventListener('change', calculateDuration);
+    startInput.addEventListener('input', calculateDuration);
+    endInput.addEventListener('change', calculateDuration);
+    endInput.addEventListener('input', calculateDuration);
+
+    calculateDuration();
+});
+</script>
+@endpush
 @endsection
