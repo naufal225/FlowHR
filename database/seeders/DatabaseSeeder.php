@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(CostSettingsSeeder::class);
         $this->call(RoleSeeder::class);
-        $this->call(UserAndDivisionSeeder::class);
+        $this->call(UserAndDivisionFictionalSeeder::class);
         $this->call(OfficeLocationAndAkbarSeeder::class);
         $this->call(HolidaySeeder::class);
         $this->call(ReimbursementTypeSeeder::class);
