@@ -7,6 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Office Attendance QR Display</title>
+    <link rel="icon" type="image/x-icon" href="{{ asset('FlowHR_logo.png') }}">
     <style>
         :root {
             color-scheme: only light;
