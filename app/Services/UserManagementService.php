@@ -19,11 +19,25 @@ use Illuminate\Validation\ValidationException;
 
 class UserManagementService
 {
-    public function getPaginatedUsers(User $actor, ?string $search, int $perPage = 10): LengthAwarePaginator
+    public function getPaginatedUsers(
+        User $actor,
+        ?string $search,
+        ?int $divisionId = null,
+        ?string $role = null,
+        int $perPage = 10
+    ): LengthAwarePaginator
     {
+        $selectedRole = $this->resolveFilterableRole($actor, $role);
+
         $users = User::query()
             ->with(['roles:id,name', 'division:id,name', 'officeLocation:id,name'])
             ->when($search, fn($query) => $query->where('name', 'like', '%' . $search . '%'))
+            ->when($divisionId !== null, fn($query) => $query->where('division_id', $divisionId))
+            ->when($selectedRole !== null, function ($query) use ($selectedRole) {
+                $query->whereHas('roles', function ($roleQuery) use ($selectedRole) {
+                    $roleQuery->where('name', $selectedRole);
+                });
+            })
             ->when($this->shouldHideSuperAdminUsers($actor), function ($query) {
                 $query->whereDoesntHave('roles', function ($roleQuery) {
                     $roleQuery->where('name', Roles::SuperAdmin->value);
@@ -239,6 +253,24 @@ class UserManagementService
         }
 
         return null;
+    }
+
+    private function resolveFilterableRole(User $actor, ?string $role): ?string
+    {
+        if (! is_string($role) || trim($role) === '') {
+            return null;
+        }
+
+        $normalizedRole = trim($role);
+        $allowedRoles = $this->getAssignableRoles($actor)
+            ->map(fn(Roles $roleItem) => $roleItem->value)
+            ->all();
+
+        if (! in_array($normalizedRole, $allowedRoles, true)) {
+            return null;
+        }
+
+        return $normalizedRole;
     }
 
     private function syncUserRoles(User $user, array $roleNames, bool $isUpdate): void

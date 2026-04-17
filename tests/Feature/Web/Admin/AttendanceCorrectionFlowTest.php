@@ -98,6 +98,98 @@ class AttendanceCorrectionFlowTest extends TestCase
             ->assertSee('Pending', false);
     }
 
+    public function test_admin_can_filter_corrections_by_partial_employee_name(): void
+    {
+        $office = $this->createOfficeLocation(['name' => 'Bandung Office']);
+        $admin = $this->createEmployee(['name' => 'Admin Filter'], $office);
+        $this->assignRole($admin, Roles::Admin->value);
+
+        $targetEmployee = $this->createEmployee(['name' => 'Rina Putri'], $office);
+        $otherEmployee = $this->createEmployee(['name' => 'Budi Santoso'], $office);
+        $this->assignRole($targetEmployee, Roles::Employee->value);
+        $this->assignRole($otherEmployee, Roles::Employee->value);
+
+        $targetAttendance = $this->createAttendance($targetEmployee, $office, null, ['work_date' => '2026-03-25']);
+        $otherAttendance = $this->createAttendance($otherEmployee, $office, null, ['work_date' => '2026-03-25']);
+
+        AttendanceCorrection::query()->create([
+            'user_id' => $targetEmployee->id,
+            'attendance_id' => $targetAttendance->id,
+            'requested_check_in_time' => Carbon::parse('2026-03-25 09:01:00', 'Asia/Jakarta'),
+            'reason' => 'Rina correction',
+            'original_attendance_snapshot' => ['work_date' => '2026-03-25'],
+            'status' => 'pending',
+        ]);
+
+        AttendanceCorrection::query()->create([
+            'user_id' => $otherEmployee->id,
+            'attendance_id' => $otherAttendance->id,
+            'requested_check_in_time' => Carbon::parse('2026-03-25 09:15:00', 'Asia/Jakarta'),
+            'reason' => 'Budi correction',
+            'original_attendance_snapshot' => ['work_date' => '2026-03-25'],
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->get(route('admin.attendance.corrections.index', [
+                'status' => 'pending',
+                'employee_name' => 'put',
+            ]));
+
+        $response->assertOk()
+            ->assertSee('Rina Putri', false)
+            ->assertSee('Rina correction', false)
+            ->assertDontSee('Budi Santoso', false)
+            ->assertDontSee('Budi correction', false);
+    }
+
+    public function test_super_admin_can_filter_corrections_by_partial_employee_name(): void
+    {
+        $office = $this->createOfficeLocation(['name' => 'Surabaya Office']);
+        $superAdmin = $this->createEmployee(['name' => 'Super Admin Filter'], $office);
+        $this->assignRole($superAdmin, Roles::SuperAdmin->value);
+
+        $targetEmployee = $this->createEmployee(['name' => 'Dewi Lestari'], $office);
+        $otherEmployee = $this->createEmployee(['name' => 'Galih Pratama'], $office);
+        $this->assignRole($targetEmployee, Roles::Employee->value);
+        $this->assignRole($otherEmployee, Roles::Employee->value);
+
+        $targetAttendance = $this->createAttendance($targetEmployee, $office, null, ['work_date' => '2026-03-24']);
+        $otherAttendance = $this->createAttendance($otherEmployee, $office, null, ['work_date' => '2026-03-24']);
+
+        AttendanceCorrection::query()->create([
+            'user_id' => $targetEmployee->id,
+            'attendance_id' => $targetAttendance->id,
+            'requested_check_in_time' => Carbon::parse('2026-03-24 08:58:00', 'Asia/Jakarta'),
+            'reason' => 'Dewi correction',
+            'original_attendance_snapshot' => ['work_date' => '2026-03-24'],
+            'status' => 'pending',
+        ]);
+
+        AttendanceCorrection::query()->create([
+            'user_id' => $otherEmployee->id,
+            'attendance_id' => $otherAttendance->id,
+            'requested_check_in_time' => Carbon::parse('2026-03-24 09:20:00', 'Asia/Jakarta'),
+            'reason' => 'Galih correction',
+            'original_attendance_snapshot' => ['work_date' => '2026-03-24'],
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($superAdmin)
+            ->withSession(['active_role' => Roles::SuperAdmin->value])
+            ->get(route('super-admin.attendance.corrections.index', [
+                'status' => 'pending',
+                'employee_name' => 'wI lEs',
+            ]));
+
+        $response->assertOk()
+            ->assertSee('Dewi Lestari', false)
+            ->assertSee('Dewi correction', false)
+            ->assertDontSee('Galih Pratama', false)
+            ->assertDontSee('Galih correction', false);
+    }
+
     public function test_admin_approve_updates_attendance_and_marks_correction_reviewed(): void
     {
         $office = $this->createOfficeLocation();

@@ -29,14 +29,22 @@
                 </select>
             </div>
             <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="user_id">Employee</label>
-                <select id="user_id" name="user_id"
-                    class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500">
-                    <option value="">All employees</option>
-                    @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" @selected((string) request('user_id') === (string) $employee->id)>{{ $employee->name }}</option>
-                    @endforeach
-                </select>
+                @if($isApproverScope)
+                    <label class="mb-2 block text-sm font-medium text-slate-700" for="user_id">Employee</label>
+                    <select id="user_id" name="user_id"
+                        class="w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-sky-500 focus:ring-sky-500">
+                        <option value="">All employees</option>
+                        @foreach($employees as $employee)
+                            <option value="{{ $employee->id }}" @selected((string) request('user_id') === (string) $employee->id)>{{ $employee->name }}</option>
+                        @endforeach
+                    </select>
+                @else
+                    <label class="mb-2 block text-sm font-medium text-slate-700" for="employee_name">Employee Name</label>
+                    <input id="employee_name" name="employee_name" type="text"
+                        value="{{ $employeeNameFilter ?? request('employee_name') }}"
+                        placeholder="Search employee name"
+                        class="w-full rounded-xl border-slate-300 px-4 py-2.5 text-sm shadow-sm placeholder:text-slate-400 focus:border-sky-500 focus:ring-sky-500">
+                @endif
             </div>
             @unless($isApproverScope)
                 <div>

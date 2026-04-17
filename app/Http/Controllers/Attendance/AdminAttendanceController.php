@@ -133,13 +133,13 @@ class AdminAttendanceController extends Controller
     {
         $status = (string) $request->input('status', 'pending');
         $allowedStatuses = ['pending', 'approved', 'rejected', 'all'];
+        $employeeName = trim((string) $request->input('employee_name', ''));
 
         if (! in_array($status, $allowedStatuses, true)) {
             $status = 'pending';
         }
 
         $officeLocations = $this->officeLocations();
-        $employees = $this->employeeQuery()->get();
 
         $corrections = AttendanceCorrection::query()
             ->with([
@@ -153,7 +153,11 @@ class AdminAttendanceController extends Controller
                     $attendanceQuery->where('office_location_id', (int) $request->input('office_location_id'));
                 });
             })
-            ->when($request->filled('user_id'), fn ($query) => $query->where('user_id', (int) $request->input('user_id')))
+            ->when($employeeName !== '', function ($query) use ($employeeName) {
+                $query->whereHas('attendance.user', function ($userQuery) use ($employeeName) {
+                    $userQuery->where('name', 'like', '%' . $employeeName . '%');
+                });
+            })
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
             ->latest('created_at')
             ->paginate(15)
@@ -163,8 +167,8 @@ class AdminAttendanceController extends Controller
             'headerTitle' => 'Attendance Corrections',
             'headerSubtitle' => 'Review and process attendance correction requests without touching approval flows in other modules.',
             'officeLocations' => $officeLocations,
-            'employees' => $employees,
             'selectedStatus' => $status,
+            'employeeNameFilter' => $employeeName,
             'statusOptions' => [
                 'pending' => 'Pending',
                 'approved' => 'Approved',

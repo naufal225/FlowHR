@@ -22,11 +22,29 @@ class UserController extends Controller
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('search', ''));
+        $selectedDivisionId = $request->filled('division_id') ? (int) $request->query('division_id') : null;
+        $selectedRole = trim((string) $request->query('role', ''));
+
+        if ($selectedDivisionId !== null && $selectedDivisionId <= 0) {
+            $selectedDivisionId = null;
+        }
+
+        if ($selectedRole === '') {
+            $selectedRole = null;
+        }
+
         /** @var User $actor */
         $actor = $request->user();
-        $users = $this->userManagementService->getPaginatedUsers($actor, $search);
+        $users = $this->userManagementService->getPaginatedUsers(
+            actor: $actor,
+            search: $search,
+            divisionId: $selectedDivisionId,
+            role: $selectedRole,
+        );
+        $divisions = $this->userManagementService->getDivisions();
+        $roles = $this->userManagementService->getAssignableRoles($actor);
 
-        return view('admin.user.index', compact('users', 'search'));
+        return view('admin.user.index', compact('users', 'search', 'divisions', 'roles', 'selectedDivisionId', 'selectedRole'));
     }
 
     public function create(Request $request): View

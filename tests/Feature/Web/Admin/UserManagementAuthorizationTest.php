@@ -80,6 +80,108 @@ class UserManagementAuthorizationTest extends TestCase
             ->assertSessionHasErrors(['roles']);
     }
 
+    public function test_admin_index_can_filter_by_division_and_role_while_super_admins_remain_hidden(): void
+    {
+        $office = $this->createOfficeLocation();
+        $divisionOps = $this->createDivision(['name' => 'Operations Division']);
+        $divisionFinance = $this->createDivision(['name' => 'Finance Division']);
+
+        $admin = $this->createEmployee([
+            'name' => 'Admin List Actor',
+            'email' => 'admin.list.actor@gmail.com',
+        ], $office, $divisionOps);
+        $this->assignRole($admin, Roles::Admin->value);
+
+        $matchingEmployee = $this->createEmployee([
+            'name' => 'Rani Ops Employee',
+            'email' => 'rani.ops.employee@gmail.com',
+        ], $office, $divisionOps);
+        $this->assignRole($matchingEmployee, Roles::Employee->value);
+
+        $sameDivisionDifferentRole = $this->createEmployee([
+            'name' => 'Manager Ops User',
+            'email' => 'manager.ops.user@gmail.com',
+        ], $office, $divisionOps);
+        $this->assignRole($sameDivisionDifferentRole, Roles::Manager->value);
+
+        $differentDivisionEmployee = $this->createEmployee([
+            'name' => 'Rani Finance Employee',
+            'email' => 'rani.finance.employee@gmail.com',
+        ], $office, $divisionFinance);
+        $this->assignRole($differentDivisionEmployee, Roles::Employee->value);
+
+        $hiddenSuperAdmin = $this->createEmployee([
+            'name' => 'Hidden Super Admin',
+            'email' => 'hidden.super.admin@gmail.com',
+        ], $office, $divisionOps);
+        $this->assignRole($hiddenSuperAdmin, Roles::SuperAdmin->value);
+
+        $response = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->get(route('admin.users.index', [
+                'division_id' => $divisionOps->id,
+                'role' => Roles::Employee->value,
+            ]));
+
+        $response->assertOk()
+            ->assertSee('Rani Ops Employee', false)
+            ->assertDontSee('Manager Ops User', false)
+            ->assertDontSee('Rani Finance Employee', false)
+            ->assertDontSee('Hidden Super Admin', false);
+
+        $forcedRoleResponse = $this->actingAs($admin)
+            ->withSession(['active_role' => Roles::Admin->value])
+            ->get(route('admin.users.index', [
+                'role' => Roles::SuperAdmin->value,
+            ]));
+
+        $forcedRoleResponse->assertOk()
+            ->assertDontSee('Hidden Super Admin', false);
+    }
+
+    public function test_super_admin_index_can_filter_super_admins_by_division_and_role(): void
+    {
+        $office = $this->createOfficeLocation();
+        $divisionEngineering = $this->createDivision(['name' => 'Engineering Division']);
+        $divisionPeopleOps = $this->createDivision(['name' => 'People Ops Division']);
+
+        $superAdminActor = $this->createEmployee([
+            'name' => 'Super Actor',
+            'email' => 'super.actor.list@gmail.com',
+        ], $office, $divisionPeopleOps);
+        $this->assignRole($superAdminActor, Roles::SuperAdmin->value);
+
+        $targetSuperAdmin = $this->createEmployee([
+            'name' => 'Target Super Admin',
+            'email' => 'target.super.admin@gmail.com',
+        ], $office, $divisionEngineering);
+        $this->assignRole($targetSuperAdmin, Roles::SuperAdmin->value);
+
+        $otherSuperAdmin = $this->createEmployee([
+            'name' => 'Other Super Admin',
+            'email' => 'other.super.admin@gmail.com',
+        ], $office, $divisionPeopleOps);
+        $this->assignRole($otherSuperAdmin, Roles::SuperAdmin->value);
+
+        $adminInSameDivision = $this->createEmployee([
+            'name' => 'Admin In Engineering',
+            'email' => 'admin.engineering@gmail.com',
+        ], $office, $divisionEngineering);
+        $this->assignRole($adminInSameDivision, Roles::Admin->value);
+
+        $response = $this->actingAs($superAdminActor)
+            ->withSession(['active_role' => Roles::SuperAdmin->value])
+            ->get(route('super-admin.users.index', [
+                'division_id' => $divisionEngineering->id,
+                'role' => Roles::SuperAdmin->value,
+            ]));
+
+        $response->assertOk()
+            ->assertSee('Target Super Admin', false)
+            ->assertDontSee('Other Super Admin', false)
+            ->assertDontSee('Admin In Engineering', false);
+    }
+
     public function test_super_admin_can_view_and_open_edit_form_for_super_admin_and_admin_users(): void
     {
         $superAdmin = $this->createEmployee([

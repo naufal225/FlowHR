@@ -49,8 +49,8 @@
     <div class="mb-6">
         <div class="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
             <div class="">
-                <form class="flex flex-col gap-4 sm:flex-row" action="{{ route("admin.users.index") }}" method="GET">
-                    <div class="flex-1">
+                <form class="grid grid-cols-1 gap-4 lg:grid-cols-12" action="{{ route("admin.users.index") }}" method="GET">
+                    <div class="lg:col-span-5">
                         <div class="relative">
                             <input type="text" placeholder="Search users..." name="search"
                                 value="{{ $search ?? request('search') }}"
@@ -64,10 +64,38 @@
                             </div>
                         </div>
                     </div>
-                    <button
-                        class="px-6 py-2 font-medium text-white transition-all duration-200 rounded-lg bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700">
-                        Search
-                    </button>
+                    <div class="lg:col-span-3">
+                        <select name="division_id"
+                            class="w-full px-4 py-2 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All divisions</option>
+                            @foreach($divisions as $division)
+                                <option value="{{ $division->id }}" @selected((string) ($selectedDivisionId ?? request('division_id')) === (string) $division->id)>
+                                    {{ $division->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <select name="role"
+                            class="w-full px-4 py-2 transition-colors border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All roles</option>
+                            @foreach($roles as $roleOption)
+                                <option value="{{ $roleOption->value }}" @selected(($selectedRole ?? request('role')) === $roleOption->value)>
+                                    {{ $roleOption->label() }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex gap-2 lg:col-span-2">
+                        <button
+                            class="flex-1 px-6 py-2 font-medium text-white transition-all duration-200 rounded-lg bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700">
+                            Search
+                        </button>
+                        <a href="{{ route('admin.users.index') }}"
+                            class="inline-flex items-center justify-center px-4 py-2 font-medium text-gray-700 transition-colors bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                            Reset
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
