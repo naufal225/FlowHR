@@ -145,15 +145,14 @@
                 <span id="countdown" class="value">-</span>
             </div>
             <div class="metric">
-                <span class="label">Server Time</span>
-                <span id="server-time" class="value">-</span>
+                <span class="label">Expired Time</span>
+                <span id="expired-time" class="value">-</span>
             </div>
             <div class="metric">
                 <span class="label">Session</span>
                 <span class="value">Display #{{ $session->id }}</span>
             </div>
         </div>
-        <p class="hint">Halaman ini khusus display kantor. Kontrol QR tetap hanya di admin panel.</p>
     </section>
 </main>
 
@@ -166,7 +165,7 @@
         const officeName = document.getElementById('office-name');
         const statusChip = document.getElementById('status-chip');
         const countdown = document.getElementById('countdown');
-        const serverTime = document.getElementById('server-time');
+        const expiredTime = document.getElementById('expired-time');
         let state = @json($qrPayload);
         let refreshing = false;
 
@@ -216,14 +215,21 @@
             renderQr(state.token || null);
             countdown.textContent = formatRemaining(state.expires_at_iso);
 
-            if (state.server_time) {
-                const serverDate = new Date(state.server_time);
-                serverTime.textContent = Number.isNaN(serverDate.getTime())
-                    ? '-'
-                    : serverDate.toLocaleString('id-ID', { hour12: false });
+            if (state.expires_at_formatted) {
+                expiredTime.textContent = state.expires_at_formatted
             } else {
-                serverTime.textContent = '-';
+                expiredTime.textContent = '-';
             }
+
+            // if (state.expires_at_iso) {
+            //     const expiresAt = new Date(state.expires_at_iso);
+            //     const expiresAtFormatted = new Date(state.expires_at_formatted)
+            //     expiredTime.textContent = Number.isNaN(expiresAtFormatted.getTime())
+            //         ? '-'
+            //         : expiresAt.toLocaleString('id-ID', { hour12: false });
+            // } else {
+            //     expiredTime.textContent = '-';
+            // }
         }
 
         async function refreshState() {

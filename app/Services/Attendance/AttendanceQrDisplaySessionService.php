@@ -15,13 +15,20 @@ use Illuminate\Support\Str;
 
 class AttendanceQrDisplaySessionService
 {
-    public function create(OfficeLocation $office, User $actor, string $name, ?int $ttlDays = null): array
-    {
-        $ttlDays ??= (int) config('attendance.qr_display.session_ttl_days', 30);
-        $ttlDays = max(1, $ttlDays);
+    public function create(
+        OfficeLocation $office,
+        User $actor,
+        string $name,
+        ?int $ttlDays = null,
+        ?Carbon $expiresAt = null
+    ): array {
+        if (! $expiresAt instanceof Carbon) {
+            $ttlDays ??= (int) config('attendance.qr_display.session_ttl_days', 30);
+            $ttlDays = max(1, $ttlDays);
+            $expiresAt = now()->addDays($ttlDays);
+        }
 
         $token = Str::random(64);
-        $expiresAt = now()->addDays($ttlDays);
 
         $session = AttendanceQrDisplaySession::query()->create([
             'office_location_id' => $office->id,

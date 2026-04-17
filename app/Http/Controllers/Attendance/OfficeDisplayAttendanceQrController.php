@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AttendanceQrDisplaySession;
 use App\Services\Attendance\AttendanceQrDisplaySessionService;
 use App\Services\Attendance\AttendanceQrManagementService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,7 +18,8 @@ class OfficeDisplayAttendanceQrController extends Controller
     public function __construct(
         private readonly AttendanceQrManagementService $attendanceQrManagementService,
         private readonly AttendanceQrDisplaySessionService $attendanceQrDisplaySessionService,
-    ) {}
+    ) {
+    }
 
     public function show(Request $request, int $session): Response
     {
@@ -47,7 +49,7 @@ class OfficeDisplayAttendanceQrController extends Controller
     {
         $session = $request->attributes->get('attendance_qr_display_session');
 
-        if (! $session instanceof AttendanceQrDisplaySession || $session->id !== $sessionId) {
+        if (!$session instanceof AttendanceQrDisplaySession || $session->id !== $sessionId) {
             abort(403, 'Display session is invalid.');
         }
 
@@ -71,6 +73,13 @@ class OfficeDisplayAttendanceQrController extends Controller
             'office_name' => $office->name,
             'token' => $token?->token,
             'expires_at_iso' => $token?->expired_at?->toIso8601String(),
+            'expires_at_formatted' => $session?->expires_at
+                ? $session->expires_at
+                    ->copy()
+                    ->timezone($session->officeLocation->timezone)
+                    ->locale('id')
+                    ->translatedFormat('d F Y H:i')
+                : '-',
             'status_label' => $statusLabel,
             'server_time' => now($office->timezone ?? config('app.timezone', 'Asia/Jakarta'))->toIso8601String(),
         ];

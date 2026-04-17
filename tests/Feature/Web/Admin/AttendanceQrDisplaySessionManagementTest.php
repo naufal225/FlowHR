@@ -4,6 +4,7 @@ namespace Tests\Feature\Web\Admin;
 
 use App\Enums\Roles;
 use App\Models\AttendanceQrDisplaySession;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesAttendanceTestData;
 use Tests\TestCase;
@@ -18,13 +19,14 @@ class AttendanceQrDisplaySessionManagementTest extends TestCase
         $admin = $this->createEmployee();
         $this->assignRole($admin, Roles::Admin->value);
         $office = $this->createOfficeLocation();
+        $expiresAtLocal = Carbon::now('Asia/Jakarta')->addDays(7)->setTime(14, 45)->format('Y-m-d\TH:i');
 
         $response = $this->actingAs($admin)
             ->withSession(['active_role' => Roles::Admin->value])
             ->post(route('admin.attendance.qr.display-sessions.store'), [
                 'office_location_id' => $office->id,
                 'name' => 'Lobby TV 1',
-                'ttl_days' => 30,
+                'expires_at' => $expiresAtLocal,
             ]);
 
         $response->assertRedirect(route('admin.attendance.qr', ['office_location_id' => $office->id]))
@@ -36,6 +38,17 @@ class AttendanceQrDisplaySessionManagementTest extends TestCase
             'name' => 'Lobby TV 1',
             'created_by' => $admin->id,
         ]);
+
+        $session = AttendanceQrDisplaySession::query()
+            ->where('office_location_id', $office->id)
+            ->where('name', 'Lobby TV 1')
+            ->first();
+
+        $this->assertNotNull($session);
+        $this->assertSame(
+            $expiresAtLocal,
+            $session->expires_at?->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i')
+        );
     }
 
     public function test_admin_can_revoke_qr_display_session(): void

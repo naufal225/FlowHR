@@ -140,20 +140,22 @@
                                 value="{{ old('name', 'TV Display ' . $selectedOffice->code) }}"
                                 maxlength="120"
                                 required
-                                class="w-full text-sm shadow-sm rounded-xl border-slate-300 focus:border-sky-500 focus:ring-sky-500"
+                                class="w-full px-4 py-3 text-sm shadow-sm rounded-xl border-slate-300 focus:border-sky-500 focus:ring-sky-500"
                                 placeholder="Example: Lobby TV 1"
                             >
                         </label>
                         <label class="space-y-2">
-                            <span class="text-sm font-medium text-slate-700">Session TTL (days)</span>
+                            <span class="text-sm font-medium text-slate-700">Session Expires At</span>
                             <input
-                                type="number"
-                                name="ttl_days"
-                                min="1"
-                                max="365"
-                                value="{{ old('ttl_days', $displaySessionDefaults['ttl_days']) }}"
-                                class="w-full text-sm shadow-sm rounded-xl border-slate-300 focus:border-sky-500 focus:ring-sky-500"
+                                type="datetime-local"
+                                name="expires_at"
+                                value="{{ old('expires_at', $displaySessionDefaults['expires_at']) }}"
+                                min="{{ $displaySessionDefaults['min_expires_at'] }}"
+                                step="60"
+                                required
+                                class="w-full px-4 py-3 text-sm shadow-sm rounded-xl border-slate-300 focus:border-sky-500 focus:ring-sky-500"
                             >
+                            <span class="text-xs text-slate-500">Timezone: {{ $displaySessionDefaults['timezone'] }} (format hingga jam:menit).</span>
                         </label>
                         <div class="sm:col-span-2">
                             <button type="submit"

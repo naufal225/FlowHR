@@ -238,6 +238,10 @@ class AdminAttendanceController extends Controller
     {
         $officeLocations = $this->officeLocations();
         $selectedOffice = $this->resolveSelectedOffice($request, $officeLocations);
+        $defaultTtlDays = max(1, (int) config('attendance.qr_display.session_ttl_days', 30));
+        $officeTimezone = (string) ($selectedOffice?->timezone ?: config('app.timezone', 'Asia/Jakarta'));
+        $defaultExpiresAt = now($officeTimezone)->addDays($defaultTtlDays)->startOfMinute();
+        $minimumExpiresAt = now($officeTimezone)->addMinute()->startOfMinute();
 
         return $this->sharedView('attendance.admin.qr', [
             'headerTitle' => 'Attendance QR',
@@ -247,7 +251,9 @@ class AdminAttendanceController extends Controller
             'qrCard' => $this->currentQrCardData($selectedOffice),
             'displaySessions' => $this->displaySessionsForOffice($selectedOffice),
             'displaySessionDefaults' => [
-                'ttl_days' => (int) config('attendance.qr_display.session_ttl_days', 30),
+                'expires_at' => $defaultExpiresAt->format('Y-m-d\TH:i'),
+                'min_expires_at' => $minimumExpiresAt->format('Y-m-d\TH:i'),
+                'timezone' => $officeTimezone,
             ],
             'generatedDisplayUrl' => (string) session('attendance_qr_display_url', ''),
         ]);
@@ -326,6 +332,13 @@ class AdminAttendanceController extends Controller
     {
         $office = OfficeLocation::query()->findOrFail((int) $request->validated('office_location_id'));
         $actor = Auth::user();
+        $officeTimezone = (string) ($office->timezone ?: config('app.timezone', 'Asia/Jakarta'));
+        $expiresAt = null;
+
+        if ($request->filled('expires_at')) {
+            $parsedExpiresAt = Carbon::createFromFormat('Y-m-d\TH:i', (string) $request->validated('expires_at'), $officeTimezone);
+            $expiresAt = $parsedExpiresAt instanceof Carbon ? $parsedExpiresAt : null;
+        }
 
         if (! $actor instanceof User) {
             abort(403, 'Unauthorized actor.');
@@ -336,6 +349,7 @@ class AdminAttendanceController extends Controller
             actor: $actor,
             name: (string) $request->validated('name'),
             ttlDays: $request->filled('ttl_days') ? (int) $request->validated('ttl_days') : null,
+            expiresAt: $expiresAt,
         );
 
         return redirect()
