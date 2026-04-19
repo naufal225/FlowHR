@@ -22,10 +22,12 @@ class OvertimeService
         $start = Carbon::createFromFormat('Y-m-d\TH:i', $data['date_start'], 'Asia/Jakarta');
         $end = Carbon::createFromFormat('Y-m-d\TH:i', $data['date_end'], 'Asia/Jakarta');
 
-        // Validasi jam mulai hari ini
-        if ($start->isToday() && $start->lt(Carbon::today()->setTime(17, 0))) {
-            throw new \Exception('Jika tanggal mulai adalah hari ini, maka waktu mulai harus setelah jam 17:00.');
+        // Validasi jam lembur and weekday
+        if (Carbon::parse($start)->isWeekday() && $start->lt(Carbon::parse($start)->setTime(17, 0))) {
+            throw new \Exception('Waktu mulai lembur harus setelah jam 17:00 jika weekday.');
         }
+
+        // Validasi jam lembur saat weekand maka dia bebas lembur dari jam berapa sampai jam berapa di hari weekend
 
         $minutes = $start->diffInMinutes($end);
         $hours = $minutes / 60;
