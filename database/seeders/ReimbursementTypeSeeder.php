@@ -10,9 +10,14 @@ class ReimbursementTypeSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        $isMySql = DB::getDriverName() === 'mysql';
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
         DB::table('reimbursement_types')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
 
         $types = [
             'Transport',
@@ -35,4 +40,3 @@ class ReimbursementTypeSeeder extends Seeder
         $this->command->info('Reimbursement types seeded untuk skenario showcase.');
     }
 }
-

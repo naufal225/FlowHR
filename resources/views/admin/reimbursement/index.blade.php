@@ -30,7 +30,7 @@
                     data-to-selector="#toDateFilter"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-all duration-200 transform rounded-lg shadow-lg bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 hover:scale-105">
                     <i class="mr-2 fa-solid fa-file-pdf"></i>
-                    <span>Export Summary PDF</span>
+                    <span>Export Summary (Auto)</span>
                 </button>
                 <button
                     type="button"

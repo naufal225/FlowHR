@@ -20,6 +20,10 @@ class ReportExport extends Model
     public const EXPORT_TYPE_SUMMARY = 'summary';
     public const EXPORT_TYPE_EVIDENCE = 'evidence';
 
+    public const FORMAT_PDF = 'pdf';
+    public const FORMAT_XLSX = 'xlsx';
+    public const FORMAT_ZIP = 'zip';
+
     public $incrementing = false;
 
     protected $keyType = 'string';
@@ -41,6 +45,11 @@ class ReportExport extends Model
         'error_message',
         'started_at',
         'finished_at',
+        'queued_at',
+        'worker_app',
+        'attempts',
+        'last_heartbeat_at',
+        'artifact_size_bytes',
     ];
 
     protected $casts = [
@@ -50,6 +59,10 @@ class ReportExport extends Model
         'total_items' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
+        'queued_at' => 'datetime',
+        'attempts' => 'integer',
+        'last_heartbeat_at' => 'datetime',
+        'artifact_size_bytes' => 'integer',
     ];
 
     protected static function booted(): void
@@ -81,4 +94,3 @@ class ReportExport extends Model
         return in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_FAILED], true);
     }
 }
-

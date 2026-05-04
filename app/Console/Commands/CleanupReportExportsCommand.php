@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 
 class CleanupReportExportsCommand extends Command
 {
-    protected $signature = 'report-exports:cleanup {--days=7 : Retention in days for completed/failed exports}';
+    protected $signature = 'report-exports:cleanup {--days=14 : Retention in days for completed/failed exports}';
 
     protected $description = 'Cleanup old generated report export files and records';
 
@@ -44,4 +44,3 @@ class CleanupReportExportsCommand extends Command
         return self::SUCCESS;
     }
 }
-

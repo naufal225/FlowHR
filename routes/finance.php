@@ -18,7 +18,8 @@ Route::middleware(['auth', 'role:finance', 'division'])->prefix('approver3')->na
 
     // Leave Requests (feature: cuti)
     Route::middleware('feature:cuti')->group(function () {
-        Route::get('/leaves/bulk-export', [LeaveController::class, 'bulkExport'])->name('leaves.bulkExport');
+        Route::get('/leaves/bulk-export', [LeaveController::class, 'bulkExport'])
+            ->name('leaves.bulkExport');
         Route::get('leaves/{leave}/export-pdf', [LeaveController::class, 'exportPdf'])->name('leaves.exportPdf');
         Route::resource('leaves', LeaveController::class)
             ->parameters([

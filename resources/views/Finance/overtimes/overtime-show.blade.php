@@ -164,7 +164,7 @@
                     data-from-selector="input[name='from_date']"
                     data-to-selector="input[name='to_date']"
                     class="flex items-center w-full px-4 py-2 text-sm font-medium text-white transition-all duration-300 bg-green-600 shadow-sm justify-center-safe rounded-xl hover:bg-green-700 hover:shadow-md sm:w-auto">
-                    <i class="mr-2 fas fa-file-pdf"></i> Export Summary PDF
+                    <i class="mr-2 fas fa-file-pdf"></i> Export Summary (Auto)
                 </button>
             </div>
         </form>

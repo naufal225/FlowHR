@@ -76,6 +76,7 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
     Route::resource('leave-balances', LeaveBalancesController::class);
 
     Route::get('/reimbursements/export', [ReimbursementController::class, 'export'])
+        ->middleware('legacy.export')
         ->name('reimbursements.export');
     Route::get('reimbursements/{reimbursement}/export-pdf', [ReimbursementController::class, 'exportPdf'])->name('reimbursements.exportPdf');
     Route::resource('reimbursements', ReimbursementController::class)
@@ -90,11 +91,13 @@ Route::middleware(['auth', 'role:superAdmin'])->prefix('super-admin')->name('sup
 
 
     Route::get('/overtimes/export', [OvertimeController::class, 'export'])
+        ->middleware('legacy.export')
         ->name('overtimes.export');
     Route::get('overtimes/{overtime}/export-pdf', [OvertimeController::class, 'exportPdf'])->name('overtimes.exportPdf');
     Route::resource('overtimes', OvertimeController::class);
 
     Route::get('/official-travels/export', [OfficialTravelController::class, 'export'])
+        ->middleware('legacy.export')
         ->name('official-travels.export');
     Route::get('official-travels/{officialTravel}/export-pdf', [OfficialTravelController::class, 'exportPdf'])->name('official-travels.exportPdf');
     Route::resource('official-travels', OfficialTravelController::class);

@@ -11,9 +11,16 @@ class OfficeLocationAndAkbarSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('office_locations')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        $isMySql = DB::getDriverName() === 'mysql';
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            DB::table('office_locations')->truncate();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        } else {
+            // On PostgreSQL, TRUNCATE uses CASCADE and can wipe users through FK dependency.
+            User::query()->whereNotNull('office_location_id')->update(['office_location_id' => null]);
+            DB::table('office_locations')->delete();
+        }
 
         $office = OfficeLocation::query()->create([
             'code' => 'BSP1-01',

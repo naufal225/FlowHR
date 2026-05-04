@@ -767,7 +767,7 @@ class MobileDashboardService
         ?Attendance $attendance,
         ?Leave $approvedLeave,
     ): DailyAttendanceStatusData {
-        $offDayContext = $this->dailyStatusResolverService->getOffDayContext($date);
+        $offDayContext = $this->dailyStatusResolverService->getOffDayContext($date, $user->id);
 
         if ($offDayContext !== null) {
             return DailyAttendanceStatusData::fromArray([

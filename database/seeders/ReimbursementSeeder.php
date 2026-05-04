@@ -18,9 +18,14 @@ class ReimbursementSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        $isMySql = DB::getDriverName() === 'mysql';
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
         DB::table('reimbursements')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
 
         $users = User::query()
             ->select(['id', 'name', 'division_id'])
@@ -311,4 +316,3 @@ class ReimbursementSeeder extends Seeder
         return $this->seededInt($key, 1, 100) <= $percentageTrue;
     }
 }
-

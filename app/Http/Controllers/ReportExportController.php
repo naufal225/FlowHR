@@ -32,10 +32,29 @@ class ReportExportController extends Controller
                 ReportExport::EXPORT_TYPE_SUMMARY,
                 ReportExport::EXPORT_TYPE_EVIDENCE,
             ])],
+            'format' => ['nullable', Rule::in([
+                ReportExport::FORMAT_PDF,
+                ReportExport::FORMAT_XLSX,
+                ReportExport::FORMAT_ZIP,
+            ])],
             'filters.status' => ['nullable', Rule::in(['approved', 'rejected', 'pending'])],
             'filters.from_date' => ['required', 'date'],
             'filters.to_date' => ['required', 'date', 'after_or_equal:filters.from_date'],
         ]);
+
+        $format = isset($validated['format']) ? (string) $validated['format'] : '';
+        $exportType = (string) $validated['export_type'];
+        if ($exportType === ReportExport::EXPORT_TYPE_SUMMARY && $format === ReportExport::FORMAT_ZIP) {
+            return response()->json([
+                'message' => 'Summary export only supports pdf or xlsx format.',
+            ], 422);
+        }
+
+        if ($exportType === ReportExport::EXPORT_TYPE_EVIDENCE && $format !== '' && $format !== ReportExport::FORMAT_ZIP) {
+            return response()->json([
+                'message' => 'Evidence export must use zip format.',
+            ], 422);
+        }
 
         $from = Carbon::parse((string) $validated['filters']['from_date'], 'Asia/Jakarta')->startOfDay();
         $to = Carbon::parse((string) $validated['filters']['to_date'], 'Asia/Jakarta')->startOfDay();
@@ -155,4 +174,3 @@ class ReportExportController extends Controller
         ];
     }
 }
-

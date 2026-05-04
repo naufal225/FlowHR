@@ -15,11 +15,16 @@ class UserAndDivisionFictionalSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        $isMySql = DB::getDriverName() === 'mysql';
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
         DB::table('role_user')->truncate();
         DB::table('users')->truncate();
         DB::table('divisions')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
 
         $roleIds = Role::query()->pluck('id', 'name');
         $divisions = [

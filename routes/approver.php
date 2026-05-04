@@ -29,7 +29,8 @@ Route::middleware(['auth', 'role:approver', 'division'])->prefix('approver')->na
 
     // Leaves (feature: cuti)
     Route::middleware('feature:cuti')->group(function () {
-        Route::get('/leaves/export', [LeaveController::class, 'export'])->name('leaves.export');
+        Route::get('/leaves/export', [LeaveController::class, 'export'])
+            ->name('leaves.export');
         Route::get('/leaves/{leave}/export-pdf', [LeaveController::class, 'exportPdf'])->name('leaves.exportPdf');
         Route::resource('leaves', LeaveController::class)
             ->parameters([
@@ -39,7 +40,9 @@ Route::middleware(['auth', 'role:approver', 'division'])->prefix('approver')->na
 
     // Official Travels (feature: perjalanan_dinas)
     Route::middleware('feature:perjalanan_dinas')->group(function () {
-        Route::get('/official-travels/export', [OfficialTravelController::class, 'export'])->name('official-travels.export');
+        Route::get('/official-travels/export', [OfficialTravelController::class, 'export'])
+            ->middleware('legacy.export')
+            ->name('official-travels.export');
         Route::get('official-travels/{officialTravel}/export-pdf', [OfficialTravelController::class, 'exportPdf'])->name('official-travels.exportPdf');
         Route::resource('official-travels', OfficialTravelController::class);
         Route::put('/official-travels/{officialTravel}/update-self', [OfficialTravelController::class, 'updateSelf'])->name('official-travels.updateSelf');
@@ -47,7 +50,9 @@ Route::middleware(['auth', 'role:approver', 'division'])->prefix('approver')->na
 
     // Reimbursements (feature: reimbursement)
     Route::middleware('feature:reimbursement')->group(function () {
-        Route::get('/reimbursements/export', [ReimbursementController::class, 'export'])->name('reimbursements.export');
+        Route::get('/reimbursements/export', [ReimbursementController::class, 'export'])
+            ->middleware('legacy.export')
+            ->name('reimbursements.export');
         Route::get('/reimbursements/{reimbursement}/export-pdf', [ReimbursementController::class, 'exportPdf'])->name('reimbursements.exportPdf');
         Route::put('/reimbursements/{reimbursement}/update-self', [ReimbursementController::class, 'updateSelf'])->name('reimbursements.updateSelf');
         Route::resource('reimbursements', ReimbursementController::class)
@@ -58,7 +63,9 @@ Route::middleware(['auth', 'role:approver', 'division'])->prefix('approver')->na
 
     // Overtimes (feature: overtime)
     Route::middleware('feature:overtime')->group(function () {
-        Route::get('/overtimes/export', [OvertimeController::class, 'export'])->name('overtimes.export');
+        Route::get('/overtimes/export', [OvertimeController::class, 'export'])
+            ->middleware('legacy.export')
+            ->name('overtimes.export');
         Route::get('overtimes/{overtime}/export-pdf', [OvertimeController::class, 'exportPdf'])->name('overtimes.exportPdf');
         Route::put('/overtimes/{overtime}/update-self', [OvertimeController::class, 'updateSelf'])->name('overtimes.updateSelf');
         Route::resource('overtimes', OvertimeController::class);

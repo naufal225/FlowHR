@@ -8,6 +8,7 @@ use App\Data\Attendance\DailyAttendanceStatusData;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\Leave;
+use App\Models\Overtime;
 use App\Models\User;
 use App\Services\HolidayDateService;
 use Carbon\Carbon;
@@ -27,7 +28,7 @@ class AttendanceDailyStatusResolverService
     {
         $date = $this->normalizeDate($date);
 
-        $offDayContext = $this->getOffDayContext($date);
+        $offDayContext = $this->getOffDayContext($date, $user->id);
 
         if ($offDayContext !== null) {
             return $this->buildOffDayStatus($user, $date, $offDayContext);
@@ -67,15 +68,30 @@ class AttendanceDailyStatusResolverService
             ->startOfDay();
     }
 
-    public function getOffDayContext(Carbon $date): ?array
+    public function getOffDayContext(Carbon $date, int $userId): ?array
     {
         $date = $this->normalizeDate($date);
 
         $holiday = $this->findHolidayForDate($date);
+        $isHoliday = $holiday !== null;
+        $isWeekend = $date->isWeekend();
 
-        if ($holiday !== null) {
+        if (! $isHoliday && ! $isWeekend) {
+            return null;
+        }
+
+        $approvedOvertime = $this->findApprovedOvertimeForDate($userId, $date);
+
+        if ($approvedOvertime !== null) {
+            if ($this->canAttendForOvertimeOnOffDay($userId, $date, $approvedOvertime)) {
+                return null;
+            }
+
+            return $this->buildRestrictedOffDayContextForOvertime($holiday, $approvedOvertime);
+        }
+
+        if ($isHoliday) {
             $holidayName = trim((string) $holiday->name);
-
             return [
                 'type' => 'holiday',
                 'label' => $holidayName !== '' ? $holidayName : 'Hari libur nasional',
@@ -85,15 +101,83 @@ class AttendanceDailyStatusResolverService
             ];
         }
 
-        if ($date->isWeekend()) {
-            return [
-                'type' => 'weekend',
-                'label' => 'Hari libur akhir pekan',
-                'reason' => 'The selected date falls on a weekend.',
-            ];
+        return [
+            'type' => 'weekend',
+            'label' => 'Hari libur akhir pekan',
+            'reason' => 'The selected date falls on a weekend.',
+        ];
+    }
+
+    private function findApprovedOvertimeForDate(int $userId, Carbon $date): ?Overtime
+    {
+        $user = User::query()
+            ->select(['id'])
+            ->whereKey($userId)
+            ->first();
+
+        if ($user === null) {
+            return null;
         }
 
-        return null;
+        $startOfDay = $date->copy()->startOfDay();
+        $endOfDay = $date->copy()->endOfDay();
+
+        return $user->approvedOvertimes()
+            ->where('date_start', '<=', $endOfDay)
+            ->where('date_end', '>=', $startOfDay)
+            ->orderBy('date_start')
+            ->first();
+    }
+
+    private function canAttendForOvertimeOnOffDay(int $userId, Carbon $date, Overtime $overtime): bool
+    {
+        // If attendance already exists, never classify the day as off-day.
+        if ($this->findAttendanceForDate($userId, $date) !== null) {
+            return true;
+        }
+
+        $today = now(self::DEFAULT_TIMEZONE)->startOfDay();
+
+        if (! $date->equalTo($today)) {
+            return true;
+        }
+
+        if (! ($overtime->date_start instanceof Carbon) || ! ($overtime->date_end instanceof Carbon)) {
+            return true;
+        }
+
+        $overtimeStart = $overtime->date_start->copy()->timezone(self::DEFAULT_TIMEZONE);
+        $overtimeEnd = $overtime->date_end->copy()->timezone(self::DEFAULT_TIMEZONE);
+        $now = now(self::DEFAULT_TIMEZONE);
+
+        return $now->betweenIncluded($overtimeStart, $overtimeEnd);
+    }
+
+    private function buildRestrictedOffDayContextForOvertime(?Holiday $holiday, Overtime $overtime): array
+    {
+        $overtimeStart = $overtime->date_start instanceof Carbon
+            ? $overtime->date_start->copy()->timezone(self::DEFAULT_TIMEZONE)
+            : null;
+        $overtimeEnd = $overtime->date_end instanceof Carbon
+            ? $overtime->date_end->copy()->timezone(self::DEFAULT_TIMEZONE)
+            : null;
+        $startText = $overtimeStart?->format('H:i') ?? '-';
+        $endText = $overtimeEnd?->format('H:i') ?? '-';
+        $holidayName = trim((string) ($holiday?->name ?? ''));
+
+        return [
+            'type' => $holiday !== null ? 'holiday' : 'weekend',
+            'label' => $holiday !== null
+                ? ($holidayName !== '' ? $holidayName : 'Hari libur nasional')
+                : 'Hari libur akhir pekan',
+            'reason' => 'Absensi lembur hanya dapat dilakukan pada rentang jam '
+                . $startText
+                . ' - '
+                . $endText
+                . '. Jam pulang mengikuti waktu akhir lembur.',
+            'overtime_start_at' => $overtimeStart?->toDateTimeString(),
+            'overtime_end_at' => $overtimeEnd?->toDateTimeString(),
+        ];
     }
 
     private function buildOffDayStatus(User $user, Carbon $date, array $offDayContext): DailyAttendanceStatusData

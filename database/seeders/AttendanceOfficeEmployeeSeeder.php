@@ -31,13 +31,18 @@ class AttendanceOfficeEmployeeSeeder extends Seeder
 
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        $isMySql = DB::getDriverName() === 'mysql';
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
         DB::table('attendance_logs')->truncate();
         DB::table('attendance_corrections')->truncate();
         DB::table('attendances')->truncate();
         DB::table('attendance_qr_tokens')->truncate();
         DB::table('attendance_settings')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        if ($isMySql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
 
         $office = OfficeLocation::query()->where('is_active', true)->first();
         if ($office === null) {

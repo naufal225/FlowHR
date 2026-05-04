@@ -3,6 +3,7 @@
 use App\Exceptions\Attendance\AttendanceException;
 use App\Http\Middleware\CheckFeatureActive;
 use App\Http\Middleware\EnsureHasDivision;
+use App\Http\Middleware\EnsureLegacyReportExportEnabled;
 use App\Http\Middleware\EnsureMobileEmployeeAccess;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\ValidateAttendanceQrDisplaySession;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'division' => EnsureHasDivision::class,
             'mobile.employee' => EnsureMobileEmployeeAccess::class,
             'qr.display.session' => ValidateAttendanceQrDisplaySession::class,
+            'legacy.export' => EnsureLegacyReportExportEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

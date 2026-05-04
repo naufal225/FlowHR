@@ -61,6 +61,16 @@
 
     @yield('partial-modal')
 
+    @if(!config('reporting.legacy_export_enabled'))
+        <style>
+            #exportReimbursementRequests,
+            #exportOvertimesData,
+            #exportOfficialTravelsData {
+                display: none !important;
+            }
+        </style>
+    @endif
+
     <x-report-export.floating-panel
         :index-url="route('admin.report-exports.index')"
         :store-url="route('admin.report-exports.store')"

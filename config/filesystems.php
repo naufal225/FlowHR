@@ -47,6 +47,13 @@ return [
             'report' => false,
         ],
 
+        'report_shared' => [
+            'driver' => 'local',
+            'root' => env('REPORT_SHARED_ROOT', storage_path('app/report-shared')),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
