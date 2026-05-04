@@ -87,7 +87,7 @@
             store: panel.dataset.storeUrl,
         };
         const stalledQueuedSecondsThreshold = 12;
-        const workerCommand = 'php artisan queue:work --queue=reports,default --tries=1 --timeout=1800 --sleep=1';
+        const workerCommand = 'php artisan queue:work database --queue=reports --tries=1 --timeout=1800 --sleep=1';
 
         const loadHiddenCompletedIds = () => {
             try {
@@ -213,10 +213,17 @@
             }, 15);
         };
 
+        const hasOtherProcessingItem = (currentId) => state.items.some(
+            (entry) => entry.status === 'processing' && String(entry.id) !== String(currentId)
+        );
+
         const buildExportCard = (item, options = {}) => {
             const allowDownload = options.allowDownload === true;
             const progressValue = Math.max(0, Math.min(100, Number(item.progress_percent || 0)));
-            const exportLabel = item.export_type === 'evidence' ? 'Evidence ZIP' : 'Summary PDF';
+            const formatLabel = String(item.format || '').trim().toUpperCase();
+            const exportLabel = item.export_type === 'evidence'
+                ? 'Evidence ZIP'
+                : (formatLabel !== '' ? `Summary ${formatLabel}` : 'Summary');
             const processedLabel = Number(item.total_items || 0) > 0
                 ? `${item.processed_items || 0}/${item.total_items || 0}`
                 : '-';
@@ -228,11 +235,17 @@
                 ? Math.floor((Date.now() - createdAtMs) / 1000)
                 : 0;
             const isQueuedStalled = item.status === 'queued' && queuedSeconds >= stalledQueuedSecondsThreshold;
-            const workerWarning = isQueuedStalled
-                ? `<div class="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">
+            const isWaitingForOtherJob = item.status === 'queued' && hasOtherProcessingItem(item.id);
+            let workerWarning = '';
+            if (isWaitingForOtherJob) {
+                workerWarning = `<div class="mt-2 rounded-md border border-sky-200 bg-sky-50 px-2 py-1.5 text-[11px] text-sky-800">
+                    Worker reports sedang memproses export lain. Job ini masih menunggu giliran.
+                </div>`;
+            } else if (isQueuedStalled) {
+                workerWarning = `<div class="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">
                     Worker reports belum aktif. Jalankan: <code class="font-mono">${workerCommand}</code>
-                </div>`
-                : '';
+                </div>`;
+            }
             const errorMessage = item.status === 'failed' && item.error_message
                 ? `<p class="mt-2 text-xs text-red-600">${item.error_message}</p>`
                 : '';
@@ -542,6 +555,7 @@
             if (trigger) {
                 event.preventDefault();
 
+                const requestedFormat = (trigger.dataset.format || '').trim();
                 const payload = {
                     module: trigger.dataset.module || '',
                     export_type: trigger.dataset.exportType || 'summary',
@@ -551,6 +565,9 @@
                         to_date: readValue(trigger.dataset.toSelector),
                     },
                 };
+                if (requestedFormat !== '') {
+                    payload.format = requestedFormat;
+                }
 
                 await requestExport(payload, trigger);
                 return;
