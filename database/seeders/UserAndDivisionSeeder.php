@@ -98,7 +98,7 @@ class UserAndDivisionSeeder extends Seeder
             $user = User::query()->create([
                 'name' => $name,
                 'email' => $email,
-                'password' => Hash::make('password'),
+                'password' => bcrypt('password'),
                 'division_id' => null,
                 'office_location_id' => null,
                 'url_profile' => null,
