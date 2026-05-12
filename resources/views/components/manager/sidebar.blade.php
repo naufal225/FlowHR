@@ -1,5 +1,5 @@
 ﻿<!-- Sidebar -->
-<div class="fixed inset-y-0 left-0 z-30 z-50 flex flex-col w-64 text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary-800 shadow-medium lg:relative lg:translate-x-0"
+<div class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 text-white transition-transform duration-300 ease-in-out transform -translate-x-full bg-primary-800 shadow-medium lg:relative lg:translate-x-0"
     id="sidebar">
     <div class="flex items-center justify-between h-32 px-6 py-4">
         <div class="w-full">
