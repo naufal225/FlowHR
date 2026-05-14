@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Roles;
+use App\Support\UserPermissions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -127,8 +128,11 @@ class User extends Authenticatable
         });
     }
 
-    public function hasRole(string $roleName): bool
+    public function hasRole(string|array $roleName): bool
     {
+        if (is_array($roleName)) {
+            return $this->roles->whereIn('name', $roleName)->isNotEmpty();
+        }
         return $this->roles->contains('name', $roleName);
     }
 
@@ -149,6 +153,11 @@ class User extends Authenticatable
         return $this->roles()
             ->whereRaw('LOWER(name) = ?', [Str::lower($mappedRole)])
             ->exists();
+    }
+
+    public function permissions(): UserPermissions
+    {
+        return new UserPermissions($this);
     }
 
     public function hasActiveRole(string $roleName): bool

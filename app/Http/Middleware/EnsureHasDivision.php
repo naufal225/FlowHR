@@ -11,7 +11,18 @@ class EnsureHasDivision
     public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();
-        if ($user && is_null($user->division_id)) {
+
+        if (!$user) {
+            return $next($request);
+        }
+
+        // Admin dan super-admin tidak memerlukan divisi
+        $user->loadMissing('roles');
+        if ($user->hasRole(['admin', 'superAdmin'])) {
+            return $next($request);
+        }
+
+        if (is_null($user->division_id)) {
             abort(403, 'Anda belum punya divisi, tunggu admin menempatkan Anda di suatu divisi.');
         }
 

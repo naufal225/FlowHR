@@ -63,7 +63,7 @@ class LeaveApprovalService
     {
         $actor = Auth::user();
 
-        if (! $actor || ! $actor->hasActiveRole(Roles::Manager->value)) {
+        if (! $actor || ! $actor->hasRole(Roles::Manager->value)) {
             abort(403, 'Unauthorized - only Manager can approve this leave.');
         }
 

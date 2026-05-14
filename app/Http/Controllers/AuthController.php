@@ -38,7 +38,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return $this->redirectToDashboardOrRoleSelection();
+        return redirect()->route("dashboard");
     }
 
     public function logout(Request $request)
@@ -55,40 +55,30 @@ class AuthController extends Controller
     }
 
     /**
-     * Redirect user setelah login:
-     * - Jika punya 1 role → langsung ke dashboard
-     * - Jika punya >1 role → pilih role
-     * - Jika tidak punya role → error
+     * Redirect user setelah login ke dashboard berdasarkan role dengan prioritas tertinggi.
+     * Tidak lagi meminta user memilih role – semua role ditampilkan sekaligus di view.
      */
     protected function redirectToDashboardOrRoleSelection()
     {
         $user = Auth::user();
         $user->load('roles');
 
-        // Filter role yang dimiliki user (kecuali SuperAdmin)
-        $userRoles = $user->roles;
+        $userRoleNames = $user->roles->pluck('name')->toArray();
 
-        // Jika hanya punya 1 role, langsung redirect
-        if ($userRoles->count() === 1) {
-            $roleName = $userRoles->first()->name;
-            session(['active_role' => $roleName]);
-            return app(AuthController::class)->redirectBasedOnRole($roleName);
+        if (empty($userRoleNames)) {
+            abort(403, 'User tidak memiliki role yang valid.');
         }
 
-        $roleLabels = Roles::labels();
+        // Pilih role dengan prioritas tertinggi dari role yang dimiliki user
         $roleOrder = Roles::selectionOrder();
+        $highestRole = collect($roleOrder)->first(fn($r) => in_array($r, $userRoleNames));
 
-        // Urutkan roles sesuai urutan yang diinginkan
-        $sortedRoles = $userRoles->sortBy(function ($role) use ($roleOrder) {
-            $index = array_search($role->name, $roleOrder, true);
+        if (!$highestRole) {
+            abort(403, 'User tidak memiliki role yang valid.');
+        }
 
-            return $index === false ? PHP_INT_MAX : $index;
-        });
-
-        return view('auth.choose-role', [
-            'roles' => $sortedRoles,
-            'roleLabels' => $roleLabels
-        ]);
+        session(['active_role' => $highestRole]);
+        return $this->redirectBasedOnRole($highestRole);
     }
 
     /**

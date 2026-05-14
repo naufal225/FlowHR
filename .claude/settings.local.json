@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\My_Projects\\\\03 - Serious Projects\\\\01 - Active\\\\FlowHR Ukom Project\\\\FlowHR\" -Directory)",
+      "Bash(Select-Object -First 20)",
+      "Bash(Get-ChildItem *)",
+      "Bash(php -l app/Http/Controllers/AuthController.php)",
+      "Bash(php -l app/Http/Middleware/RoleMiddleware.php)",
+      "Bash(php artisan *)",
+      "Bash(Select-Object Name)",
+      "Bash(php -l app/Support/UserPermissions.php)",
+      "Bash(php -l app/Models/User.php)",
+      "Bash(php -l app/Http/Middleware/EnsureHasDivision.php)",
+      "Bash(php -l app/Services/LeaveApprovalService.php)",
+      "Bash(php -l app/Traits/HelperController.php)",
+      "Bash(php -l app/Http/Controllers/DashboardController.php)",
+      "Bash(php -l app/Http/Controllers/LeaveController.php)",
+      "Bash(php -l app/Http/Controllers/ReimbursementController.php)",
+      "Bash(php -l app/Http/Controllers/OvertimeController.php)",
+      "Bash(php -l app/Http/Controllers/OfficialTravelController.php)",
+      "Bash(findstr /v \"admin super-admin manager approver employee finance\")",
+      "Bash(findstr \"leaves\")",
+      "Bash(Select-String \"^.*leaves\\\\.\")"
+    ]
+  }
+}

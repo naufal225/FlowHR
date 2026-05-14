@@ -13,29 +13,23 @@ class ApproveOfficialTravelRequest extends FormRequest
     public function authorize(): bool
     {
         return auth()->check() && (
-            auth()->user()->hasActiveRole(Roles::Approver->value)
-            || auth()->user()->hasActiveRole(Roles::Manager->value)
+            auth()->user()->hasRole(Roles::Approver->value)
+            || auth()->user()->hasRole(Roles::Manager->value)
         );
     }
 
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
-        $activeRole = session('active_role');
+        $user = auth()->user();
 
         $status1Rule = 'nullable|string|in:approved,rejected';
         $status2Rule = 'nullable|string|in:approved,rejected';
 
-        if ($activeRole === Roles::Approver->value) {
+        if ($user->hasRole(Roles::Approver->value)) {
             $status1Rule = 'required|string|in:approved,rejected';
         }
 
-        if ($activeRole === Roles::Manager->value) {
+        if ($user->hasRole(Roles::Manager->value)) {
             $status2Rule = 'required|string|in:approved,rejected';
         }
 

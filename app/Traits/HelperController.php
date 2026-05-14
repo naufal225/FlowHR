@@ -16,39 +16,25 @@ trait HelperController
     private function getRecentRequests($userId)
     {
         $user = Auth::user();
-        $role = session('active_role');
-
-        // Tentukan prefix route sesuai role
-        $routePrefix = match ($role) {
-            Roles::Admin->value => 'admin',
-            Roles::SuperAdmin->value => 'super-admin',
-            Roles::Approver->value => 'approver',
-            Roles::Manager->value => 'manager',
-            default => 'employee',
-        };
+        $user->loadMissing('roles');
 
         // Helper untuk membangun query dasar per model sesuai role
-        $baseQuery = function (string $model) use ($role, $userId, $user) {
+        $baseQuery = function (string $model) use ($userId, $user) {
             /** @var \Illuminate\Database\Eloquent\Builder $q */
             $q = $model::query();
 
-            switch ($role) {
-                case Roles::Approver->value:
-                    // Ambil data sesuai divisi leader/approver
-                    // Pastikan scope forLeader($leaderId) tersedia di masing-masing Model
-                    $q = $q->forLeader($user->id);
-                    break;
-
-                case Roles::Manager->value:
-                case Roles::SuperAdmin->value:
-                case Roles::Admin->value:
-                    // Semua data -> tanpa filter
-                    break;
-
-                default:
-                    // Employee: hanya data miliknya
-                    $q = $q->where('employee_id', $userId);
-                    break;
+            if ($user->hasRole(Roles::Approver->value)) {
+                // Ambil data sesuai divisi leader/approver
+                $q = $q->forLeader($user->id);
+            } elseif (
+                $user->hasRole(Roles::Manager->value) ||
+                $user->hasRole(Roles::SuperAdmin->value) ||
+                $user->hasRole(Roles::Admin->value)
+            ) {
+                // Semua data -> tanpa filter
+            } else {
+                // Employee/Finance: hanya data miliknya
+                $q = $q->where('employee_id', $userId);
             }
 
             return $q->orderBy('created_at', 'desc')->limit(5);
@@ -58,14 +44,14 @@ trait HelperController
         $leaves = $baseQuery(Leave::class)
             ->with(['employee.division'])
             ->get()
-            ->map(function ($leave) use ($routePrefix) {
+            ->map(function ($leave) {
                 return [
                     'id' => $leave->id,
                     'type' => TypeRequest::Leaves->value,
                     'title' => 'Leave Request: ' . Carbon::parse($leave->date_start)->format('M d') . ' - ' . Carbon::parse($leave->date_end)->format('M d'),
                     'date' => Carbon::parse($leave->created_at)->format('M d, Y'),
                     'status_1' => $leave->status_1,
-                    'url' => route($routePrefix . '.leaves.show', $leave->id),
+                    'url' => route('leaves.show', $leave->id),
                     'created_at' => $leave->created_at,
                     'employee_id' => $leave->employee_id,
                     'employee_name' => $leave->employee?->name,
@@ -78,7 +64,7 @@ trait HelperController
         $reimbursements = $baseQuery(Reimbursement::class)
             ->with(['employee.division'])
             ->get()
-            ->map(function ($reimbursement) use ($routePrefix) {
+            ->map(function ($reimbursement) {
                 return [
                     'id' => $reimbursement->id,
                     'type' => TypeRequest::Reimbursements->value,
@@ -86,7 +72,7 @@ trait HelperController
                     'date' => Carbon::parse($reimbursement->created_at)->format('M d, Y'),
                     'status_1' => $reimbursement->status_1,
                     'status_2' => $reimbursement->status_2,
-                    'url' => route($routePrefix . '.reimbursements.show', $reimbursement->id),
+                    'url' => route('reimbursements.show', $reimbursement->id),
                     'created_at' => $reimbursement->created_at,
                     'employee_id' => $reimbursement->employee_id,
                     'employee_name' => $reimbursement->employee?->name,
@@ -99,7 +85,7 @@ trait HelperController
         $overtimes = $baseQuery(Overtime::class)
             ->with(['employee.division'])
             ->get()
-            ->map(function ($overtime) use ($routePrefix) {
+            ->map(function ($overtime) {
                 return [
                     'id' => $overtime->id,
                     'type' => TypeRequest::Overtimes->value,
@@ -107,7 +93,7 @@ trait HelperController
                     'date' => Carbon::parse($overtime->created_at)->format('M d, Y'),
                     'status_1' => $overtime->status_1,
                     'status_2' => $overtime->status_2,
-                    'url' => route($routePrefix . '.overtimes.show', $overtime->id),
+                    'url' => route('overtimes.show', $overtime->id),
                     'created_at' => $overtime->created_at,
                     'employee_id' => $overtime->employee_id,
                     'employee_name' => $overtime->employee?->name,
@@ -120,7 +106,7 @@ trait HelperController
         $travels = $baseQuery(OfficialTravel::class)
             ->with(['employee.division'])
             ->get()
-            ->map(function ($travel) use ($routePrefix) {
+            ->map(function ($travel) {
                 return [
                     'id' => $travel->id,
                     'type' => TypeRequest::Travels->value,
@@ -128,7 +114,7 @@ trait HelperController
                     'date' => Carbon::parse($travel->created_at)->format('M d, Y'),
                     'status_1' => $travel->status_1,
                     'status_2' => $travel->status_2,
-                    'url' => route($routePrefix . '.official-travels.show', $travel->id),
+                    'url' => route('official-travels.show', $travel->id),
                     'created_at' => $travel->created_at,
                     'employee_id' => $travel->employee_id,
                     'employee_name' => $travel->employee?->name,

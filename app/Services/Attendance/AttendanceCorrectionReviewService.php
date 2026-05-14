@@ -109,7 +109,7 @@ class AttendanceCorrectionReviewService
 
     private function assertCanReview(AttendanceCorrection $correction, User $reviewer): void
     {
-        if ($reviewer->hasActiveRole(Roles::Admin->value) || $reviewer->hasActiveRole(Roles::SuperAdmin->value)) {
+        if ($reviewer->hasRole(Roles::Admin->value) || $reviewer->hasRole(Roles::SuperAdmin->value)) {
             return;
         }
 
@@ -117,7 +117,7 @@ class AttendanceCorrectionReviewService
         $employeeDivision = $employee?->division;
 
         $canReviewAsTeamLeader =
-            $reviewer->hasActiveRole(Roles::Approver->value)
+            $reviewer->hasRole(Roles::Approver->value)
             && $employee !== null
             && $employeeDivision !== null
             && (int) $employeeDivision->leader_id === (int) $reviewer->id

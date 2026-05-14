@@ -56,17 +56,30 @@ Route::get('/', function () {
         return redirect()->route('login');
     }
 
-    $role = session('active_role'); // ambil role aktif dari session
+    // Redirect ke dashboard terpadu jika sudah ada, atau ke dashboard berdasarkan role tertinggi
+    if (\Illuminate\Support\Facades\Route::has('dashboard')) {
+        return redirect()->route('dashboard');
+    }
 
-    return match ($role) {
-        Roles::SuperAdmin->value => redirect()->route('super-admin.dashboard'),
-        Roles::Admin->value      => redirect()->route('admin.dashboard'),
-        Roles::Approver->value   => redirect()->route('approver.dashboard'),
-        Roles::Employee->value   => redirect()->route('employee.dashboard'),
-        Roles::Manager->value    => redirect()->route('manager.dashboard'),
-        Roles::Finance->value    => redirect()->route('finance.dashboard'),
-        default                  => abort(403, 'Role tidak diizinkan.'),
-    };
+    // Fallback ke role-based dashboard (untuk masa transisi)
+    $user = Auth::user();
+    $user->loadMissing('roles');
+
+    if ($user->hasRole(Roles::SuperAdmin->value)) {
+        return redirect()->route('super-admin.dashboard');
+    } elseif ($user->hasRole(Roles::Admin->value)) {
+        return redirect()->route('admin.dashboard');
+    } elseif ($user->hasRole(Roles::Manager->value)) {
+        return redirect()->route('manager.dashboard');
+    } elseif ($user->hasRole(Roles::Approver->value)) {
+        return redirect()->route('approver.dashboard');
+    } elseif ($user->hasRole(Roles::Finance->value)) {
+        return redirect()->route('finance.dashboard');
+    } elseif ($user->hasRole(Roles::Employee->value)) {
+        return redirect()->route('employee.dashboard');
+    }
+
+    abort(403, 'User tidak memiliki role yang valid.');
 });
 
 // ==============================
@@ -86,12 +99,12 @@ Route::middleware('auth')->group(function () {
 // ==============================
 // MODULE ROUTES
 // ==============================
-require __DIR__.'/super-admin.php';
-require __DIR__.'/admin.php';
-require __DIR__.'/approver.php';
-require __DIR__.'/employee.php';
-require __DIR__.'/manager.php';
-require __DIR__.'/finance.php';
+// require __DIR__.'/super-admin.php';
+// require __DIR__.'/admin.php';
+// require __DIR__.'/approver.php';
+// require __DIR__.'/employee.php';
+// require __DIR__.'/manager.php';
+// require __DIR__.'/finance.php';
+require __DIR__.'/unified.php';
 require __DIR__.'/channels.php';
 
-// test

@@ -11,7 +11,7 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto sidebar-scroll">
+    <nav class="flex-1 min-h-0 px-4 py-6 space-y-2 overflow-y-auto sidebar-scroll">
         <a href="{{ route('super-admin.dashboard') }}"
             class="flex items-center px-4 py-3 rounded-lg transition-all duration-200 {{ request()->routeIs('super-admin.dashboard') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
             <i class="w-5 mr-3 text-center fas fa-tachometer-alt"></i>
@@ -142,6 +142,124 @@
             <i class="w-5 mr-3 text-center fas fa-cog"></i>
             <span class="font-medium">Settings</span>
         </a>
+
+        @if(Auth::user()->hasRole('manager'))
+        <div class="pt-2 mt-2 border-t border-primary-600/50">
+            <p class="mb-1 px-4 text-[10px] font-semibold uppercase tracking-wider text-primary-400">Manager</p>
+            @if(\App\Models\FeatureSetting::isActive('cuti'))
+            <a href="{{ route('manager.leaves.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.leaves.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-plane-departure"></i>
+                <span class="font-medium">Leave Approvals</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('reimbursement'))
+            <a href="{{ route('manager.reimbursements.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.reimbursements.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-file-invoice-dollar"></i>
+                <span class="font-medium">Reimbursement Approvals</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('overtime'))
+            <a href="{{ route('manager.overtimes.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.overtimes.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-clock"></i>
+                <span class="font-medium">Overtime Approvals</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('perjalanan_dinas'))
+            <a href="{{ route('manager.official-travels.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('manager.official-travels.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-briefcase"></i>
+                <span class="font-medium">Travel Approvals</span>
+            </a>
+            @endif
+        </div>
+        @endif
+
+        @if(Auth::user()->hasRole('approver'))
+        <div class="pt-2 mt-2 border-t border-primary-600/50">
+            <p class="mb-1 px-4 text-[10px] font-semibold uppercase tracking-wider text-primary-400">Team Leader</p>
+            <a href="{{ route('approver.attendance.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.attendance.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-user-clock"></i>
+                <span class="font-medium">Team Attendance</span>
+            </a>
+            @if(\App\Models\FeatureSetting::isActive('cuti'))
+            <a href="{{ route('approver.leaves.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.leaves.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-plane-departure"></i>
+                <span class="font-medium">Leave Approvals</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('reimbursement'))
+            <a href="{{ route('approver.reimbursements.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.reimbursements.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-file-invoice-dollar"></i>
+                <span class="font-medium">Reimbursement Approvals</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('overtime'))
+            <a href="{{ route('approver.overtimes.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.overtimes.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-clock"></i>
+                <span class="font-medium">Overtime Approvals</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('perjalanan_dinas'))
+            <a href="{{ route('approver.official-travels.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('approver.official-travels.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-briefcase"></i>
+                <span class="font-medium">Travel Approvals</span>
+            </a>
+            @endif
+        </div>
+        @endif
+
+        @if(Auth::user()->hasRole('finance'))
+        <div class="pt-2 mt-2 border-t border-primary-600/50">
+            <p class="mb-1 px-4 text-[10px] font-semibold uppercase tracking-wider text-primary-400">Finance</p>
+            @if(\App\Models\FeatureSetting::isActive('cuti'))
+            <a href="{{ route('finance.leaves.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('finance.leaves.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-calendar-alt"></i>
+                <span class="font-medium">Leave</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('reimbursement'))
+            <a href="{{ route('finance.reimbursements.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('finance.reimbursements.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-receipt"></i>
+                <span class="font-medium">Reimbursement</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('overtime'))
+            <a href="{{ route('finance.overtimes.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('finance.overtimes.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-clock"></i>
+                <span class="font-medium">Overtime</span>
+            </a>
+            @endif
+            @if(\App\Models\FeatureSetting::isActive('perjalanan_dinas'))
+            <a href="{{ route('finance.official-travels.index') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('finance.official-travels.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-plane"></i>
+                <span class="font-medium">Official Travel</span>
+            </a>
+            @endif
+        </div>
+        @endif
+
+        @if(Auth::user()->hasRole('employee'))
+        <div class="pt-2 mt-2 border-t border-primary-600/50">
+            <p class="mb-1 px-4 text-[10px] font-semibold uppercase tracking-wider text-primary-400">My Portal</p>
+            <a href="{{ route('employee.dashboard') }}"
+                class="flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('employee.*') ? 'bg-primary-700 text-white shadow-soft' : 'text-primary-100 hover:bg-primary-700 hover:text-white' }}">
+                <i class="w-5 mr-3 text-center fas fa-user"></i>
+                <span class="font-medium">Employee Portal</span>
+            </a>
+        </div>
+        @endif
     </nav>
 
     <div class="p-4 border-t border-primary-700 bg-primary-900/60">
@@ -164,13 +282,6 @@
                 <p class="text-xs text-primary-100">{{ Auth::user()->email }}</p>
             </div>
         </a>
-        @if(Auth::user()->roles->count() >= 2)
-        <a href="/choose-role"
-            class="mb-2 flex w-full items-center rounded-lg border border-sky-300/40 bg-sky-600/25 px-4 py-2.5 text-sky-100 transition-all duration-200 hover:bg-sky-500/35 hover:text-white">
-            <i class="w-5 mr-3 text-center fas fa-sync-alt"></i>
-            <span class="font-medium">Change Role</span>
-        </a>
-        @endif
         <form action="{{ route('logout') }}" method="POST">
             @csrf
             <button type="submit"

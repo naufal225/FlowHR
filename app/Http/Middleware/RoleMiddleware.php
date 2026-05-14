@@ -15,22 +15,16 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        // 1. Pastikan user sudah login
         if (!auth()->check()) {
             return redirect()->route('login');
         }
 
-        // 2. Ambil role aktif dari session
-        $activeRole = session('active_role');
+        $user = auth()->user();
+        $user->loadMissing('roles');
 
-        // 3. Jika belum memilih role (misal: akses langsung ke dashboard)
-        if (!$activeRole) {
-            // Redirect ke halaman pilih role
-            return redirect()->route('choose-role');
-        }
+        $userRoles = $user->roles->pluck('name')->toArray();
 
-        // 4. Cek apakah role aktif termasuk dalam daftar yang diizinkan
-        if (!in_array($activeRole, $roles)) {
+        if (empty(array_intersect($roles, $userRoles))) {
             abort(403, 'Akses ditolak. Role tidak memiliki izin.');
         }
 

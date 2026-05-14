@@ -13,31 +13,24 @@ class ApproveReimbursementRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Hanya Approver atau Manager yang aktif yang boleh approve
         return Auth::check() && (
-            Auth::user()->hasActiveRole(Roles::Approver->value)
-            || Auth::user()->hasActiveRole(Roles::Manager->value)
+            Auth::user()->hasRole(Roles::Approver->value)
+            || Auth::user()->hasRole(Roles::Manager->value)
         );
     }
 
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
-        $activeRole = session('active_role');
+        $user = Auth::user();
 
         $status1Rule = 'nullable|string|in:approved,rejected';
         $status2Rule = 'nullable|string|in:approved,rejected';
 
-        if ($activeRole === Roles::Approver->value) {
+        if ($user->hasRole(Roles::Approver->value)) {
             $status1Rule = 'required|string|in:approved,rejected';
         }
 
-        if ($activeRole === Roles::Manager->value) {
+        if ($user->hasRole(Roles::Manager->value)) {
             $status2Rule = 'required|string|in:approved,rejected';
         }
 
